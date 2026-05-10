@@ -36,7 +36,7 @@
         <div class="hero-text">
 
             <h1>
-                Cloud GPU NVIDIA <br>
+                Cloud GPU NUSAGRID <br>
                 Untuk Performa <span>Tanpa Batas</span>
             </h1>
 
@@ -49,11 +49,11 @@
             </p>
 
             <a href="register.php" class="btn">
-                Mulai Sekarang
+                Mulai Sekarang!
             </a>
 
             <a href="#layanan" class="btn btn-dark">
-                Lihat Layanan
+                Lihat Layanan Yang Tersedia
             </a>
 
         </div>
@@ -76,7 +76,7 @@
             <!-- CARD -->
             <div class="gpu-card">
 
-                <img src="https://images.nvidia.com/aem-dam/Solutions/geforce/ada/rtx-4090/geforce-rtx-4090-web-og-1200x630.jpg">
+                <img src="assets/img/RTX4090.jpg">
 
                 <h3>NVIDIA RTX 4090</h3>
 

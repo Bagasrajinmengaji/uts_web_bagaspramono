@@ -1,20 +1,14 @@
-/* =========================
-   GOOGLE FONT
-========================= */
+/*GOOGLE FONT*/
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
 
-/* =========================
-   RESET
-========================= */
+/*RESET */
 *{
     margin: 0;
     padding: 0;
     box-sizing: border-box;
 }
 
-/* =========================
-   BODY
-========================= */
+/*BODY*/
 body{
     font-family: 'Poppins', sans-serif;
     background: #0f172a;
@@ -22,18 +16,14 @@ body{
     min-height: 100vh;
 }
 
-/* =========================
-   CONTAINER
-========================= */
+/*CONTAINER*/
 .container{
     width: 90%;
     max-width: 1200px;
     margin: auto;
 }
 
-/* =========================
-   NAVBAR
-========================= */
+/* NAVBAR */
 .navbar{
     display: flex;
     justify-content: space-between;
@@ -64,9 +54,7 @@ body{
     color: #22c55e;
 }
 
-/* =========================
-   HERO
-========================= */
+/*HERO*/
 .hero{
     display: flex;
     align-items: center;
@@ -107,9 +95,7 @@ body{
     filter: drop-shadow(0 0 25px #22c55e);
 }
 
-/* =========================
-   BUTTON
-========================= */
+/*BUTTON*/
 .btn{
     display: inline-block;
     padding: 13px 28px;
@@ -136,18 +122,14 @@ body{
     background: #334155;
 }
 
-/* =========================
-   SECTION TITLE
-========================= */
+/*SECTION TITLE*/
 .section-title{
     text-align: center;
     font-size: 38px;
     margin-bottom: 50px;
 }
 
-/* =========================
-   GPU GRID
-========================= */
+/*GPU GRID*/
 .gpu-grid{
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px,1fr));
@@ -155,9 +137,7 @@ body{
     margin-bottom: 80px;
 }
 
-/* =========================
-   GPU CARD
-========================= */
+/*GPU CARD*/
 .gpu-card{
     background: #1e293b;
     padding: 25px;
@@ -197,17 +177,13 @@ body{
     font-weight: 600;
 }
 
-/* =========================
-   AUTH PAGE
-========================= */
+/*AUTH PAGE*/
 .auth-wrapper{
     display: flex;
     min-height: 100vh;
 }
 
-/* =========================
-   AUTH LEFT
-========================= */
+/*AUTH LEFT*/
 .auth-left{
     flex: 1;
 
@@ -254,9 +230,7 @@ body{
     filter: drop-shadow(0 0 30px #22c55e);
 }
 
-/* =========================
-   AUTH RIGHT
-========================= */
+/*AUTH RIGHT*/
 .auth-right{
     flex: 1;
     background: #0f172a;
@@ -268,9 +242,7 @@ body{
     padding: 30px;
 }
 
-/* =========================
-   FORM CONTAINER
-========================= */
+/*FORM CONTAINER*/
 .form-container{
     width: 100%;
     max-width: 450px;
@@ -292,9 +264,7 @@ body{
     margin-bottom: 35px;
 }
 
-/* =========================
-   INPUT GROUP
-========================= */
+/*INPUT GROUP*/
 .input-group{
     margin-bottom: 22px;
 }
