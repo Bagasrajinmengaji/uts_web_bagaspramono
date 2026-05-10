@@ -1,4 +1,5 @@
 <?php
+
 session_start();
 include 'koneksi.php';
 
@@ -7,7 +8,7 @@ if(isset($_POST['login'])){
     $user_input = $_POST['user_input'];
     $password   = $_POST['password'];
 
-    $data = mysqli_query($conn,
+    $query = mysqli_query($conn,
 
     "SELECT * FROM users
     WHERE
@@ -17,58 +18,128 @@ if(isset($_POST['login'])){
 
     );
 
-    $cek = mysqli_num_rows($data);
+    $cek = mysqli_num_rows($query);
 
     if($cek > 0){
 
         $_SESSION['login'] = true;
-        $_SESSION['user'] = $user_input;
+        $_SESSION['user']  = $user_input;
 
         header("Location: dashboard.php");
         exit;
 
     } else {
 
-        echo "Login gagal";
+        echo "
+        <script>
+            alert('Login gagal');
+        </script>
+        ";
     }
 }
+
 ?>
 
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+    content="width=device-width, initial-scale=1.0">
+
     <title>Login NUSAGRID</title>
+
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<div class="container">
+<div class="auth-wrapper">
 
-    <h2>Login NUSAGRID</h2>
+    <!-- LEFT -->
+    <div class="auth-left">
 
-    <form method="POST">
+        <div>
 
-        <input type="text"
-        name="user_input"
-        placeholder="Username atau Email"
-        required>
+            <div class="logo-auth">
+                NUSAGRID
+            </div>
 
-        <input type="password"
-        name="password"
-        placeholder="Password"
-        required>
+            <h1>
+                Selamat Datang Kembali
+            </h1>
 
-        <button type="submit"
-        name="login">
-        Login
-        </button>
+            <p>
+                Masuk untuk mengelola layanan
+                Cloud GPU NVIDIA Anda.
+            </p>
 
-    </form>
+        </div>
 
-    <p>
-    Belum punya akun?
-    <a href="register.php">Register</a>
-    </p>
+        <img src="assets/img/rtx4090.png">
+
+    </div>
+
+    <!-- RIGHT -->
+    <div class="auth-right">
+
+        <div class="form-container">
+
+            <h2>Login</h2>
+
+            <p>
+                Masuk ke akun Anda
+            </p>
+
+            <form method="POST">
+
+                <div class="input-group">
+
+                    <label>
+                        Username atau Email
+                    </label>
+
+                    <input type="text"
+                    name="user_input"
+                    placeholder="Masukkan username atau email"
+                    required>
+
+                </div>
+
+                <div class="input-group">
+
+                    <label>
+                        Password
+                    </label>
+
+                    <input type="password"
+                    name="password"
+                    placeholder="Masukkan password"
+                    required>
+
+                </div>
+
+                <button type="submit"
+                name="login"
+                class="btn auth-btn">
+                    Login
+                </button>
+
+            </form>
+
+            <div class="auth-footer">
+
+                Belum punya akun?
+
+                <a href="register.php">
+                    Register
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
 
 </div>
 
