@@ -1,6 +1,5 @@
 <?php
 session_start();
-
 include 'koneksi.php';
 
 if(isset($_POST['login'])){
@@ -23,9 +22,10 @@ if(isset($_POST['login'])){
     if($cek > 0){
 
         $_SESSION['login'] = true;
-        $_SESSION['user']  = $user_input;
+        $_SESSION['user'] = $user_input;
 
         header("Location: dashboard.php");
+        exit;
 
     } else {
 
