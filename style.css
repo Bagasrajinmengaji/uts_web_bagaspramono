@@ -1,0 +1,30 @@
+body{
+    font-family: Arial;
+    background: #f2f2f2;
+}
+
+.container{
+    width: 400px;
+    margin: 50px auto;
+    background: white;
+    padding: 20px;
+}
+
+input,
+textarea,
+button{
+    width: 100%;
+    padding: 10px;
+    margin-top: 10px;
+}
+
+button{
+    background: #00a8ff;
+    color: white;
+    border: none;
+}
+
+table{
+    width: 100%;
+    background: white;
+}
