@@ -57,6 +57,7 @@ body{
     color: white;
     text-decoration: none;
     transition: 0.3s;
+    font-weight: 500;
 }
 
 .nav-menu a:hover{
@@ -197,41 +198,112 @@ body{
 }
 
 /* =========================
+   AUTH PAGE
+========================= */
+.auth-wrapper{
+    display: flex;
+    min-height: 100vh;
+}
+
+/* =========================
+   AUTH LEFT
+========================= */
+.auth-left{
+    flex: 1;
+
+    background:
+    linear-gradient(
+        rgba(15,23,42,0.92),
+        rgba(15,23,42,0.92)
+    ),
+    url('assets/img/bg.jpg');
+
+    background-size: cover;
+    background-position: center;
+
+    padding: 60px;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.logo-auth{
+    font-size: 34px;
+    font-weight: 700;
+    color: #22c55e;
+    margin-bottom: 40px;
+}
+
+.auth-left h1{
+    font-size: 55px;
+    margin-bottom: 20px;
+    line-height: 1.2;
+}
+
+.auth-left p{
+    color: #cbd5e1;
+    line-height: 1.8;
+    max-width: 500px;
+}
+
+.auth-left img{
+    width: 100%;
+    max-width: 450px;
+    margin: auto;
+    filter: drop-shadow(0 0 30px #22c55e);
+}
+
+/* =========================
+   AUTH RIGHT
+========================= */
+.auth-right{
+    flex: 1;
+    background: #0f172a;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    padding: 30px;
+}
+
+/* =========================
    FORM CONTAINER
 ========================= */
 .form-container{
     width: 100%;
-    max-width: 500px;
-    margin: 70px auto;
+    max-width: 450px;
     background: #1e293b;
-    padding: 40px;
-    border-radius: 20px;
-    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    padding: 45px;
+    border-radius: 25px;
+    box-shadow: 0 0 25px rgba(0,0,0,0.5);
 }
 
 .form-container h2{
     text-align: center;
-    font-size: 32px;
+    font-size: 38px;
     margin-bottom: 10px;
 }
 
 .form-container p{
     text-align: center;
     color: #cbd5e1;
-    margin-bottom: 30px;
+    margin-bottom: 35px;
 }
 
 /* =========================
    INPUT GROUP
 ========================= */
 .input-group{
-    margin-bottom: 20px;
+    margin-bottom: 22px;
 }
 
 .input-group label{
     display: block;
     margin-bottom: 8px;
     font-size: 15px;
+    font-weight: 500;
 }
 
 .input-group input,
@@ -240,10 +312,11 @@ body{
     padding: 15px;
     border: none;
     outline: none;
-    border-radius: 10px;
+    border-radius: 12px;
     background: #334155;
     color: white;
     transition: 0.3s;
+    font-size: 14px;
 }
 
 .input-group textarea{
@@ -255,6 +328,35 @@ body{
 .input-group textarea:focus{
     border: 1px solid #22c55e;
     box-shadow: 0 0 10px rgba(34,197,94,0.5);
+}
+
+/* =========================
+   AUTH BUTTON
+========================= */
+.auth-btn{
+    width: 100%;
+    padding: 15px;
+    margin-top: 10px;
+    font-size: 16px;
+}
+
+/* =========================
+   AUTH FOOTER
+========================= */
+.auth-footer{
+    text-align: center;
+    margin-top: 25px;
+    color: #cbd5e1;
+}
+
+.auth-footer a{
+    color: #22c55e;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.auth-footer a:hover{
+    text-decoration: underline;
 }
 
 /* =========================
@@ -348,6 +450,22 @@ table tr:hover{
 /* =========================
    RESPONSIVE
 ========================= */
+@media(max-width: 900px){
+
+    .auth-wrapper{
+        flex-direction: column;
+    }
+
+    .auth-left{
+        display: none;
+    }
+
+    .auth-right{
+        padding: 30px;
+    }
+
+}
+
 @media(max-width: 768px){
 
     .navbar{
