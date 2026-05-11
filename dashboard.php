@@ -36,7 +36,7 @@ $data = mysqli_query($conn,
 
         <div class="nav-menu">
 
-            <a href="dashboard.php">
+            <a href="index.php">
                 Dashboard
             </a>
 

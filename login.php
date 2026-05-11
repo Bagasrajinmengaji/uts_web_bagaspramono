@@ -1,41 +1,36 @@
 <?php
 
 session_start();
+
 include 'koneksi.php';
 
 if(isset($_POST['login'])){
 
-    $user_input = $_POST['user_input'];
-    $password   = $_POST['password'];
+    $username = $_POST['username'];
+    $password = $_POST['password'];
 
-    $query = mysqli_query($conn,
+    $cek = mysqli_query($conn,
 
     "SELECT * FROM users
-    WHERE
-    (username='$user_input'
-    OR email='$user_input')
+    WHERE username='$username'
     AND password='$password'"
 
     );
 
-    $cek = mysqli_num_rows($query);
-
-    if($cek > 0){
+    if(mysqli_num_rows($cek) > 0){
 
         $_SESSION['login'] = true;
-        $_SESSION['user']  = $user_input;
+        $_SESSION['user']  = $username;
 
         header("Location: dashboard.php");
         exit;
 
-    } else {
+    }else{
 
-        echo "
-        <script>
-            alert('Login gagal');
-        </script>
-        ";
+        $error = true;
+
     }
+
 }
 
 ?>
@@ -43,100 +38,85 @@ if(isset($_POST['login'])){
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
     <meta charset="UTF-8">
 
     <meta name="viewport"
     content="width=device-width, initial-scale=1.0">
 
-    <title>Login NUSAGRID</title>
+    <title>Login Admin - NUSAGRID</title>
 
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=5">
+
 </head>
 <body>
 
-<div class="auth-wrapper">
+<div class="login-wrapper">
 
-    <!-- LEFT -->
-    <div class="auth-left">
+    <div class="login-box">
 
-        <div>
+        <h2>
+            Login Admin
+        </h2>
 
-            <div class="logo-auth">
-                NUSAGRID
-            </div>
+        <p class="login-subtitle">
+            Selamat datang di Dashboard NUSAGRID
+        </p>
 
-            <h1>
-                Selamat Datang Kembali
-            </h1>
+        <?php if(isset($error)) { ?>
 
-            <p>
-                Masuk untuk mengelola layanan
-                Cloud GPU NVIDIA Anda.
-            </p>
-
+        <div class="error-message">
+            Username atau password salah
         </div>
 
-        <img src="assets/img/rtx4090.png">
+        <?php } ?>
 
-    </div>
+        <form action="" method="POST">
 
-    <!-- RIGHT -->
-    <div class="auth-right">
+            <!-- USERNAME -->
+            <div class="input-group">
 
-        <div class="form-container">
+                <label>
+                    Username
+                </label>
 
-            <h2>Login</h2>
-
-            <p>
-                Masuk ke akun Anda
-            </p>
-
-            <form method="POST">
-
-                <div class="input-group">
-
-                    <label>
-                        Username atau Email
-                    </label>
-
-                    <input type="text"
-                    name="user_input"
-                    placeholder="Masukkan username atau email"
-                    required>
-
-                </div>
-
-                <div class="input-group">
-
-                    <label>
-                        Password
-                    </label>
-
-                    <input type="password"
-                    name="password"
-                    placeholder="Masukkan password"
-                    required>
-
-                </div>
-
-                <button type="submit"
-                name="login"
-                class="btn auth-btn">
-                    Login
-                </button>
-
-            </form>
-
-            <div class="auth-footer">
-
-                Belum punya akun?
-
-                <a href="register.php">
-                    Register
-                </a>
+                <input
+                type="text"
+                name="username"
+                placeholder="Masukkan username"
+                required>
 
             </div>
 
+            <!-- PASSWORD -->
+            <div class="input-group">
+
+                <label>
+                    Password
+                </label>
+
+                <input
+                type="password"
+                name="password"
+                placeholder="Masukkan password"
+                required>
+
+            </div>
+
+            <!-- BUTTON -->
+            <button
+            type="submit"
+            name="login"
+            class="btn login-btn">
+
+                Login
+
+            </button>
+
+        </form>
+
+        <div class="login-footer">
+            © 2026 NUSAGRID
         </div>
 
     </div>
