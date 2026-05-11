@@ -68,7 +68,7 @@
     <section id="layanan">
 
         <h2 class="section-title">
-            Layanan GPU Populer
+            GPU Yang Tersedia
         </h2>
 
         <div class="gpu-grid">
@@ -76,7 +76,7 @@
             <!-- CARD -->
             <div class="gpu-card">
 
-                <img src="assets/img/RTX4090.jpg">
+                <img src="assets/img/RTX4090.jpg"> 
 
                 <h3>NVIDIA RTX 4090</h3>
 
@@ -96,7 +96,7 @@
 
                 <img src="https://images.nvidia.com/aem-dam/Solutions/data-center/a100/nvidia-a100-og-image.jpg">
 
-                <h3>NVIDIA A100</h3>
+                <h3>NVIDIA RTX 3050</h3>
 
                 <p>
                     GPU terbaik untuk Deep Learning
