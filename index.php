@@ -1,3 +1,12 @@
+<?php
+
+include 'koneksi.php';
+
+$data = mysqli_query($conn,
+"SELECT * FROM gpu_services ORDER BY id DESC");
+
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -19,13 +28,19 @@
         </div>
 
         <div class="nav-menu">
-            <a href="">Beranda</a>
-            <a href="">Layanan</a>
-            <a href="">tentang</a>
-            <a href="login.php">Login</a>
+
+            <a href="">
+                Beranda
+            </a>
+
+            <a href="#layanan">
+                Layanan
+            </a>
+
             <a href="register.php" class="btn">
                 Register
             </a>
+
         </div>
 
     </div>
@@ -48,18 +63,21 @@
                 dan Machine Learning.
             </p>
 
-            <a href="register.php" class="btn">
-                Mulai Sekarang!
+            <a href="login.php" class="btn">
+                Login Admin
             </a>
 
             <a href="#layanan" class="btn btn-dark">
-                Lihat Layanan Yang Tersedia
+                GPU Tersedia
             </a>
 
         </div>
 
         <div class="hero-image">
-            <img src="ssets/img/RTX4090.jpg" alt="">
+
+            <img src="assets/img/RTX4090.png"
+            alt="RTX 4090">
+
         </div>
 
     </section>
@@ -73,77 +91,36 @@
 
         <div class="gpu-grid">
 
-            <!-- CARD -->
+            <?php while($row = mysqli_fetch_array($data)) { ?>
+
             <div class="gpu-card">
 
-                <img src="assets/img/RTX4090.jpg"> 
+                <img
+                src="assets/img/<?= $row['foto']; ?>"
+                alt="<?= $row['nama_gpu']; ?>">
 
-                <h3>NVIDIA RTX 4090</h3>
+                <h3>
+                    <?= $row['nama_gpu']; ?>
+                </h3>
 
                 <p>
-                    Cocok untuk rendering,
-                    AI training, dan video editing.
+                    <?= $row['kebutuhan']; ?>
                 </p>
 
                 <div class="price">
-                    Rp 30.000 / jam
+
+                    Rp <?= number_format(
+                        (int)$row['harga'],
+                        0,
+                        ',',
+                        '.'
+                    ); ?> / jam
+
                 </div>
 
             </div>
 
-            <!-- CARD -->
-            <div class="gpu-card">
-
-                <img src="https://images.nvidia.com/aem-dam/Solutions/data-center/a100/nvidia-a100-og-image.jpg">
-
-                <h3>NVIDIA RTX 3050</h3>
-
-                <p>
-                    GPU terbaik untuk Deep Learning
-                    dan Machine Learning.
-                </p>
-
-                <div class="price">
-                    Rp 45.000 / jam
-                </div>
-
-            </div>
-
-            <!-- CARD -->
-            <div class="gpu-card">
-
-                <img src="https://www.nvidia.com/content/dam/en-zz/Solutions/Data-Center/h100/images/h100-og.jpg">
-
-                <h3>NVIDIA H100</h3>
-
-                <p>
-                    Performa tinggi untuk AI Model
-                    dan komputasi berat.
-                </p>
-
-                <div class="price">
-                    Rp 60.000 / jam
-                </div>
-
-            </div>
-
-            <!-- CARD -->
-            <div class="gpu-card">
-
-                <img src="https://www.nvidia.com/content/dam/en-zz/Solutions/design-visualization/rtx-6000-ada/rtx-6000-ada-og-image.jpg">
-
-                <h3>RTX 6000 ADA</h3>
-
-                <p>
-                    Cocok untuk desain 3D,
-                    animasi, dan rendering profesional.
-                </p>
-
-                <div class="price">
-                    Rp 50.000 / jam
-                </div>
-
-            </div>
+            <?php } ?>
 
         </div>
 
@@ -156,43 +133,5 @@
 
 </div>
 
-<!-- Code injected by live-server -->
-<script>
-	// <![CDATA[  <-- For SVG support
-	if ('WebSocket' in window) {
-		(function () {
-			function refreshCSS() {
-				var sheets = [].slice.call(document.getElementsByTagName("link"));
-				var head = document.getElementsByTagName("head")[0];
-				for (var i = 0; i < sheets.length; ++i) {
-					var elem = sheets[i];
-					var parent = elem.parentElement || head;
-					parent.removeChild(elem);
-					var rel = elem.rel;
-					if (elem.href && typeof rel != "string" || rel.length == 0 || rel.toLowerCase() == "stylesheet") {
-						var url = elem.href.replace(/(&|\?)_cacheOverride=\d+/, '');
-						elem.href = url + (url.indexOf('?') >= 0 ? '&' : '?') + '_cacheOverride=' + (new Date().valueOf());
-					}
-					parent.appendChild(elem);
-				}
-			}
-			var protocol = window.location.protocol === 'http:' ? 'ws://' : 'wss://';
-			var address = protocol + window.location.host + window.location.pathname + '/ws';
-			var socket = new WebSocket(address);
-			socket.onmessage = function (msg) {
-				if (msg.data == 'reload') window.location.reload();
-				else if (msg.data == 'refreshcss') refreshCSS();
-			};
-			if (sessionStorage && !sessionStorage.getItem('IsThisFirstTime_Log_From_LiveServer')) {
-				console.log('Live reload enabled.');
-				sessionStorage.setItem('IsThisFirstTime_Log_From_LiveServer', true);
-			}
-		})();
-	}
-	else {
-		console.error('Upgrade your browser. This Browser is NOT supported WebSocket for Live-Reloading.');
-	}
-	// ]]>
-</script>
 </body>
 </html>

@@ -10,7 +10,7 @@ if(!isset($_SESSION['login'])){
 include 'koneksi.php';
 
 $data = mysqli_query($conn,
-"SELECT * FROM gpu_services");
+"SELECT * FROM gpu_services ORDER BY id DESC");
 
 ?>
 
@@ -80,11 +80,14 @@ $data = mysqli_query($conn,
         <table>
 
             <tr>
+
                 <th>No</th>
+                <th>Foto</th>
                 <th>Nama GPU</th>
                 <th>Harga</th>
                 <th>Kebutuhan</th>
                 <th>Aksi</th>
+
             </tr>
 
             <?php
@@ -97,14 +100,31 @@ $data = mysqli_query($conn,
 
             <tr>
 
-                <td><?= $no++; ?></td>
+                <td>
+                    <?= $no++; ?>
+                </td>
+
+                <td>
+
+                    <img
+                    src="assets/img/<?= $row['foto']; ?>"
+                    alt="<?= $row['nama_gpu']; ?>">
+
+                </td>
 
                 <td>
                     <?= $row['nama_gpu']; ?>
                 </td>
 
                 <td>
-                    <?= $row['harga']; ?>
+
+                    Rp <?= number_format(
+                        (int)$row['harga'],
+                        0,
+                        ',',
+                        '.'
+                    ); ?> / jam
+
                 </td>
 
                 <td>
@@ -113,15 +133,21 @@ $data = mysqli_query($conn,
 
                 <td>
 
-                    <a href="edit.php?id=<?= $row['id']; ?>"
+                    <a
+                    href="edit.php?id=<?= $row['id']; ?>"
                     class="action-btn edit">
+
                         Edit
+
                     </a>
 
-                    <a href="hapus.php?id=<?= $row['id']; ?>"
+                    <a
+                    href="hapus.php?id=<?= $row['id']; ?>"
                     class="action-btn delete"
                     onclick="return confirm('Yakin hapus data?')">
+
                         Hapus
+
                     </a>
 
                 </td>
