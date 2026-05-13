@@ -31,7 +31,7 @@ $data = mysqli_query($conn,
     <div class="navbar">
 
         <div class="logo">
-            NUSAGRID
+            NUSAGRID BRO
         </div>
 
         <div class="nav-menu">
