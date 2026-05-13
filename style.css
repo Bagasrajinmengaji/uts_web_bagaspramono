@@ -12,7 +12,7 @@ html{
 
 body{
     font-family: 'Poppins', sans-serif;
-    background: #081120;
+    background: #0a1f44;
     color: white;
 }
 
@@ -34,7 +34,7 @@ body{
 .logo{
     font-size: 32px;
     font-weight: 800;
-    color: #22c55e;
+    color: #073b48;
     letter-spacing: 1px;
 }
 
@@ -46,18 +46,18 @@ body{
 
 .nav-menu a{
     text-decoration: none;
-    color: white;
+    color: rgb(255, 237, 237);
     font-size: 15px;
     transition: 0.3s;
 }
 
 .nav-menu a:hover{
-    color: #22c55e;
+    color: #010e06;
 }
 
 /* BUTTON */
 .btn{
-    background: #22c55e;
+    background: #13489e;
     color: white !important;
     padding: 12px 22px;
     border-radius: 12px;
@@ -71,7 +71,7 @@ body{
 
 .btn:hover{
     transform: translateY(-3px);
-    background: #16a34a;
+    background: #097c9c;
 }
 
 .btn-dark{
@@ -104,11 +104,11 @@ body{
 }
 
 .hero-text span{
-    color: #22c55e;
+    color: #0676aa;
 }
 
 .hero-text p{
-    color: #cbd5e1;
+    color: #7eb3f4;
     line-height: 1.9;
     margin-bottom: 35px;
     font-size: 17px;
@@ -178,7 +178,7 @@ body{
     margin: 20px;
     font-size: 24px;
     font-weight: 700;
-    color: #22c55e;
+    color: #098497;
 }
 
 /* DASHBOARD */
@@ -213,7 +213,7 @@ table{
 }
 
 table th{
-    background: #22c55e;
+    background: #0f96b4;
     color: white;
     padding: 16px;
     text-align: center;
@@ -283,19 +283,19 @@ table td:nth-child(6){
 }
 
 .edit{
-    background: orange;
+    background: rgb(15, 97, 184);
 }
 
 .edit:hover{
-    background: #ea9a00;
+    background: #126aa8;
 }
 
 .delete{
-    background: #ef4444;
+    background: #0d449c;
 }
 
 .delete:hover{
-    background: #dc2626;
+    background: #1057a9;
 }
 
 /* FORM */
@@ -340,7 +340,7 @@ table td:nth-child(6){
 
 .input-group input:focus,
 .input-group textarea:focus{
-    outline: 2px solid #22c55e;
+    outline: 2px solid #158bc2;
 }
 
 /* LOGIN */
@@ -472,7 +472,7 @@ table td:nth-child(6){
 
 .login-subtitle{
     text-align: center;
-    color: #94a3b8;
+    color: #3278db;
     margin-bottom: 30px;
     font-size: 14px;
 }
@@ -509,7 +509,7 @@ table td:nth-child(6){
 }
 
 .login-box input:focus{
-    outline: 2px solid #22c55e;
+    outline: 2px solid #0a4aab;
 }
 
 .login-btn{
