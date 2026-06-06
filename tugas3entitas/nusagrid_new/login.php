@@ -16,6 +16,10 @@ $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     require_once 'connection.php';
     
+    // Antispasi jika nama variabel di connection.php adalah $db atau $conn
+    if (!isset($pdo) && isset($db)) { $pdo = $db; }
+    if (!isset($pdo) && isset($conn)) { $pdo = $conn; }
+
     $usernameOrEmail = isset($_POST['username_or_email']) ? trim($_POST['username_or_email']) : '';
     $password = isset($_POST['password']) ? $_POST['password'] : '';
 
@@ -23,20 +27,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'Username/Email dan Password wajib diisi.';
     } else {
         try {
-            // Check in Database
-            $stmt = $pdo->prepare("SELECT * FROM users WHERE username = :input OR email = :input");
-            $stmt->execute([':input' => $usernameOrEmail]);
-            $user = $stmt->fetch();
+            // Check in Database dengan parameter terpisah agar lebih stabil di beberapa versi PDO
+            $stmt = $pdo->prepare("SELECT * FROM users WHERE username = :username OR email = :email");
+            $stmt->execute([
+                ':username' => $usernameOrEmail,
+                ':email'    => $usernameOrEmail
+            ]);
+            $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            if ($user && password_verify($password, $user['password'])) {
-                // Set Session
-                $_SESSION['user'] = [
-                    'id' => $user['id'],
-                    'username' => $user['username'],
-                    'email' => $user['email']
-                ];
-                header("Location: index.php");
-                exit;
+            if ($user) {
+                // FITUR AKURAT: Bisa login dengan Bcrypt Hash (Akun Baru) ATAU Teks Biasa (Akun Lama seperti 'bagas')
+                $isPasswordValid = password_verify($password, $user['password']) || ($password === $user['password']);
+
+                if ($isPasswordValid) {
+                    // Set Session
+                    $_SESSION['user'] = [
+                        'id' => $user['id'],
+                        'username' => $user['username'],
+                        'email' => $user['email']
+                    ];
+                    header("Location: index.php");
+                    exit;
+                } else {
+                    $error = 'Username/Email atau Password salah.';
+                }
             } else {
                 $error = 'Username/Email atau Password salah.';
             }
@@ -45,6 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 }
+?>
 ?>
 <!DOCTYPE html>
 <html lang="id">
