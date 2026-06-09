@@ -6,6 +6,11 @@ require_once 'config/helper.php';
 // Ensure user is logged in
 auth_check();
 
+// Fungsi helper ditaruh di paling atas (aman dari scope)
+function in_amount_type($val) {
+    return in_array($val, ['Pemasukan', 'Pengeluaran'], true);
+}
+
 $user_id = $_SESSION['user_id'];
 $errors = [];
 $jenis = '';
@@ -13,7 +18,7 @@ $nominal = '';
 $keterangan = '';
 $tanggal = date('Y-m-d'); // Default to today's date
 
-// Handle POST request
+// Baris 22: Handle POST request
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Trim input data
     $jenis = isset($_POST['jenis']) ? trim($_POST['jenis']) : '';
@@ -26,14 +31,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = "Semua field wajib diisi.";
     }
 
-    // Validasi jenis transaksi
-if (!empty($jenis) && !in_amount_type($jenis)) {
-    $errors[] = "Jenis transaksi tidak valid.";
-}
-
-    // Helper function checking logic inline or direct match
-    function in_amount_type($val) {
-        return in_array($val, ['Pemasukan', 'Pengeluaran'], true);
+    // 2. Validasi jenis transaksi
+    if (!empty($jenis) && !in_amount_type($jenis)) {
+        $errors[] = "Jenis transaksi tidak valid.";
     }
 
     // 3. Validation: Positive numeric check for nominal
@@ -53,7 +53,7 @@ if (!empty($jenis) && !in_amount_type($jenis)) {
         $errors[] = "Keterangan terlalu panjang (maksimal 255 karakter).";
     }
 
-    // If validation succeeds, perform insertion via Prepared Statements
+    // Jika validasi sukses, lakukan insert data
     if (empty($errors)) {
         try {
             $stmt = $pdo->prepare("INSERT INTO transaksi (user_id, jenis, nominal, keterangan, tanggal) VALUES (:user_id, :jenis, :nominal, :keterangan, :tanggal)");
@@ -73,7 +73,7 @@ if (!empty($jenis) && !in_amount_type($jenis)) {
             $errors[] = "Gagal menyimpan transaksi. Terjadi kesalahan internal.";
         }
     }
-}
+} // <--- KURUNG KURAWAL INI YANG TADI HILANG (Penutup IF POST di baris 22)
 ?>
 <!DOCTYPE html>
 <html lang="id">
