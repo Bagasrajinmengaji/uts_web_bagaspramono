@@ -9,32 +9,115 @@ auth_check();
 $user_id = $_SESSION['user_id'];
 $username = $_SESSION['username'];
 
+// --- LOGIK BACKEND: PROSES CRUD VIA POST ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    header('Content-Type: application/json');
+    $action = $_POST['action'];
+
+    try {
+        // Aksi 1: Tambah Transaksi (Create)
+        if ($action === 'create') {
+            $jenis = isset($_POST['jenis']) ? trim($_POST['jenis']) : '';
+            $nominal = isset($_POST['nominal']) ? trim($_POST['nominal']) : '';
+            $keterangan = isset($_POST['keterangan']) ? trim($_POST['keterangan']) : '';
+            $tanggal = isset($_POST['tanggal']) ? trim($_POST['tanggal']) : '';
+
+            if (empty($jenis) || empty($nominal) || empty($keterangan) || empty($tanggal)) {
+                echo json_encode(['status' => 'error', 'message' => 'Semua field wajib diisi.']);
+                exit;
+            }
+            if (!in_array($jenis, ['Pemasukan', 'Pengeluaran'], true)) {
+                echo json_encode(['status' => 'error', 'message' => 'Jenis transaksi tidak valid.']);
+                exit;
+            }
+            if (!is_numeric($nominal) || floatval($nominal) <= 0) {
+                echo json_encode(['status' => 'error', 'message' => 'Nominal harus angka positif.']);
+                exit;
+            }
+
+            $stmt = $pdo->prepare("INSERT INTO transaksi (user_id, jenis, nominal, keterangan, tanggal) VALUES (:user_id, :jenis, :nominal, :keterangan, :tanggal)");
+            $stmt->execute([
+                'user_id'    => $user_id,
+                'jenis'      => $jenis,
+                'nominal'    => floatval($nominal),
+                'keterangan' => $keterangan,
+                'tanggal'    => $tanggal
+            ]);
+
+            echo json_encode(['status' => 'success', 'message' => 'Transaksi berhasil ditambahkan!']);
+            exit;
+        }
+
+        // Aksi 2: Edit Transaksi (Update)
+        if ($action === 'update') {
+            $id = isset($_POST['id']) ? trim($_POST['id']) : '';
+            $jenis = isset($_POST['jenis']) ? trim($_POST['jenis']) : '';
+            $nominal = isset($_POST['nominal']) ? trim($_POST['nominal']) : '';
+            $keterangan = isset($_POST['keterangan']) ? trim($_POST['keterangan']) : '';
+            $tanggal = isset($_POST['tanggal']) ? trim($_POST['tanggal']) : '';
+
+            if (empty($id) || empty($jenis) || empty($nominal) || empty($keterangan) || empty($tanggal)) {
+                echo json_encode(['status' => 'error', 'message' => 'Semua field wajib diisi.']);
+                exit;
+            }
+
+            $stmt = $pdo->prepare("UPDATE transaksi SET jenis = :jenis, nominal = :nominal, keterangan = :keterangan, tanggal = :tanggal WHERE id = :id AND user_id = :user_id");
+            $stmt->execute([
+                'jenis'      => $jenis,
+                'nominal'    => floatval($nominal),
+                'keterangan' => $keterangan,
+                'tanggal'    => $tanggal,
+                'id'         => $id,
+                'user_id'    => $user_id
+            ]);
+
+            echo json_encode(['status' => 'success', 'message' => 'Transaksi berhasil diperbarui!']);
+            exit;
+        }
+
+        // Aksi 3: Hapus Transaksi (Delete)
+        if ($action === 'delete') {
+            $id = isset($_POST['id']) ? trim($_POST['id']) : '';
+            
+            $stmt = $pdo->prepare("DELETE FROM transaksi WHERE id = :id AND user_id = :user_id");
+            $stmt->execute(['id' => $id, 'user_id' => $user_id]);
+
+            if ($stmt->rowCount() > 0) {
+                echo json_encode(['status' => 'success', 'message' => 'Transaksi berhasil dihapus!']);
+            } else {
+                echo json_encode(['status' => 'error', 'message' => 'Data tidak ditemukan atau tidak ada akses.']);
+            }
+            exit;
+        }
+
+    } catch (\PDOException $e) {
+        error_log($e->getMessage());
+        echo json_encode(['status' => 'error', 'message' => 'Kesalahan server backend.']);
+        exit;
+    }
+}
+
+// --- LOGIK UTAMA: MENAMPILKAN DATA (Read) ---
 try {
-    // 1. Calculate Total Pemasukan
     $stmt_income = $pdo->prepare("SELECT SUM(nominal) as total FROM transaksi WHERE user_id = :user_id AND jenis = 'Pemasukan'");
     $stmt_income->execute(['user_id' => $user_id]);
     $total_pemasukan = $stmt_income->fetch()['total'] ?? 0;
 
-    // 2. Calculate Total Pengeluaran
     $stmt_expense = $pdo->prepare("SELECT SUM(nominal) as total FROM transaksi WHERE user_id = :user_id AND jenis = 'Pengeluaran'");
     $stmt_expense->execute(['user_id' => $user_id]);
     $total_pengeluaran = $stmt_expense->fetch()['total'] ?? 0;
 
-    // 3. Calculate Current Balance
     $saldo_sekarang = $total_pemasukan - $total_pengeluaran;
 
-    // 4. Fetch Transactions with Search & Type Filter (applying SQL Injection mitigation)
     $query = "SELECT * FROM transaksi WHERE user_id = :user_id";
     $params = ['user_id' => $user_id];
 
-    // Filter by type
     $jenis_filter = isset($_GET['jenis']) ? trim($_GET['jenis']) : '';
     if ($jenis_filter === 'Pemasukan' || $jenis_filter === 'Pengeluaran') {
         $query .= " AND jenis = :jenis";
         $params['jenis'] = $jenis_filter;
     }
 
-    // Filter by keyword search (keterangan)
     $search = isset($_GET['search']) ? trim($_GET['search']) : '';
     if ($search !== '') {
         $query .= " AND keterangan LIKE :search";
@@ -57,200 +140,117 @@ try {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - DompetKu</title>
-    <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
-    <!-- Custom CSS -->
+    
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+    
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
     <link href="assets/css/style.css" rel="stylesheet">
 </head>
 <body>
-    <!-- Navbar Header -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary bg-gradient shadow-sm py-3">
         <div class="container">
-            <a class="navbar-brand d-flex align-items-center" href="dashboard.php">
-                <i class="bi bi-wallet2 me-2"></i> DompetKu
-            </a>
-            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
+            <a class="navbar-brand d-flex align-items-center" href="dashboard.php"><i class="bi bi-wallet2 me-2"></i> DompetKu</a>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto align-items-center mt-3 mt-lg-0">
-                    <li class="nav-item me-lg-3 mb-2 mb-lg-0 text-white opacity-75">
+                <ul class="navbar-nav ms-auto align-items-center">
+                    <li class="nav-item text-white me-3">
                         <i class="bi bi-person-circle me-1"></i> Halo, <strong><?= escape($username); ?></strong>
                     </li>
-                    <li class="nav-item">
-                        <a class="btn btn-light btn-sm text-primary px-3 shadow-sm font-bold" href="logout.php">
-                            <i class="bi bi-box-arrow-right me-1"></i> Logout
-                        </a>
-                    </li>
+                    <li class="nav-item"><a class="btn btn-light btn-sm text-primary" href="logout.php">Logout</a></li>
                 </ul>
             </div>
         </div>
     </nav>
 
-    <!-- Main Container -->
     <div class="container my-5">
-        
-        <!-- Display Flash Messages (e.g., successful additions or updates) -->
-        <?php display_flash_message(); ?>
-
-        <!-- Welcome Banner -->
-        <div class="mb-4">
-            <h2 class="font-bold">Ringkasan Keuangan Anda</h2>
-            <p class="text-muted-custom">Pantau dan kelola pemasukan serta pengeluaran harian Anda di sini.</p>
-        </div>
-
-        <!-- 3 Financial Summary Cards (Income, Expense, Balance) -->
         <div class="row g-4 mb-5">
-            <!-- Pemasukan Card -->
             <div class="col-md-4">
-                <div class="card h-100 p-4">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <div>
-                            <span class="text-muted-custom font-bold text-xs text-uppercase tracking-wider">Total Pemasukan</span>
-                            <h3 class="font-bold text-success mt-2 mb-0"><?= format_rupiah($total_pemasukan); ?></h3>
-                        </div>
-                        <div class="finance-card-icon icon-pemasukan">
-                            <i class="bi bi-arrow-down-left-circle-fill"></i>
-                        </div>
-                    </div>
+                <div class="card p-4">
+                    <span class="text-muted text-uppercase text-xs font-bold">Total Pemasukan</span>
+                    <h3 class="text-success font-bold mt-2"><?= format_rupiah($total_pemasukan); ?></h3>
                 </div>
             </div>
-
-            <!-- Pengeluaran Card -->
             <div class="col-md-4">
-                <div class="card h-100 p-4">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <div>
-                            <span class="text-muted-custom font-bold text-xs text-uppercase tracking-wider">Total Pengeluaran</span>
-                            <h3 class="font-bold text-danger mt-2 mb-0"><?= format_rupiah($total_pengeluaran); ?></h3>
-                        </div>
-                        <div class="finance-card-icon icon-pengeluaran">
-                            <i class="bi bi-arrow-up-right-circle-fill"></i>
-                        </div>
-                    </div>
+                <div class="card p-4">
+                    <span class="text-muted text-uppercase text-xs font-bold">Total Pengeluaran</span>
+                    <h3 class="text-danger font-bold mt-2"><?= format_rupiah($total_pengeluaran); ?></h3>
                 </div>
             </div>
-
-            <!-- Saldo Card -->
             <div class="col-md-4">
-                <div class="card h-100 p-4">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <div>
-                            <span class="text-muted-custom font-bold text-xs text-uppercase tracking-wider">Saldo Saat Ini</span>
-                            <h3 class="font-bold mt-2 mb-0 <?= $saldo_sekarang >= 0 ? 'text-primary' : 'text-danger'; ?>">
-                                <?= format_rupiah($saldo_sekarang); ?>
-                            </h3>
-                        </div>
-                        <div class="finance-card-icon icon-saldo">
-                            <i class="bi bi-cash-stack"></i>
-                        </div>
-                    </div>
+                <div class="card p-4">
+                    <span class="text-muted text-uppercase text-xs font-bold">Saldo Saat Ini</span>
+                    <h3 class="font-bold mt-2 <?= $saldo_sekarang >= 0 ? 'text-primary' : 'text-danger'; ?>"><?= format_rupiah($saldo_sekarang); ?></h3>
                 </div>
             </div>
         </div>
 
-        <!-- Transaction Section Header -->
         <div class="card p-4">
-            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
                 <h4 class="font-bold mb-0">Daftar Transaksi</h4>
-                <a href="tambah_transaksi.php" class="btn btn-primary">
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalTransaksi" onclick="resetModal()">
                     <i class="bi bi-plus-lg me-1"></i> Tambah Transaksi
-                </a>
+                </button>
             </div>
 
-            <!-- Search and Filter Form -->
             <form action="dashboard.php" method="GET" class="row g-3 mb-4">
                 <div class="col-md-5">
-                    <div class="input-group">
-                        <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
-                        <input type="text" class="form-control border-start-0 ps-0" name="search" placeholder="Cari keterangan..." value="<?= escape($search); ?>">
-                    </div>
+                    <input type="text" class="form-control" name="search" placeholder="Cari keterangan..." value="<?= escape($search); ?>">
                 </div>
                 <div class="col-md-4">
-                    <select class="form-select" name="jenis">
+                    <select class="form-select select2-init" name="jenis">
                         <option value="">-- Semua Jenis Transaksi --</option>
                         <option value="Pemasukan" <?= $jenis_filter === 'Pemasukan' ? 'selected' : ''; ?>>Pemasukan</option>
                         <option value="Pengeluaran" <?= $jenis_filter === 'Pengeluaran' ? 'selected' : ''; ?>>Pengeluaran</option>
                     </select>
                 </div>
                 <div class="col-md-3 d-flex gap-2">
-                    <button type="submit" class="btn btn-outline-primary w-100">
-                        <i class="bi bi-funnel-fill me-1"></i> Filter
-                    </button>
+                    <button type="submit" class="btn btn-outline-primary w-100"><i class="bi bi-funnel-fill"></i> Filter</button>
                     <?php if ($search !== '' || $jenis_filter !== ''): ?>
-                        <a href="dashboard.php" class="btn btn-light border" title="Reset Filter">
-                            <i class="bi bi-arrow-counterclockwise"></i>
-                        </a>
+                        <a href="dashboard.php" class="btn btn-light border"><i class="bi bi-arrow-counterclockwise"></i></a>
                     <?php endif; ?>
                 </div>
             </form>
 
-            <!-- Responsive Transaction Table -->
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
+                <table class="table table-hover align-middle">
                     <thead>
                         <tr>
-                            <th scope="col" style="width: 5%;">No</th>
-                            <th scope="col" style="width: 15%;">Tanggal</th>
-                            <th scope="col" style="width: 15%;">Jenis</th>
-                            <th scope="col" style="width: 35%;">Keterangan</th>
-                            <th scope="col" style="width: 15%;">Nominal</th>
-                            <th scope="col" style="width: 15%;" class="text-center">Aksi</th>
+                            <th>No</th>
+                            <th>Tanggal</th>
+                            <th>Jenis</th>
+                            <th>Keterangan</th>
+                            <th>Nominal</th>
+                            <th class="text-center">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php if (empty($transactions)): ?>
-                            <tr>
-                                <td colspan="6" class="text-center py-4 text-muted">
-                                    <i class="bi bi-clipboard-x fs-2 d-block mb-2 text-muted-custom"></i>
-                                    Tidak ada data transaksi ditemukan.
-                                </td>
-                            </tr>
+                            <tr><td colspan="6" class="text-center py-4 text-muted">Tidak ada data transaksi.</td></tr>
                         <?php else: ?>
-                            <?php 
-                            $no = 1; 
-                            foreach ($transactions as $row): 
-                                $jenis_badge = $row['jenis'] === 'Pemasukan' ? 'badge-pemasukan' : 'badge-pengeluaran';
-                                $nominal_class = $row['jenis'] === 'Pemasukan' ? 'text-success' : 'text-danger';
-                                $prefix_sign = $row['jenis'] === 'Pemasukan' ? '+' : '-';
-                            ?>
+                            <?php $no = 1; foreach ($transactions as $row): ?>
                                 <tr>
                                     <td><?= $no++; ?></td>
-                                    <td>
-                                        <!-- Safe date output -->
-                                        <?= date('d M Y', strtotime($row['tanggal'])); ?>
-                                    </td>
-                                    <td>
-                                        <span class="<?= $jenis_badge; ?>">
-                                            <i class="bi <?= $row['jenis'] === 'Pemasukan' ? 'bi-arrow-down-left' : 'bi-arrow-up-right'; ?> me-1"></i>
-                                            <?= escape($row['jenis']); ?>
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <!-- XSS Protection: sanitizing transaction details before rendering -->
-                                        <?= escape($row['keterangan']); ?>
-                                    </td>
-                                    <td>
-                                        <span class="font-bold <?= $nominal_class; ?>">
-                                            <?= $prefix_sign . ' ' . format_rupiah($row['nominal']); ?>
-                                        </span>
+                                    <td><?= date('d M Y', strtotime($row['tanggal'])); ?></td>
+                                    <td><span class="<?= $row['jenis'] === 'Pemasukan' ? 'badge bg-success' : 'badge bg-danger'; ?>"><?= escape($row['jenis']); ?></span></td>
+                                    <td><?= escape($row['keterangan']); ?></td>
+                                    <td class="font-bold <?= $row['jenis'] === 'Pemasukan' ? 'text-success' : 'text-danger'; ?>">
+                                        <?= ($row['jenis'] === 'Pemasukan' ? '+ ' : '- ') . format_rupiah($row['nominal']); ?>
                                     </td>
                                     <td class="text-center">
                                         <div class="d-flex justify-content-center gap-2">
-                                            <!-- Edit action (GET) -->
-                                            <a href="edit_transaksi.php?id=<?= $row['id']; ?>" class="btn btn-sm btn-outline-primary" title="Edit Transaksi">
+                                            <button type="button" class="btn btn-sm btn-outline-primary btn-edit" 
+                                                    data-id="<?= $row['id']; ?>" 
+                                                    data-jenis="<?= $row['jenis']; ?>" 
+                                                    data-nominal="<?= $row['nominal']; ?>" 
+                                                    data-tanggal="<?= $row['tanggal']; ?>" 
+                                                    data-keterangan="<?= escape($row['keterangan']); ?>">
                                                 <i class="bi bi-pencil-square"></i>
-                                            </a>
-
-                                            <!-- Delete action (POST method for security/preventing CSRF) -->
-                                            <form action="hapus_transaksi.php" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus data transaksi ini?')">
-                                                <input type="hidden" name="id" value="<?= $row['id']; ?>">
-                                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Hapus Transaksi">
-                                                    <i class="bi bi-trash"></i>
-                                                </button>
-                                            </form>
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-danger btn-delete" data-id="<?= $row['id']; ?>">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
@@ -262,15 +262,159 @@ try {
         </div>
     </div>
 
-    <!-- Sticky Footer -->
-    <footer class="text-center">
-        <div class="container">
-            <p class="mb-0">&copy; <?= date('Y'); ?> <strong>DompetKu</strong></p>
-        </div>
-    </footer>
+    <div class="modal fade" id="modalTransaksi"  tabindex="-1" aria-labelledby="modalTransaksiLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title font-bold" id="modalTransaksiLabel">Tambah Transaksi</h5>
+                    <button type="button" class="btn-close" data-bs-shadow="none" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="formTransaksi">
+                    <div class="modal-body">
+                        <input type="hidden" name="action" id="formAction" value="create">
+                        <input type="hidden" name="id" id="transaksiId" value="">
 
-    <!-- Bootstrap 5 Bundle JS with Popper -->
+                        <div class="mb-3">
+                            <label for="jenis" class="form-label">Jenis Transaksi</label>
+                            <select class="form-select modal-select2" id="jenis" name="jenis" required style="width: 100%;">
+                                <option value="">-- Pilih Jenis --</option>
+                                <option value="Pemasukan">Pemasukan (Uang Masuk)</option>
+                                <option value="Pengeluaran">Pengeluaran (Uang Keluar)</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="nominal" class="form-label">Nominal (Rupiah)</label>
+                            <input type="number" step="0.01" min="0.01" class="form-control" id="nominal" name="nominal" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="tanggal" class="form-label">Tanggal Transaksi</label>
+                            <input type="date" class="form-control" id="tanggal" name="tanggal" value="<?= date('Y-m-d'); ?>" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="keterangan" class="form-label">Keterangan</label>
+                            <input type="text" class="form-control" id="keterangan" name="keterangan" required maxlength="255">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary" id="btnSimpan">Simpan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        $(document).ready(function() {
+            // --- INSISIALISASI SELECT2 ---
+            $('.select2-init, .modal-select2').select2({
+                theme: 'bootstrap-5',
+                dropdownParent: $('#modalTransaksi').css('display') === 'none' ? null : $('#modalTransaksi') 
+            });
+
+            // Perbaiki bug Select2 di dalam Bootstrap Modal agar bisa diklik/fokus pencariannya
+            $('#modalTransaksi').on('shown.bs.modal', function () {
+                $('.modal-select2').select2({
+                    theme: 'bootstrap-5',
+                    dropdownParent: $('#modalTransaksi')
+                });
+            });
+
+            // --- PROSES SIMPAN DATA (CREATE & UPDATE VIA AJAX) ---
+            $('#formTransaksi').on('submit', function(e) {
+                e.preventDefault();
+                $.ajax({
+                    url: 'dashboard.php',
+                    type: 'POST',
+                    data: $(this).serialize(),
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.status === 'success') {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Berhasil!',
+                                text: response.message,
+                                timer: 1500,
+                                showConfirmButton: false
+                            }).then(() => {
+                                location.reload(); // Reload halaman untuk memperbarui tabel & saldo
+                            });
+                        } else {
+                            Swal.fire({ icon: 'error', title: 'Gagal!', text: response.message });
+                        }
+                    }
+                });
+            });
+
+            // --- TOMBOL EDIT DIKLIK ---
+            $('.btn-edit').on('click', function() {
+                const id = $(this).data('id');
+                const jenis = $(this).data('jenis');
+                const nominal = $(this).data('nominal');
+                const tanggal = $(this).data('tanggal');
+                const keterangan = $(this).data('keterangan');
+
+                // Mengubah setelan modal menjadi Mode Edit
+                $('#modalTransaksiLabel').text('Edit Transaksi');
+                $('#formAction').val('update');
+                $('#transaksiId').val(id);
+                $('#jenis').val(jenis).trigger('change'); // Update Select2 value
+                $('#nominal').val(nominal);
+                $('#tanggal').val(tanggal);
+                $('#keterangan').val(keterangan);
+
+                // Tampilkan Modal
+                $('#modalTransaksi').modal('show');
+            });
+
+            // --- TOMBOL HAPUS DIKLIK (DELETE VIA SWEETALERT2 CONFIRMATION) ---
+            $('.btn-delete').on('click', function() {
+                const id = $(this).data('id');
+
+                Swal.fire({
+                    title: 'Apakah Anda yakin?',
+                    text: "Data transaksi ini akan dihapus permanen!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Ya, Hapus!',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: 'dashboard.php',
+                            type: 'POST',
+                            data: { action: 'delete', id: id },
+                            dataType: 'json',
+                            success: function(response) {
+                                if (response.status === 'success') {
+                                    Swal.fire('Terhapus!', response.message, 'success').then(() => {
+                                        location.reload();
+                                    });
+                                } else {
+                                    Swal.fire('Gagal!', response.message, 'error');
+                                }
+                            }
+                        });
+                    }
+                });
+            });
+        });
+
+        // --- RESET MODAL KE MODE TAMBAH ---
+        function resetModal() {
+            $('#modalTransaksiLabel').text('Tambah Transaksi');
+            $('#formAction').val('create');
+            $('#transaksiId').val('');
+            $('#formTransaksi')[0].reset();
+            $('#jenis').val('').trigger('change');
+        }
+    </script>
 </body>
 </html>
-<!-- test -->
