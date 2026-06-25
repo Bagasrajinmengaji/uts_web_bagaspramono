@@ -8,6 +8,27 @@ auth_check();
 
 $user_id = $_SESSION['user_id'];
 
+// Fungsi untuk mendeteksi pembatas (delimiter) CSV secara otomatis
+function detect_delimiter($file_path) {
+    $file = fopen($file_path, 'r');
+    if (!$file) return ';'; // default
+    $first_line = fgets($file);
+    fclose($file);
+    
+    $delimiters = [
+        ';'  => 0,
+        ','  => 0,
+        "\t" => 0
+    ];
+    
+    foreach ($delimiters as $delim => &$count) {
+        $count = substr_count($first_line, $delim);
+    }
+    
+    arsort($delimiters);
+    return key($delimiters); // Kembalikan delimiter dengan jumlah terbanyak
+}
+
 // =========================================================================
 // 1. HELPER PARSER ZIP KUSTOM (Penyelamat tanpa ekstensi ZipArchive)
 // =========================================================================
