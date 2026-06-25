@@ -165,6 +165,7 @@ try {
     </nav>
 
     <div class="container my-5">
+        <?php display_flash_message(); ?>
         <div class="row g-4 mb-5">
             <div class="col-md-4">
                 <div class="card p-4">
@@ -190,6 +191,9 @@ try {
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h4 class="font-bold mb-0">Daftar Transaksi</h4>
                 <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#modalImport">
+                        <i class="bi bi-file-earmark-arrow-up me-1"></i> Import Excel/CSV
+                    </button>
                     <a href="export_excel.php?<?= http_build_query($_GET); ?>" class="btn btn-success">
                         <i class="bi bi-file-earmark-excel me-1"></i> Export Excel
                     </a>
@@ -303,6 +307,63 @@ try {
                     <div class="modal-footer">
                         <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Batal</button>
                         <button type="submit" class="btn btn-primary" id="btnSimpan">Simpan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Import Transaksi -->
+    <div class="modal fade" id="modalImport" tabindex="-1" aria-labelledby="modalImportLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title font-bold" id="modalImportLabel">Import Transaksi dari Excel/CSV</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form action="import_csv.php" method="POST" enctype="multipart/form-data">
+                    <div class="modal-body">
+                        <div class="alert alert-info py-2 px-3 mb-3" style="font-size: 0.9rem;">
+                            <i class="bi bi-info-circle-fill me-1"></i>
+                            <strong>Petunjuk:</strong> Simpan file Excel Anda sebagai <strong>CSV (Comma Delimited)</strong> sebelum mengunggahnya. Sistem akan secara otomatis mendeteksi pembatas kolom (koma atau titik koma).
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="file_transaksi" class="form-label font-bold">Pilih File CSV / Excel</label>
+                            <input type="file" class="form-control" id="file_transaksi" name="file_transaksi" accept=".csv, .txt" required>
+                            <div class="form-text">Mendukung format file <code>.csv</code>.</div>
+                        </div>
+
+                        <div class="card bg-light border-0 p-3 mb-2">
+                            <h6 class="font-bold mb-2 text-secondary" style="font-size: 0.85rem; text-transform: uppercase;">Format Kolom Template:</h6>
+                            <table class="table table-bordered table-sm mb-0 bg-white" style="font-size: 0.8rem;">
+                                <thead class="table-light text-center">
+                                    <tr>
+                                        <th>Tanggal</th>
+                                        <th>Jenis</th>
+                                        <th>Nominal</th>
+                                        <th>Keterangan</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="text-center">YYYY-MM-DD</td>
+                                        <td class="text-center">Pemasukan / Pengeluaran</td>
+                                        <td class="text-end font-bold">Angka positif</td>
+                                        <td>Bebas</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="modal-footer d-flex justify-content-between">
+                        <a href="download_template.php" class="btn btn-outline-secondary">
+                            <i class="bi bi-download me-1"></i> Unduh Template
+                        </a>
+                        <div>
+                            <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Batal</button>
+                            <button type="submit" class="btn btn-success">Unggah & Import</button>
+                        </div>
                     </div>
                 </form>
             </div>
