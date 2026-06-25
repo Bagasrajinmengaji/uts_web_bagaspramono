@@ -192,11 +192,30 @@ try {
                 <h4 class="font-bold mb-0">Daftar Transaksi</h4>
                 <div class="d-flex gap-2">
                     <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#modalImport">
-                        <i class="bi bi-file-earmark-arrow-up me-1"></i> Import Excel/CSV
+                        <i class="bi bi-file-earmark-arrow-up me-1"></i> Import Transaksi
                     </button>
-                    <a href="export_excel.php?<?= http_build_query($_GET); ?>" class="btn btn-success">
-                        <i class="bi bi-file-earmark-excel me-1"></i> Export Excel
-                    </a>
+                    <div class="dropdown">
+                        <button class="btn btn-success dropdown-toggle" type="button" id="dropdownExport" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi w-4 h-4 bi-download me-1"></i> Ekspor Laporan
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="dropdownExport">
+                            <li>
+                                <a class="dropdown-item py-2" href="export_excel.php?<?= http_build_query($_GET); ?>">
+                                    <i class="bi bi-file-earmark-excel text-success me-2"></i> Ekspor ke Excel (.xls)
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item py-2" href="export_docx.php?<?= http_build_query($_GET); ?>">
+                                    <i class="bi bi-file-earmark-word text-primary me-2"></i> Ekspor ke Word (.doc)
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item py-2" href="export_pdf.php?<?= http_build_query($_GET); ?>">
+                                    <i class="bi bi-file-earmark-pdf text-danger me-2"></i> Ekspor ke PDF (.pdf)
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
                     <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalTransaksi" onclick="resetModal()">
                         <i class="bi bi-plus-lg me-1"></i> Tambah Transaksi
                     </button>
@@ -318,52 +337,46 @@ try {
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title font-bold" id="modalImportLabel">Import Transaksi dari Excel/CSV</h5>
+                    <h5 class="modal-title font-bold" id="modalImportLabel">Import Transaksi dari Dokumen</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <form action="import_csv.php" method="POST" enctype="multipart/form-data">
+                <form action="import_document.php" method="POST" enctype="multipart/form-data">
                     <div class="modal-body">
-                        <div class="alert alert-info py-2 px-3 mb-3" style="font-size: 0.9rem;">
+                        <div class="alert alert-info py-2 px-3 mb-3" style="font-size: 0.88rem;">
                             <i class="bi bi-info-circle-fill me-1"></i>
-                            <strong>Petunjuk:</strong> Simpan file Excel Anda sebagai <strong>CSV (Comma Delimited)</strong> sebelum mengunggahnya. Sistem akan secara otomatis mendeteksi pembatas kolom (koma atau titik koma).
+                            <strong>Petunjuk Format Dokumen:</strong>
+                            <ul class="mb-0 ps-3 mt-1">
+                                <li><strong>Excel/CSV</strong>: Simpan sebagai berkas CSV.</li>
+                                <li><strong>Word (DOCX)</strong>: Tulis data dalam tabel, simpan sebagai .docx.</li>
+                                <li><strong>PDF</strong>: Gunakan format laporan PDF asli yang diunduh dari sistem.</li>
+                            </ul>
                         </div>
                         
-                        <div class="mb-3">
-                            <label for="file_transaksi" class="form-label font-bold">Pilih File CSV / Excel</label>
-                            <input type="file" class="form-control" id="file_transaksi" name="file_transaksi" accept=".csv, .txt" required>
-                            <div class="form-text">Mendukung format file <code>.csv</code>.</div>
+                        <div class="mb-4">
+                            <label for="file_dokumen" class="form-label font-bold">Pilih File Laporan / Template</label>
+                            <input type="file" class="form-control" id="file_dokumen" name="file_dokumen" accept=".csv, .txt, .docx, .doc, .pdf" required>
+                            <div class="form-text">Mendukung format berkas <code>.csv</code>, <code>.docx</code>, dan <code>.pdf</code>.</div>
                         </div>
 
+                        <!-- Area Unduh Template -->
                         <div class="card bg-light border-0 p-3 mb-2">
-                            <h6 class="font-bold mb-2 text-secondary" style="font-size: 0.85rem; text-transform: uppercase;">Format Kolom Template:</h6>
-                            <table class="table table-bordered table-sm mb-0 bg-white" style="font-size: 0.8rem;">
-                                <thead class="table-light text-center">
-                                    <tr>
-                                        <th>Tanggal</th>
-                                        <th>Jenis</th>
-                                        <th>Nominal</th>
-                                        <th>Keterangan</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td class="text-center">YYYY-MM-DD</td>
-                                        <td class="text-center">Pemasukan / Pengeluaran</td>
-                                        <td class="text-end font-bold">Angka positif</td>
-                                        <td>Bebas</td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                            <h6 class="font-bold mb-3 text-secondary" style="font-size: 0.85rem; text-transform: uppercase;">Unduh Template Pengisian:</h6>
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-between">
+                                <a href="download_template.php" class="btn btn-sm btn-outline-success w-100 text-nowrap">
+                                    <i class="bi bi-file-earmark-excel me-1"></i> Template Excel
+                                </a>
+                                <a href="download_template_docx.php" class="btn btn-sm btn-outline-primary w-100 text-nowrap">
+                                    <i class="bi bi-file-earmark-word me-1"></i> Template Word
+                                </a>
+                                <a href="download_template_pdf.php" class="btn btn-sm btn-outline-danger w-100 text-nowrap">
+                                    <i class="bi bi-file-earmark-pdf me-1"></i> Template PDF
+                                </a>
+                            </div>
                         </div>
                     </div>
-                    <div class="modal-footer d-flex justify-content-between">
-                        <a href="download_template.php" class="btn btn-outline-secondary">
-                            <i class="bi bi-download me-1"></i> Unduh Template
-                        </a>
-                        <div>
-                            <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Batal</button>
-                            <button type="submit" class="btn btn-success">Unggah & Import</button>
-                        </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-success">Unggah & Proses Import</button>
                     </div>
                 </form>
             </div>
