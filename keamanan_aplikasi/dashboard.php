@@ -1,15 +1,15 @@
 <?php
-// Include configuration and security helper files
+// manggil file koneksi dan helper
 require_once 'config/koneksi.php';
 require_once 'config/helper.php';
 
-// Ensure user is logged in
+//pastikan user dah log in
 auth_check();
 
 $user_id = $_SESSION['user_id'];
 $username = $_SESSION['username'];
 
-// --- LOGIK BACKEND: PROSES CRUD VIA POST ---
+// backend crud pake post
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     header('Content-Type: application/json');
     $action = $_POST['action'];
@@ -189,9 +189,14 @@ try {
         <div class="card p-4">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h4 class="font-bold mb-0">Daftar Transaksi</h4>
-                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalTransaksi" onclick="resetModal()">
-                    <i class="bi bi-plus-lg me-1"></i> Tambah Transaksi
-                </button>
+                <div class="d-flex gap-2">
+                    <a href="export_excel.php?<?= http_build_query($_GET); ?>" class="btn btn-success">
+                        <i class="bi bi-file-earmark-excel me-1"></i> Export Excel
+                    </a>
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalTransaksi" onclick="resetModal()">
+                        <i class="bi bi-plus-lg me-1"></i> Tambah Transaksi
+                    </button>
+                </div>
             </div>
 
             <form action="dashboard.php" method="GET" class="row g-3 mb-4">
