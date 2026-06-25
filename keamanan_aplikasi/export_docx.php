@@ -9,25 +9,32 @@ auth_check();
 $user_id = $_SESSION['user_id'];
 $username = $_SESSION['username'];
 
-// Ambil filter yang sama seperti di dashboard
+// Ambil parameter ekspor khusus satu transaksi atau filter massal
+$id = isset($_GET['id']) ? trim($_GET['id']) : '';
 $jenis_filter = isset($_GET['jenis']) ? trim($_GET['jenis']) : '';
 $search = isset($_GET['search']) ? trim($_GET['search']) : '';
 
 try {
-    $query = "SELECT * FROM transaksi WHERE user_id = :user_id";
-    $params = ['user_id' => $user_id];
+    if ($id !== '') {
+        $query = "SELECT * FROM transaksi WHERE id = :id AND user_id = :user_id";
+        $params = ['id' => $id, 'user_id' => $user_id];
+    } else {
+        $query = "SELECT * FROM transaksi WHERE user_id = :user_id";
+        $params = ['user_id' => $user_id];
 
-    if ($jenis_filter === 'Pemasukan' || $jenis_filter === 'Pengeluaran') {
-        $query .= " AND jenis = :jenis";
-        $params['jenis'] = $jenis_filter;
+        if ($jenis_filter === 'Pemasukan' || $jenis_filter === 'Pengeluaran') {
+            $query .= " AND jenis = :jenis";
+            $params['jenis'] = $jenis_filter;
+        }
+
+        if ($search !== '') {
+            $query .= " AND keterangan LIKE :search";
+            $params['search'] = '%' . $search . '%';
+        }
+
+        $query .= " ORDER BY tanggal DESC, id DESC";
     }
 
-    if ($search !== '') {
-        $query .= " AND keterangan LIKE :search";
-        $params['search'] = '%' . $search . '%';
-    }
-
-    $query .= " ORDER BY tanggal DESC, id DESC";
     $stmt = $pdo->prepare($query);
     $stmt->execute($params);
     $transactions = $stmt->fetchAll();
@@ -49,9 +56,14 @@ try {
     die("Gagal mengambil data untuk export Word.");
 }
 
-// Set header agar diunduh sebagai dokumen Word (.doc)
-// Word mendukung pembacaan HTML ber-ekstensi .doc/.docx dengan penataan gaya penuh
-$filename = "Laporan_Transaksi_DompetKu_" . date('Ymd_His') . ".doc";
+// Tentukan judul laporan dan nama file berkas
+if ($id !== '') {
+    $title_report = "KUITANSI TRANSAKSI - DOMPETKU";
+    $filename = "Kuitansi_Transaksi_" . $id . "_" . date('Ymd_His') . ".doc";
+} else {
+    $title_report = "LAPORAN TRANSAKSI - DOMPETKU";
+    $filename = "Laporan_Transaksi_DompetKu_" . date('Ymd_His') . ".doc";
+}
 header("Content-Type: application/vnd.ms-word");
 header("Content-Disposition: attachment; filename=\"$filename\"");
 header("Pragma: no-cache");
@@ -149,7 +161,7 @@ header("Expires: 0");
 </head>
 <body>
 
-    <div class="title">LAPORAN TRANSAKSI - DOMPETKU</div>
+    <div class="title"><?= $title_report; ?></div>
     <div class="subtitle">Aplikasi Catatan Keuangan Pribadi yang Aman</div>
 
     <table class="info-table" border="0" cellspacing="0" cellpadding="0">

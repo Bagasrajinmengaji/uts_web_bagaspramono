@@ -268,15 +268,38 @@ try {
                                     </td>
                                     <td class="text-center">
                                         <div class="d-flex justify-content-center gap-2">
+                                            <div class="dropdown d-inline-block">
+                                                <button class="btn btn-sm btn-outline-success dropdown-toggle no-caret" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Ekspor Kuitansi">
+                                                    <i class="bi bi-download"></i>
+                                                </button>
+                                                <ul class="dropdown-menu shadow">
+                                                    <li>
+                                                        <a class="dropdown-item py-1" href="export_excel.php?id=<?= $row['id']; ?>">
+                                                            <i class="bi bi-file-earmark-excel text-success me-2"></i> Kuitansi Excel
+                                                        </a>
+                                                    </li>
+                                                    <li>
+                                                        <a class="dropdown-item py-1" href="export_docx.php?id=<?= $row['id']; ?>">
+                                                            <i class="bi bi-file-earmark-word text-primary me-2"></i> Kuitansi Word
+                                                        </a>
+                                                    </li>
+                                                    <li>
+                                                        <a class="dropdown-item py-1" href="export_pdf.php?id=<?= $row['id']; ?>">
+                                                            <i class="bi bi-file-earmark-pdf text-danger me-2"></i> Kuitansi PDF
+                                                        </a>
+                                                    </li>
+                                                </ul>
+                                            </div>
                                             <button type="button" class="btn btn-sm btn-outline-primary btn-edit" 
                                                     data-id="<?= $row['id']; ?>" 
                                                     data-jenis="<?= $row['jenis']; ?>" 
                                                     data-nominal="<?= $row['nominal']; ?>" 
                                                     data-tanggal="<?= $row['tanggal']; ?>" 
-                                                    data-keterangan="<?= escape($row['keterangan']); ?>">
+                                                    data-keterangan="<?= escape($row['keterangan']); ?>"
+                                                    title="Edit Transaksi">
                                                 <i class="bi bi-pencil-square"></i>
                                             </button>
-                                            <button type="button" class="btn btn-sm btn-outline-danger btn-delete" data-id="<?= $row['id']; ?>">
+                                            <button type="button" class="btn btn-sm btn-outline-danger btn-delete" data-id="<?= $row['id']; ?>" title="Hapus Transaksi">
                                                 <i class="bi bi-trash"></i>
                                             </button>
                                         </div>

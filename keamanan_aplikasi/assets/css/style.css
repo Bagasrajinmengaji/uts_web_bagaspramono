@@ -188,3 +188,8 @@ footer {
 .text-muted-custom {
     color: #64748b;
 }
+
+/* Custom Dropdown adjustments */
+.dropdown-toggle.no-caret::after {
+    display: none !important;
+}
