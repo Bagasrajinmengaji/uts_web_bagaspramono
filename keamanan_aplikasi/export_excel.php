@@ -6,6 +6,9 @@ require_once 'config/helper.php';
 // Pastikan user sudah login
 auth_check();
 
+require_once 'lib/SimpleXLSXGen.php';
+use Shuchkin\SimpleXLSXGen;
+
 $user_id = $_SESSION['user_id'];
 $username = $_SESSION['username'];
 
@@ -59,196 +62,92 @@ try {
 // Tentukan judul laporan dan nama file berkas
 if ($id !== '') {
     $title_report = "KUITANSI TRANSAKSI - DOMPETKU";
-    $filename = "Kuitansi_Transaksi_" . $id . "_" . date('Ymd_His') . ".xls";
+    $filename = "Kuitansi_Transaksi_" . $id . "_" . date('Ymd_His') . ".xlsx";
 } else {
     $title_report = "LAPORAN TRANSAKSI - DOMPETKU";
-    $filename = "Laporan_Transaksi_DompetKu_" . date('Ymd_His') . ".xls";
+    $filename = "Laporan_Transaksi_DompetKu_" . date('Ymd_His') . ".xlsx";
 }
 
-// Set header agar didownload sebagai file Excel (.xls)
-header("Content-Type: application/vnd.ms-excel");
-header("Content-Disposition: attachment; filename=\"$filename\"");
-header("Pragma: no-cache");
-header("Expires: 0");
+$data = [];
 
-// Render HTML Table yang akan dibaca oleh Excel dengan styling yang rapi
-?>
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-        }
-        .title {
-            font-size: 16pt;
-            font-weight: bold;
-            text-align: center;
-            margin-bottom: 5px;
-        }
-        .subtitle {
-            font-size: 11pt;
-            text-align: center;
-            margin-bottom: 20px;
-            color: #555555;
-        }
-        .info-table {
-            margin-bottom: 15px;
-            font-size: 10pt;
-        }
-        .info-table td {
-            padding: 3px 0;
-        }
-        .data-table {
-            border-collapse: collapse;
-            width: 100%;
-            font-size: 10pt;
-        }
-        .data-table th {
-            background-color: #0d6efd;
-            color: #ffffff;
-            font-weight: bold;
-            text-align: center;
-            padding: 8px;
-            border: 1px solid #dddddd;
-        }
-        .data-table td {
-            padding: 8px;
-            border: 1px solid #dddddd;
-            vertical-align: middle;
-        }
-        .data-table tr:nth-child(even) {
-            background-color: #f8f9fa;
-        }
-        .text-center {
-            text-align: center;
-        }
-        .text-right {
-            text-align: right;
-        }
-        .font-bold {
-            font-weight: bold;
-        }
-        .text-success {
-            color: #198754;
-        }
-        .text-danger {
-            color: #dc3545;
-        }
-        .text-primary {
-            color: #0d6efd;
-        }
-        .badge-pemasukan {
-            background-color: #d1e7dd;
-            color: #0f5132;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-weight: bold;
-        }
-        .badge-pengeluaran {
-            background-color: #f8d7da;
-            color: #842029;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-weight: bold;
-        }
-        .summary-row {
-            background-color: #e9ecef;
-            font-weight: bold;
-        }
-    </style>
-</head>
-<body>
+// Header / Metadata rows
+$data[] = ["<style font-size=16 font-style=bold>$title_report</style>"];
+$data[] = ["<style font-size=11 color=#555555>Aplikasi Catatan Keuangan Pribadi yang Aman</style>"];
+$data[] = []; // Empty row
 
-    <!-- Judul Laporan -->
-    <div class="title"><?= $title_report; ?></div>
-    <div class="subtitle">Aplikasi Catatan Keuangan Pribadi yang Aman</div>
+$data[] = ["Nama Pengguna", ":", $username];
+$data[] = ["Tanggal Ekspor", ":", date('d M Y H:i:s')];
 
-    <!-- Informasi Laporan -->
-    <table class="info-table">
-        <tr>
-            <td width="150"><strong>Nama Pengguna</strong></td>
-            <td width="10">:</td>
-            <td><?= escape($username); ?></td>
-        </tr>
-        <tr>
-            <td><strong>Tanggal Ekspor</strong></td>
-            <td>:</td>
-            <td><?= date('d M Y H:i:s'); ?></td>
-        </tr>
-        <?php if ($jenis_filter !== ''): ?>
-        <tr>
-            <td><strong>Filter Jenis</strong></td>
-            <td>:</td>
-            <td><?= escape($jenis_filter); ?></td>
-        </tr>
-        <?php endif; ?>
-        <?php if ($search !== ''): ?>
-        <tr>
-            <td><strong>Kata Kunci Pencarian</strong></td>
-            <td>:</td>
-            <td>"<?= escape($search); ?>"</td>
-        </tr>
-        <?php endif; ?>
-    </table>
+if ($jenis_filter !== '') {
+    $data[] = ["Filter Jenis", ":", $jenis_filter];
+}
+if ($search !== '') {
+    $data[] = ["Kata Kunci Pencarian", ":", '"' . $search . '"'];
+}
 
-    <!-- Tabel Data Transaksi -->
-    <table class="data-table">
-        <thead>
-            <tr>
-                <th width="50" style="background-color: #0d6efd; color: #ffffff; font-weight: bold; border: 1px solid #dddddd;">No</th>
-                <th width="120" style="background-color: #0d6efd; color: #ffffff; font-weight: bold; border: 1px solid #dddddd;">Tanggal</th>
-                <th width="120" style="background-color: #0d6efd; color: #ffffff; font-weight: bold; border: 1px solid #dddddd;">Jenis</th>
-                <th width="300" style="background-color: #0d6efd; color: #ffffff; font-weight: bold; border: 1px solid #dddddd;">Keterangan</th>
-                <th width="150" style="background-color: #0d6efd; color: #ffffff; font-weight: bold; border: 1px solid #dddddd;">Nominal</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php if (empty($transactions)): ?>
-                <tr>
-                    <td colspan="5" class="text-center" style="padding: 20px; color: #777777; border: 1px solid #dddddd;">Tidak ada data transaksi.</td>
-                </tr>
-            <?php else: ?>
-                <?php $no = 1; foreach ($transactions as $row): ?>
-                    <tr>
-                        <td class="text-center" style="border: 1px solid #dddddd;"><?= $no++; ?></td>
-                        <td class="text-center" style="border: 1px solid #dddddd;"><?= date('d M Y', strtotime($row['tanggal'])); ?></td>
-                        <td class="text-center" style="border: 1px solid #dddddd;">
-                            <?php if ($row['jenis'] === 'Pemasukan'): ?>
-                                <span class="badge-pemasukan">Pemasukan</span>
-                            <?php else: ?>
-                                <span class="badge-pengeluaran">Pengeluaran</span>
-                            <?php endif; ?>
-                        </td>
-                        <td style="border: 1px solid #dddddd;"><?= escape($row['keterangan']); ?></td>
-                        <td class="text-right font-bold <?= $row['jenis'] === 'Pemasukan' ? 'text-success' : 'text-danger'; ?>" style="border: 1px solid #dddddd;">
-                            <?= ($row['jenis'] === 'Pemasukan' ? '' : '-') ?><?= number_format($row['nominal'], 0, ',', '.'); ?>
-                        </td>
-                    </tr>
-                <?php endforeach; ?>
-                
-                <!-- Spacer Baris Kosong -->
-                <tr><td colspan="5" style="border: none; height: 15px; background-color: transparent;"></td></tr>
-                
-                <!-- Ringkasan Total -->
-                <tr class="summary-row" style="background-color: #e9ecef; font-weight: bold;">
-                    <td colspan="4" class="text-right" style="border: 1px solid #dddddd; padding: 8px;">Total Pemasukan:</td>
-                    <td class="text-right text-success" style="border: 1px solid #dddddd; padding: 8px;"><?= number_format($total_pemasukan, 0, ',', '.'); ?></td>
-                </tr>
-                <tr class="summary-row" style="background-color: #e9ecef; font-weight: bold;">
-                    <td colspan="4" class="text-right" style="border: 1px solid #dddddd; padding: 8px;">Total Pengeluaran:</td>
-                    <td class="text-right text-danger" style="border: 1px solid #dddddd; padding: 8px;">-<?= number_format($total_pengeluaran, 0, ',', '.'); ?></td>
-                </tr>
-                <tr class="summary-row" style="background-color: #e9ecef; font-weight: bold;">
-                    <td colspan="4" class="text-right" style="border: 1px solid #dddddd; padding: 8px;">Saldo Akhir:</td>
-                    <td class="text-right <?= $saldo_sekarang >= 0 ? 'text-primary' : 'text-danger'; ?>" style="border: 1px solid #dddddd; padding: 8px;">
-                        <?= number_format($saldo_sekarang, 0, ',', '.'); ?>
-                    </td>
-                </tr>
-            <?php endif; ?>
-        </tbody>
-    </table>
+$data[] = []; // Empty row
 
-</body>
-</html>
+// Table Headers
+$data[] = [
+    "<style bgcolor=#0d6efd color=#ffffff font-style=bold align=center>No</style>",
+    "<style bgcolor=#0d6efd color=#ffffff font-style=bold align=center>Tanggal</style>",
+    "<style bgcolor=#0d6efd color=#ffffff font-style=bold align=center>Jenis</style>",
+    "<style bgcolor=#0d6efd color=#ffffff font-style=bold align=center>Keterangan</style>",
+    "<style bgcolor=#0d6efd color=#ffffff font-style=bold align=center>Nominal</style>"
+];
+
+if (empty($transactions)) {
+    $data[] = ["", "", "Tidak ada data transaksi.", "", ""];
+} else {
+    $no = 1;
+    foreach ($transactions as $row) {
+        $date_formatted = date('d M Y', strtotime($row['tanggal']));
+        
+        if ($row['jenis'] === 'Pemasukan') {
+            $nominal_cell = "<style color=#198754 font-style=bold align=right>" . number_format($row['nominal'], 0, ',', '.') . "</style>";
+            $jenis_cell = "<style color=#0f5132 font-style=bold align=center>Pemasukan</style>";
+        } else {
+            $nominal_cell = "<style color=#dc3545 font-style=bold align=right>-" . number_format($row['nominal'], 0, ',', '.') . "</style>";
+            $jenis_cell = "<style color=#842029 font-style=bold align=center>Pengeluaran</style>";
+        }
+        
+        $data[] = [
+            "<style align=center>$no</style>",
+            "<style align=center>$date_formatted</style>",
+            $jenis_cell,
+            $row['keterangan'],
+            $nominal_cell
+        ];
+        $no++;
+    }
+    
+    $data[] = []; // Empty row
+    
+    // Summary
+    $data[] = [
+        "<style align=right font-style=bold>Total Pemasukan:</style>", "", "", "",
+        "<style color=#198754 font-style=bold align=right>" . number_format($total_pemasukan, 0, ',', '.') . "</style>"
+    ];
+    $data[] = [
+        "<style align=right font-style=bold>Total Pengeluaran:</style>", "", "", "",
+        "<style color=#dc3545 font-style=bold align=right>-" . number_format($total_pengeluaran, 0, ',', '.') . "</style>"
+    ];
+    
+    $saldo_color = $saldo_sekarang >= 0 ? '#0d6efd' : '#dc3545';
+    $data[] = [
+        "<style align=right font-style=bold>Saldo Akhir:</style>", "", "", "",
+        "<style color=$saldo_color font-style=bold align=right>" . number_format($saldo_sekarang, 0, ',', '.') . "</style>"
+    ];
+}
+
+// Generate and download
+$xlsx = SimpleXLSXGen::fromArray($data);
+// Set column widths to make it look premium
+$xlsx->setColWidth(1, 8);
+$xlsx->setColWidth(2, 18);
+$xlsx->setColWidth(3, 16);
+$xlsx->setColWidth(4, 35);
+$xlsx->setColWidth(5, 20);
+
+$xlsx->downloadAs($filename);
+exit;

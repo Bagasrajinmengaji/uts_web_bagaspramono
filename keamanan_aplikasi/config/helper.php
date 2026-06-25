@@ -110,4 +110,95 @@ function in_amount_type($val)
         true
     );
 }
+function send_smtp_mail($to, $subject, $message_body) {
+    // Pengaturan Akun SMTP
+    $smtp_host = $_ENV['SMTP_HOST']; 
+    $smtp_port = $_ENV['SMTP_PORT'];
+    $smtp_user = $_ENV['SMTP_USERNAME'];
+    $smtp_pass = $_ENV['SMTP_PASSWORD'];
+    $from_email = $_ENV['SMTP_FROM_EMAIL'];
+    $from_name  = $_ENV['SMTP_FROM_NAME'];
+
+    // 1. Membuka Koneksi Socket ke Server SMTP
+    $socket = fsockopen($smtp_host, $smtp_port, $errno, $errstr, 15);
+    if (!$socket) return false;
+
+    function get_smtp_response($socket) {
+        $response = '';
+        while (substr($response, 3, 1) != ' ') {
+            if (!($line = fgets($socket, 256))) break;
+            $response .= $line;
+        }
+        return $response;
+    }
+
+    get_smtp_response($socket); // Baca baris sambutan server
+
+    // 2. Jabat tangan (EHLO) dan Mulai Enkripsi TLS
+    fwrite($socket, "EHLO " . $_SERVER['HTTP_HOST'] . "\r\n");
+    get_smtp_response($socket);
+
+    fwrite($socket, "STARTTLS\r\n");
+    get_smtp_response($socket);
+    stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLS_CLIENT);
+
+    // 3. Jabat tangan ulang setelah enkripsi aktif + Login Otentikasi
+    fwrite($socket, "EHLO " . $_SERVER['HTTP_HOST'] . "\r\n");
+    get_smtp_response($socket);
+
+    fwrite($socket, "AUTH LOGIN\r\n");
+    get_smtp_response($socket);
+
+    fwrite($socket, base64_encode($smtp_user) . "\r\n");
+    get_smtp_response($socket);
+
+    fwrite($socket, base64_encode($smtp_pass) . "\r\n");
+    get_smtp_response($socket);
+
+    // 4. Set Pengirim dan Penerima
+    fwrite($socket, "MAIL FROM: <$from_email>\r\n");
+    get_smtp_response($socket);
+
+    fwrite($socket, "RCPT TO: <$to>\r\n");
+    get_smtp_response($socket);
+
+    // 5. Mengirimkan Konten Email (Header & Body)
+    fwrite($socket, "DATA\r\n");
+    get_smtp_response($socket);
+
+    $headers = "MIME-Version: 1.0\r\n";
+    $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
+    $headers .= "From: =?UTF-8?B?".base64_encode($from_name)."?= <$from_email>\r\n";
+    $headers .= "To: <$to>\r\n";
+    $headers .= "Subject: =?UTF-8?B?".base64_encode($subject)."?=\r\n";
+
+    fwrite($socket, $headers . "\r\n" . $message_body . "\r\n.\r\n");
+    get_smtp_response($socket);
+
+    // 6. Tutup Koneksi
+    fwrite($socket, "QUIT\r\n");
+    fclose($socket);
+    return true;
+}
+// Fungsi untuk membaca file .env secara native
+function load_env() {
+    $path = __DIR__ . '/../.env';
+    if (file_exists($path)) {
+        $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        foreach ($lines as $line) {
+            if (strpos(trim($line), '#') === 0) continue; // Lewati komentar
+            list($name, $value) = explode('=', $line, 2);
+            $name = trim($name);
+            $value = trim(trim($value), '"\''); // Hapus kutip jika ada
+            if (!array_key_exists($name, $_SERVER) && !array_key_exists($name, $_ENV)) {
+                putenv("{$name}={$value}");
+                $_ENV[$name] = $value;
+                $_SERVER[$name] = $value;
+            }
+        }
+    }
+}
+
+// Langsung jalankan fungsinya agar env siap dipakai di file lain
+load_env();
 }

@@ -6,8 +6,22 @@ require_once 'config/helper.php';
 // Redirect logged-in users to the dashboard
 guest_check();
 
-$errors = [];
+// Definisi credential Google SSO 
+$google_client_id = $_ENV['GOOGLE_CLIENT_ID'];
+$google_redirect_url = $_ENV['GOOGLE_REDIRECT_URL'];
+
+// Generate URL Login google (Sudah diperbaiki: 'redirect_uri' & 'access_type')
+$google_login_url = "https://accounts.google.com/o/oauth2/v2/auth?" . http_build_query([
+    'client_id'     => $google_client_id,
+    'redirect_uri'  => $google_redirect_url, // Perbaikan di sini
+    'response_type' => 'code',
+    'scope'         => 'https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
+    'access_type'   => 'offline', // Perbaikan di sini
+    'prompt'        => 'select_account'
+]);
+
 $identity = '';
+$errors = [];
 
 // Enable/disable temporary debugging (set to true for college testing, can be toggled to false later)
 $debug = true;
@@ -27,8 +41,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($errors)) {
         try {
             // Retrieve user details using PDO prepared statements to block SQL Injection
-            // Identity can be username or email for user convenience
-            // Fixed duplicate named parameter bug for native prepared statements
             $stmt = $pdo->prepare("SELECT * FROM users WHERE username = :username_identity OR email = :email_identity");
             $stmt->execute([
                 'username_identity' => $identity,
@@ -57,7 +69,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 if ($password_matches) {
                     // --- CRITICAL SECURITY: Session Fixation Prevention ---
-                    // Regenerate session ID upon successful authentication
                     session_regenerate_id(true);
 
                     // Set session variables
@@ -98,11 +109,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - DompetKu</title>
-    <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
-    <!-- Custom CSS -->
     <link href="assets/css/style.css" rel="stylesheet">
 </head>
 <body>
@@ -116,10 +124,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <p class="text-muted-custom">Masukkan username/email untuk masuk ke dashboard</p>
             </div>
 
-            <!-- Flash messages (e.g. successful registration) -->
             <?php display_flash_message(); ?>
 
-            <!-- Debug Logs -->
+            <?php if (isset($_SESSION['sso_error'])): ?>
+                <div class="alert alert-danger alert-dismissible fade show font-bold" role="alert" style="font-size: 0.9rem;">
+                    <i class="bi bi-exclamation-octagon-fill me-2"></i> <?= htmlspecialchars($_SESSION['sso_error']); ?>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                <?php unset($_SESSION['sso_error']); ?>
+            <?php endif; ?>
+
             <?php if (isset($_SESSION['debug_log'])): ?>
                 <div class="alert alert-info border-2 font-monospace mb-3" style="font-size: 0.82rem; border-color: #3b82f6; background-color: #eff6ff;">
                     <strong class="text-primary"><i class="bi bi-bug-fill me-1"></i> DEBUG AUTENTIKASI:</strong>
@@ -133,7 +147,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <?php unset($_SESSION['debug_log']); ?>
             <?php endif; ?>
 
-            <!-- Error Alerts (if any) -->
             <?php if (!empty($errors)): ?>
                 <div class="alert alert-danger d-flex align-items-center" role="alert">
                     <i class="bi bi-exclamation-triangle-fill me-2"></i>
@@ -147,7 +160,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
             <?php endif; ?>
 
-            <!-- Login Form -->
             <form action="login.php" method="POST" autocomplete="off">
                 <div class="mb-3">
                     <label for="identity" class="form-label">Username atau Email</label>
@@ -166,6 +178,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
 
                 <button type="submit" class="btn btn-primary w-100 mb-3">Login</button>
+                
+                <div class="d-flex align-items-center my-3">
+                    <hr class="flex-grow-1 text-muted my-0">
+                    <span class="mx-3 text-muted-custom" style="font-size: 0.85rem;">atau masuk dengan</span>
+                    <hr class="flex-grow-1 text-muted my-0">
+                </div>
+
+                <a href="<?= $google_login_url; ?>" class="btn btn-light border w-100 mb-3 d-flex align-items-center justify-content-center py-2 shadow-sm style-sso-btn" style="border-radius: 8px; transition: all 0.2s ease;">
+                    <img src="https://fonts.gstatic.com/s/i/productlogos/googleg/v6/24px.svg" alt="Google Logo" class="me-2" style="width: 18px; height: 18px;">
+                    <span class="font-bold text-dark" style="font-size: 0.95rem;">Google Account</span>
+                </a>
             </form>
 
             <div class="text-center mt-2">
@@ -174,7 +197,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
     </div>
 
-    <!-- Bootstrap 5 Bundle JS with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
