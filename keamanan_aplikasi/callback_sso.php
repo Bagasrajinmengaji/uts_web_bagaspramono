@@ -20,7 +20,7 @@ try {
         'code' => $_GET['code'],
         'client_id' => $google_client_id,
         'client_secret' => $google_client_secret,
-        'redirect_uri' => $google_redirect_uri,
+        'redirect_uri' => $google_redirect_url,
         'grant_type' => 'authorization_code'
     ]));
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);

@@ -99,7 +99,8 @@ function display_flash_message() {
         echo '  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>';
         echo '</div>';
     }
-    /**
+}
+/**
  * Validasi jenis transaksi
  */
 function in_amount_type($val)
@@ -180,21 +181,27 @@ function send_smtp_mail($to, $subject, $message_body) {
     fclose($socket);
     return true;
 }
-// Fungsi untuk membaca file .env secara native
 function load_env() {
-    $path = __DIR__ . '/../.env';
-    if (file_exists($path)) {
-        $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-        foreach ($lines as $line) {
-            if (strpos(trim($line), '#') === 0) continue; // Lewati komentar
-            list($name, $value) = explode('=', $line, 2);
-            $name = trim($name);
-            $value = trim(trim($value), '"\''); // Hapus kutip jika ada
-            if (!array_key_exists($name, $_SERVER) && !array_key_exists($name, $_ENV)) {
-                putenv("{$name}={$value}");
-                $_ENV[$name] = $value;
-                $_SERVER[$name] = $value;
+    $paths = [
+        __DIR__ . '/../../.env',
+        __DIR__ . '/../.env'
+    ];
+    foreach ($paths as $path) {
+        if (file_exists($path)) {
+            $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+            foreach ($lines as $line) {
+                if (strpos(trim($line), '#') === 0) continue; // Lewati komentar
+                if (strpos($line, '=') === false) continue;
+                list($name, $value) = explode('=', $line, 2);
+                $name = trim($name);
+                $value = trim(trim($value), '"\''); // Hapus kutip jika ada
+                if (!array_key_exists($name, $_SERVER) && !array_key_exists($name, $_ENV)) {
+                    putenv("{$name}={$value}");
+                    $_ENV[$name] = $value;
+                    $_SERVER[$name] = $value;
+                }
             }
+            break;
         }
     }
 }

@@ -11,6 +11,7 @@ $username = $_SESSION['username'];
 
 // backend crud pake post
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    file_put_contents('post_log.txt', "POST Data: " . print_r($_POST, true) . "\n", FILE_APPEND);
     header('Content-Type: application/json');
     $action = $_POST['action'];
 
@@ -18,6 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         // Aksi 1: Tambah Transaksi (Create)
         if ($action === 'create') {
             $jenis = isset($_POST['jenis']) ? trim($_POST['jenis']) : '';
+            $id_kategori = isset($_POST['id_kategori']) && $_POST['id_kategori'] !== '' ? intval($_POST['id_kategori']) : null;
             $nominal = isset($_POST['nominal']) ? trim($_POST['nominal']) : '';
             $keterangan = isset($_POST['keterangan']) ? trim($_POST['keterangan']) : '';
             $tanggal = isset($_POST['tanggal']) ? trim($_POST['tanggal']) : '';
@@ -35,13 +37,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 exit;
             }
 
-            $stmt = $pdo->prepare("INSERT INTO transaksi (user_id, jenis, nominal, keterangan, tanggal) VALUES (:user_id, :jenis, :nominal, :keterangan, :tanggal)");
+            $stmt = $pdo->prepare("INSERT INTO transaksi (user_id, id_kategori, jenis, nominal, keterangan, tanggal) VALUES (:user_id, :id_kategori, :jenis, :nominal, :keterangan, :tanggal)");
             $stmt->execute([
-                'user_id'    => $user_id,
-                'jenis'      => $jenis,
-                'nominal'    => floatval($nominal),
-                'keterangan' => $keterangan,
-                'tanggal'    => $tanggal
+                'user_id'     => $user_id,
+                'id_kategori' => $id_kategori,
+                'jenis'       => $jenis,
+                'nominal'     => floatval($nominal),
+                'keterangan'  => $keterangan,
+                'tanggal'     => $tanggal
             ]);
 
             echo json_encode(['status' => 'success', 'message' => 'Transaksi berhasil ditambahkan!']);
@@ -52,6 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         if ($action === 'update') {
             $id = isset($_POST['id']) ? trim($_POST['id']) : '';
             $jenis = isset($_POST['jenis']) ? trim($_POST['jenis']) : '';
+            $id_kategori = isset($_POST['id_kategori']) && $_POST['id_kategori'] !== '' ? intval($_POST['id_kategori']) : null;
             $nominal = isset($_POST['nominal']) ? trim($_POST['nominal']) : '';
             $keterangan = isset($_POST['keterangan']) ? trim($_POST['keterangan']) : '';
             $tanggal = isset($_POST['tanggal']) ? trim($_POST['tanggal']) : '';
@@ -61,14 +65,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 exit;
             }
 
-            $stmt = $pdo->prepare("UPDATE transaksi SET jenis = :jenis, nominal = :nominal, keterangan = :keterangan, tanggal = :tanggal WHERE id = :id AND user_id = :user_id");
+            $stmt = $pdo->prepare("UPDATE transaksi SET id_kategori = :id_kategori, jenis = :jenis, nominal = :nominal, keterangan = :keterangan, tanggal = :tanggal WHERE id = :id AND user_id = :user_id");
             $stmt->execute([
-                'jenis'      => $jenis,
-                'nominal'    => floatval($nominal),
-                'keterangan' => $keterangan,
-                'tanggal'    => $tanggal,
-                'id'         => $id,
-                'user_id'    => $user_id
+                'id_kategori' => $id_kategori,
+                'jenis'       => $jenis,
+                'nominal'     => floatval($nominal),
+                'keterangan'  => $keterangan,
+                'tanggal'     => $tanggal,
+                'id'          => $id,
+                'user_id'     => $user_id
             ]);
 
             echo json_encode(['status' => 'success', 'message' => 'Transaksi berhasil diperbarui!']);
@@ -109,22 +114,28 @@ try {
 
     $saldo_sekarang = $total_pemasukan - $total_pengeluaran;
 
-    $query = "SELECT * FROM transaksi WHERE user_id = :user_id";
+    // Ambil daftar kategori kustom milik user
+    $stmt_cat = $pdo->prepare("SELECT * FROM kategori WHERE id_user = :user_id ORDER BY nama_kategori ASC");
+    $stmt_cat->execute(['user_id' => $user_id]);
+    $categories = $stmt_cat->fetchAll();
+
+    // Query Transaksi dengan Left Join Kategori
+    $query = "SELECT t.*, k.nama_kategori FROM transaksi t LEFT JOIN kategori k ON t.id_kategori = k.id_kategori WHERE t.user_id = :user_id";
     $params = ['user_id' => $user_id];
 
     $jenis_filter = isset($_GET['jenis']) ? trim($_GET['jenis']) : '';
     if ($jenis_filter === 'Pemasukan' || $jenis_filter === 'Pengeluaran') {
-        $query .= " AND jenis = :jenis";
+        $query .= " AND t.jenis = :jenis";
         $params['jenis'] = $jenis_filter;
     }
 
     $search = isset($_GET['search']) ? trim($_GET['search']) : '';
     if ($search !== '') {
-        $query .= " AND keterangan LIKE :search";
+        $query .= " AND t.keterangan LIKE :search";
         $params['search'] = '%' . $search . '%';
     }
 
-    $query .= " ORDER BY tanggal DESC, id DESC";
+    $query .= " ORDER BY t.tanggal DESC, t.id DESC";
     $stmt_transactions = $pdo->prepare($query);
     $stmt_transactions->execute($params);
     $transactions = $stmt_transactions->fetchAll();
@@ -475,23 +486,30 @@ try {
         const categories = <?= json_encode($categories); ?>;
 
         $(document).ready(function() {
-            // --- INSISIALISASI SELECT2 ---
-            $('.select2-init, .modal-select2').select2({
-                theme: 'bootstrap-5',
-                dropdownParent: $('#modalTransaksi').css('display') === 'none' ? null : $('#modalTransaksi') 
+            // --- INISIALISASI SELECT2 ---
+            $('.select2-init').select2({
+                theme: 'bootstrap-5'
             });
 
-            // Perbaiki bug Select2 di dalam Bootstrap Modal agar bisa diklik/fokus pencariannya
-            $('#modalTransaksi').on('shown.bs.modal', function () {
-                $('.modal-select2').select2({
-                    theme: 'bootstrap-5',
-                    dropdownParent: $('#modalTransaksi')
-                });
+            $('#jenis').select2({
+                theme: 'bootstrap-5',
+                dropdownParent: $('#modalTransaksi')
+            });
+
+            $('#id_kategori').select2({
+                theme: 'bootstrap-5',
+                dropdownParent: $('#modalTransaksi')
             });
 
             // --- PILIHAN KATEGORI DINAMIS ---
             function updateCategoryOptions(selectedJenis, selectedKategoriId = null) {
                 const $catSelect = $('#id_kategori');
+                
+                // Hancurkan Select2 jika sudah aktif sebelum memodifikasi DOM
+                if ($catSelect.hasClass("select2-hidden-accessible")) {
+                    $catSelect.select2('destroy');
+                }
+                
                 $catSelect.empty().append('<option value="">-- Tanpa Kategori --</option>');
                 
                 if (selectedJenis) {
@@ -501,6 +519,13 @@ try {
                         $catSelect.append(`<option value="${c.id_kategori}" ${isSelected}>${c.nama_kategori}</option>`);
                     });
                 }
+                
+                // Bangun ulang Select2 setelah option terpasang
+                $catSelect.select2({
+                    theme: 'bootstrap-5',
+                    dropdownParent: $('#modalTransaksi')
+                });
+                
                 $catSelect.trigger('change');
             }
 
