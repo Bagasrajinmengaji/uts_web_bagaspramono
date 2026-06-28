@@ -201,5 +201,55 @@ function load_env() {
 
 // Langsung jalankan fungsinya agar env siap dipakai di file lain
 load_env();
-}
-//
+
+/**
+ * Menghitung pengeluaran berjalan dan membandingkannya dengan limit anggaran bulanan (PDO Version)
+ */
+function dapatkan_analisis_anggaran($id_user, $bulan, $tahun) {
+    global $pdo;
+    $hasil_analisis = [];
+
+    try {
+        $query = "SELECT 
+                    a.id_kategori,
+                    k.nama_kategori,
+                    a.jumlah_budget,
+                    COALESCE(SUM(t.nominal), 0) AS total_pengeluaran
+                  FROM anggaran a
+                  JOIN kategori k ON a.id_kategori = k.id_kategori
+                  LEFT JOIN transaksi t ON t.id_kategori = a.id_kategori 
+                    AND t.user_id = a.id_user 
+                    AND t.jenis = 'Pengeluaran'
+                    AND MONTH(t.tanggal) = :bulan 
+                    AND YEAR(t.tanggal) = :tahun
+                  WHERE a.id_user = :id_user AND a.bulan = :bulan_anggaran AND a.tahun = :tahun_anggaran
+                  GROUP BY a.id_kategori, k.nama_kategori, a.jumlah_budget";
+
+        $stmt = $pdo->prepare($query);
+        $stmt->execute([
+            'bulan'          => $bulan,
+            'tahun'          => $tahun,
+            'id_user'        => $id_user,
+            'bulan_anggaran' => $bulan,
+            'tahun_anggaran' => $tahun
+        ]);
+        
+        while ($row = $stmt->fetch()) {
+            $budget = floatval($row['jumlah_budget']);
+            $pengeluaran = floatval($row['total_pengeluaran']);
+            $persentase = ($budget > 0) ? ($pengeluaran / $budget) * 100 : 0;
+
+            $hasil_analisis[] = [
+                'id_kategori'   => $row['id_kategori'],
+                'nama_kategori' => $row['nama_kategori'],
+                'budget'        => $budget,
+                'pengeluaran'   => $pengeluaran,
+                'persentase'    => $persentase
+            ];
+        }
+    } catch (\PDOException $e) {
+        error_log($e->getMessage());
+    }
+    
+    return $hasil_analisis;
+}

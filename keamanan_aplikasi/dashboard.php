@@ -153,7 +153,15 @@ try {
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary bg-gradient shadow-sm py-3">
         <div class="container">
             <a class="navbar-brand d-flex align-items-center" href="dashboard.php"><i class="bi bi-wallet2 me-2"></i> DompetKu</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
             <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-3">
+                    <li class="nav-item"><a class="nav-link active font-bold" href="dashboard.php">Dashboard</a></li>
+                    <li class="nav-item"><a class="nav-link" href="kategori.php">Kategori</a></li>
+                    <li class="nav-item"><a class="nav-link" href="budgeting.php">Anggaran</a></li>
+                </ul>
                 <ul class="navbar-nav ms-auto align-items-center">
                     <li class="nav-item text-white me-3">
                         <i class="bi bi-person-circle me-1"></i> Halo, <strong><?= escape($username); ?></strong>
@@ -166,6 +174,48 @@ try {
 
     <div class="container my-5">
         <?php display_flash_message(); ?>
+
+        <!-- Bagian Alert Peringatan Anggaran -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <?php
+                $bulan_sekarang = intval(date('m'));
+                $tahun_sekarang = intval(date('Y'));
+                $daftar_anggaran = dapatkan_analisis_anggaran($user_id, $bulan_sekarang, $tahun_sekarang);
+
+                foreach ($daftar_anggaran as $anggaran):
+                    $persentase = $anggaran['persentase'];
+                    $nama_kategori = escape($anggaran['nama_kategori']);
+                    $sisa = $anggaran['budget'] - $anggaran['pengeluaran'];
+                    
+                    if ($persentase >= 90): 
+                ?>
+                        <div class="alert alert-danger border-0 shadow-sm d-flex align-items-center mb-2" role="alert">
+                            <i class="bi bi-exclamation-octagon-fill fs-5 me-3"></i>
+                            <div class="flex-grow-1">
+                                <strong>Kritis!</strong> Anggaran untuk kategori <strong><?= $nama_kategori; ?></strong> hampir habis atau telah terlampaui.
+                                <br>
+                                <small>Terpakai: <strong><?= format_rupiah($anggaran['pengeluaran']); ?></strong> dari limit <strong><?= format_rupiah($anggaran['budget']); ?></strong> (<?= number_format($persentase, 1); ?>%)</small>
+                            </div>
+                            <span class="badge bg-danger p-2 fs-7 text-uppercase">Limit Kritis</span>
+                        </div>
+
+                    <?php elseif ($persentase >= 70 && $persentase < 90): ?>
+                        <div class="alert alert-warning border-0 shadow-sm d-flex align-items-center mb-2" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill fs-5 me-3 text-warning"></i>
+                            <div class="flex-grow-1">
+                                <strong>Peringatan!</strong> Pengeluaran untuk kategori <strong><?= $nama_kategori; ?></strong> sudah mendekati batas limit anggaran bulanan.
+                                <br>
+                                <small>Sisa Saldo Anggaran: <strong><?= format_rupiah($sisa); ?></strong> lagi dari total <strong><?= format_rupiah($anggaran['budget']); ?></strong> (<?= number_format($persentase, 1); ?>% terpakai)</small>
+                            </div>
+                            <span class="badge bg-warning text-dark p-2 fs-7 text-uppercase">Waspada</span>
+                        </div>
+                <?php 
+                    endif;
+                endforeach; 
+                ?>
+            </div>
+        </div>
         <div class="row g-4 mb-5">
             <div class="col-md-4">
                 <div class="card p-4">
@@ -248,6 +298,7 @@ try {
                             <th>No</th>
                             <th>Tanggal</th>
                             <th>Jenis</th>
+                            <th>Kategori</th>
                             <th>Keterangan</th>
                             <th>Nominal</th>
                             <th class="text-center">Aksi</th>
@@ -255,13 +306,14 @@ try {
                     </thead>
                     <tbody>
                         <?php if (empty($transactions)): ?>
-                            <tr><td colspan="6" class="text-center py-4 text-muted">Tidak ada data transaksi.</td></tr>
+                            <tr><td colspan="7" class="text-center py-4 text-muted">Tidak ada data transaksi.</td></tr>
                         <?php else: ?>
                             <?php $no = 1; foreach ($transactions as $row): ?>
                                 <tr>
                                     <td><?= $no++; ?></td>
                                     <td><?= date('d M Y', strtotime($row['tanggal'])); ?></td>
                                     <td><span class="<?= $row['jenis'] === 'Pemasukan' ? 'badge bg-success' : 'badge bg-danger'; ?>"><?= escape($row['jenis']); ?></span></td>
+                                    <td><span class="badge bg-secondary"><?= $row['nama_kategori'] ? escape($row['nama_kategori']) : 'Tanpa Kategori'; ?></span></td>
                                     <td><?= escape($row['keterangan']); ?></td>
                                     <td class="font-bold <?= $row['jenis'] === 'Pemasukan' ? 'text-success' : 'text-danger'; ?>">
                                         <?= ($row['jenis'] === 'Pemasukan' ? '+ ' : '- ') . format_rupiah($row['nominal']); ?>
@@ -293,6 +345,7 @@ try {
                                             <button type="button" class="btn btn-sm btn-outline-primary btn-edit" 
                                                     data-id="<?= $row['id']; ?>" 
                                                     data-jenis="<?= $row['jenis']; ?>" 
+                                                    data-kategori="<?= $row['id_kategori']; ?>" 
                                                     data-nominal="<?= $row['nominal']; ?>" 
                                                     data-tanggal="<?= $row['tanggal']; ?>" 
                                                     data-keterangan="<?= escape($row['keterangan']); ?>"
@@ -331,6 +384,12 @@ try {
                                 <option value="">-- Pilih Jenis --</option>
                                 <option value="Pemasukan">Pemasukan (Uang Masuk)</option>
                                 <option value="Pengeluaran">Pengeluaran (Uang Keluar)</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="id_kategori" class="form-label">Kategori</label>
+                            <select class="form-select modal-select2" id="id_kategori" name="id_kategori" style="width: 100%;">
+                                <option value="">-- Tanpa Kategori --</option>
                             </select>
                         </div>
                         <div class="mb-3">
@@ -412,6 +471,9 @@ try {
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
+        // Data Kategori dari PHP
+        const categories = <?= json_encode($categories); ?>;
+
         $(document).ready(function() {
             // --- INSISIALISASI SELECT2 ---
             $('.select2-init, .modal-select2').select2({
@@ -425,6 +487,26 @@ try {
                     theme: 'bootstrap-5',
                     dropdownParent: $('#modalTransaksi')
                 });
+            });
+
+            // --- PILIHAN KATEGORI DINAMIS ---
+            function updateCategoryOptions(selectedJenis, selectedKategoriId = null) {
+                const $catSelect = $('#id_kategori');
+                $catSelect.empty().append('<option value="">-- Tanpa Kategori --</option>');
+                
+                if (selectedJenis) {
+                    const filtered = categories.filter(c => c.tipe === selectedJenis);
+                    filtered.forEach(c => {
+                        const isSelected = (selectedKategoriId && parseInt(c.id_kategori) === parseInt(selectedKategoriId)) ? 'selected' : '';
+                        $catSelect.append(`<option value="${c.id_kategori}" ${isSelected}>${c.nama_kategori}</option>`);
+                    });
+                }
+                $catSelect.trigger('change');
+            }
+
+            $('#jenis').on('change', function() {
+                const selectedJenis = $(this).val();
+                updateCategoryOptions(selectedJenis);
             });
 
             // --- PROSES SIMPAN DATA (CREATE & UPDATE VIA AJAX) ---
@@ -457,6 +539,7 @@ try {
             $('.btn-edit').on('click', function() {
                 const id = $(this).data('id');
                 const jenis = $(this).data('jenis');
+                const kategoriId = $(this).data('kategori');
                 const nominal = $(this).data('nominal');
                 const tanggal = $(this).data('tanggal');
                 const keterangan = $(this).data('keterangan');
@@ -466,6 +549,10 @@ try {
                 $('#formAction').val('update');
                 $('#transaksiId').val(id);
                 $('#jenis').val(jenis).trigger('change'); // Update Select2 value
+                
+                // Perbarui opsi kategori dan set terpilih
+                updateCategoryOptions(jenis, kategoriId);
+
                 $('#nominal').val(nominal);
                 $('#tanggal').val(tanggal);
                 $('#keterangan').val(keterangan);
@@ -516,6 +603,7 @@ try {
             $('#transaksiId').val('');
             $('#formTransaksi')[0].reset();
             $('#jenis').val('').trigger('change');
+            $('#id_kategori').empty().append('<option value="">-- Tanpa Kategori --</option>').trigger('change');
         }
     </script>
 </body>
