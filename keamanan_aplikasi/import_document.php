@@ -296,6 +296,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['file_dokumen'])) {
                 $col_indices = [
                     'tanggal' => -1,
                     'jenis' => -1,
+                    'kategori' => -1,
                     'nominal' => -1,
                     'keterangan' => -1
                 ];
@@ -306,6 +307,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['file_dokumen'])) {
                         $col_indices['tanggal'] = $idx;
                     } elseif (strpos($clean_name, 'jenis') !== false) {
                         $col_indices['jenis'] = $idx;
+                    } elseif (strpos($clean_name, 'kategori') !== false) {
+                        $col_indices['kategori'] = $idx;
                     } elseif (strpos($clean_name, 'nominal') !== false || strpos($clean_name, 'jumlah') !== false) {
                         $col_indices['nominal'] = $idx;
                     } elseif (strpos($clean_name, 'keterangan') !== false) {
@@ -316,8 +319,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['file_dokumen'])) {
                 // Fallback default mapping jika kolom tidak terdeteksi dinamis
                 if ($col_indices['tanggal'] === -1) $col_indices['tanggal'] = 0;
                 if ($col_indices['jenis'] === -1) $col_indices['jenis'] = 1;
-                if ($col_indices['nominal'] === -1) $col_indices['nominal'] = 2;
-                if ($col_indices['keterangan'] === -1) $col_indices['keterangan'] = 3;
+                
+                if ($col_indices['kategori'] === -1) {
+                    if (count($header) >= 5) {
+                        $col_indices['kategori'] = 2;
+                        if ($col_indices['nominal'] === -1) $col_indices['nominal'] = 3;
+                        if ($col_indices['keterangan'] === -1) $col_indices['keterangan'] = 4;
+                    } else {
+                        $col_indices['kategori'] = -1;
+                        if ($col_indices['nominal'] === -1) $col_indices['nominal'] = 2;
+                        if ($col_indices['keterangan'] === -1) $col_indices['keterangan'] = 3;
+                    }
+                } else {
+                    if ($col_indices['nominal'] === -1) $col_indices['nominal'] = ($col_indices['kategori'] === 2) ? 3 : 2;
+                    if ($col_indices['keterangan'] === -1) $col_indices['keterangan'] = ($col_indices['kategori'] === 2) ? 4 : 3;
+                }
                 
                 $no_excel = 1;
                 for ($i = 1; $i < count($rows); $i++) {
@@ -328,6 +344,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['file_dokumen'])) {
                     
                     $val_tanggal = isset($row[$col_indices['tanggal']]) ? $row[$col_indices['tanggal']] : '';
                     $val_jenis = isset($row[$col_indices['jenis']]) ? $row[$col_indices['jenis']] : '';
+                    $val_kategori = ($col_indices['kategori'] !== -1 && isset($row[$col_indices['kategori']])) ? $row[$col_indices['kategori']] : '';
                     $val_nominal = isset($row[$col_indices['nominal']]) ? $row[$col_indices['nominal']] : '';
                     $val_keterangan = isset($row[$col_indices['keterangan']]) ? $row[$col_indices['keterangan']] : '';
                     
@@ -339,6 +356,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['file_dokumen'])) {
                         $no_excel++,
                         $val_tanggal,
                         $val_jenis,
+                        $val_kategori,
                         $val_keterangan,
                         $val_nominal
                     ];
@@ -359,21 +377,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['file_dokumen'])) {
         $row_num = 1; // Untuk penanda baris
         $imported_count = 0;
         
-        $stmt = $pdo->prepare("INSERT INTO transaksi (user_id, jenis, nominal, keterangan, tanggal) VALUES (:user_id, :jenis, :nominal, :keterangan, :tanggal)");
+        $stmt = $pdo->prepare("INSERT INTO transaksi (user_id, id_kategori, jenis, nominal, keterangan, tanggal) VALUES (:user_id, :id_kategori, :jenis, :nominal, :keterangan, :tanggal)");
         
         foreach ($rows_data as $row) {
             $row_num++;
             
-            // Baris data harus memiliki minimal 4 kolom (Tanggal, Jenis, Keterangan, Nominal)
-            // Dalam format tabel kita: kolom 0=No, 1=Tanggal, 2=Jenis, 3=Keterangan, 4=Nominal
+            // Baris data harus memiliki minimal 5 kolom (jika tanpa kategori) atau 6 kolom (jika ada kategori)
             if (count($row) < 5) {
-                continue; // Skip jika baris tidak lengkap
+                continue;
             }
             
             $raw_tanggal    = $row[1];
             $raw_jenis      = $row[2];
-            $raw_keterangan = $row[3];
-            $raw_nominal    = $row[4];
+            
+            if (count($row) >= 6) {
+                $raw_kategori   = $row[3];
+                $raw_keterangan = $row[4];
+                $raw_nominal    = $row[5];
+            } else {
+                $raw_kategori   = '';
+                $raw_keterangan = $row[3];
+                $raw_nominal    = $row[4];
+            }
             
             // 1. Validasi & Format Tanggal
             $tanggal = parse_import_date($raw_tanggal);
@@ -403,13 +428,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['file_dokumen'])) {
                 $keterangan = substr($keterangan, 0, 255);
             }
             
+            // 5. Proses Kategori (Cari atau Buat baru)
+            $id_kategori = null;
+            $nama_kategori = trim($raw_kategori);
+            if (!empty($nama_kategori)) {
+                $stmt_find_cat = $pdo->prepare("SELECT id_kategori FROM kategori WHERE id_user = :id_user AND nama_kategori = :nama_kategori AND tipe = :tipe");
+                $stmt_find_cat->execute([
+                    'id_user' => $user_id,
+                    'nama_kategori' => $nama_kategori,
+                    'tipe' => $jenis
+                ]);
+                $cat_found = $stmt_find_cat->fetch();
+                
+                if ($cat_found) {
+                    $id_kategori = $cat_found['id_kategori'];
+                } else {
+                    $stmt_create_cat = $pdo->prepare("INSERT INTO kategori (id_user, nama_kategori, tipe) VALUES (:id_user, :nama_kategori, :tipe)");
+                    $stmt_create_cat->execute([
+                        'id_user' => $user_id,
+                        'nama_kategori' => $nama_kategori,
+                        'tipe' => $jenis
+                    ]);
+                    $id_kategori = $pdo->lastInsertId();
+                }
+            }
+            
             // Eksekusi insert data ke database
             $stmt->execute([
-                'user_id'    => $user_id,
-                'jenis'      => $jenis,
-                'nominal'    => $nominal,
-                'keterangan' => $keterangan,
-                'tanggal'    => $tanggal
+                'user_id'     => $user_id,
+                'id_kategori' => $id_kategori,
+                'jenis'       => $jenis,
+                'nominal'     => $nominal,
+                'keterangan'  => $keterangan,
+                'tanggal'     => $tanggal
             ]);
             
             $imported_count++;

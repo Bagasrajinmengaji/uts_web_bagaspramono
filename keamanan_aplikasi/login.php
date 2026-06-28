@@ -13,7 +13,7 @@ $google_redirect_url = $_ENV['GOOGLE_REDIRECT_URL'];
 // Generate URL Login google (Sudah diperbaiki: 'redirect_uri' & 'access_type')
 $google_login_url = "https://accounts.google.com/o/oauth2/v2/auth?" . http_build_query([
     'client_id'     => $google_client_id,
-    'redirect_uri'  => $google_redirect_url, // Perbaikan di sini
+    'redirect_uri'  => $google_redirect_url, 
     'response_type' => 'code',
     'scope'         => 'https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
     'access_type'   => 'offline', // Perbaikan di sini
