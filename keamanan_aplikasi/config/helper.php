@@ -113,22 +113,29 @@ function in_amount_type($val)
 }
 function send_smtp_mail($to, $subject, $message_body) {
     // Pengaturan Akun SMTP
-    $smtp_host = $_ENV['SMTP_HOST']; 
-    $smtp_port = $_ENV['SMTP_PORT'];
-    $smtp_user = $_ENV['SMTP_USERNAME'];
-    $smtp_pass = $_ENV['SMTP_PASSWORD'];
-    $from_email = $_ENV['SMTP_FROM_EMAIL'];
-    $from_name  = $_ENV['SMTP_FROM_NAME'];
+    $smtp_host  = isset($_ENV['SMTP_HOST']) ? $_ENV['SMTP_HOST'] : '';
+    $smtp_port  = isset($_ENV['SMTP_PORT']) ? intval($_ENV['SMTP_PORT']) : 587;
+    $smtp_user  = isset($_ENV['SMTP_USERNAME']) ? $_ENV['SMTP_USERNAME'] : (isset($_ENV['SMTP_UNAME']) ? $_ENV['SMTP_UNAME'] : (isset($_ENV['SMTP_USER']) ? $_ENV['SMTP_USER'] : ''));
+    $smtp_pass  = isset($_ENV['SMTP_PASSWORD']) ? $_ENV['SMTP_PASSWORD'] : (isset($_ENV['SMTP_PASS']) ? $_ENV['SMTP_PASS'] : '');
+    $from_email = isset($_ENV['SMTP_FROM_EMAIL']) ? $_ENV['SMTP_FROM_EMAIL'] : $smtp_user;
+    $from_name  = isset($_ENV['SMTP_FROM_NAME']) ? $_ENV['SMTP_FROM_NAME'] : 'DompetKu';
 
     // 1. Membuka Koneksi Socket ke Server SMTP
-    $socket = fsockopen($smtp_host, $smtp_port, $errno, $errstr, 15);
+    $socket = fsockopen($smtp_host, $smtp_port, $errno, $errstr, 10);
     if (!$socket) return false;
+
+    // Set timeout baca/tulis socket 5 detik agar tidak hang selamanya
+    stream_set_timeout($socket, 5);
 
     function get_smtp_response($socket) {
         $response = '';
         while (substr($response, 3, 1) != ' ') {
             if (!($line = fgets($socket, 256))) break;
             $response .= $line;
+            
+            // Cek jika terjadi timeout pada stream
+            $info = stream_get_meta_data($socket);
+            if ($info['timed_out']) break;
         }
         return $response;
     }
@@ -136,15 +143,20 @@ function send_smtp_mail($to, $subject, $message_body) {
     get_smtp_response($socket); // Baca baris sambutan server
 
     // 2. Jabat tangan (EHLO) dan Mulai Enkripsi TLS
-    fwrite($socket, "EHLO " . $_SERVER['HTTP_HOST'] . "\r\n");
+    fwrite($socket, "EHLO " . (isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : 'localhost') . "\r\n");
     get_smtp_response($socket);
 
     fwrite($socket, "STARTTLS\r\n");
     get_smtp_response($socket);
-    stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLS_CLIENT);
+    
+    $crypto_res = stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLS_CLIENT);
+    if (!$crypto_res) {
+        fclose($socket);
+        return false;
+    }
 
     // 3. Jabat tangan ulang setelah enkripsi aktif + Login Otentikasi
-    fwrite($socket, "EHLO " . $_SERVER['HTTP_HOST'] . "\r\n");
+    fwrite($socket, "EHLO " . (isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : 'localhost') . "\r\n");
     get_smtp_response($socket);
 
     fwrite($socket, "AUTH LOGIN\r\n");
