@@ -4,6 +4,7 @@ require_once 'config/helper.php';
 
 // Cek apakah user sudah login
 $is_logged_in = isset($_SESSION['user_id']);
+$user_id = $is_logged_in ? $_SESSION['user_id'] : 0;
 $username = $is_logged_in ? $_SESSION['username'] : '';
 ?>
 <!DOCTYPE html>
@@ -11,163 +12,292 @@ $username = $is_logged_in ? $_SESSION['username'] : '';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DompetKu - Catat & Rancang Finansialmu</title>
-    <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>DOMPETKU.M — High-Performance Finance Tracker</title>
+    <!-- Bootstrap 4.6.2 CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
     <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
-    <!-- Custom Style Font & Theme -->
-    <link href="assets/css/style.css" rel="stylesheet">
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&family=Space+Grotesk:wght@700&display=swap');
+
+        :root {
+            --m-black: #000000;
+            --m-dark-grey: #121212;
+            --m-card-bg: #1a1a1a;
+            --m-text-primary: #ffffff;
+            --m-text-secondary: #bbbbbb;
+            
+            /* BMW M Tricolor Tokens */
+            --m-light-blue: #0066b1;
+            --m-dark-blue: #1c69d4;
+            --m-red: #e22718;
+        }
+
         body {
-            /* Warna latar putih lembut yang tidak terlalu cerah (soft off-white) */
-            background-color: #f1f5f9;
-            color: #1e293b;
-        }
-        
-        /* Navigasi */
-        .navbar-custom {
-            background-color: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(8px);
-            border-bottom: 1px solid #e2e8f0;
-        }
-        
-        /* Hero Section dengan gradasi biru muda lembut */
-        .hero-section {
-            padding: 90px 0 70px 0;
-            background: linear-gradient(180deg, #e0f2fe 0%, #f1f5f9 100%);
-        }
-        .hero-title {
-            font-size: 2.8rem;
-            font-weight: 800;
-            line-height: 1.2;
-            letter-spacing: -1px;
-            color: #0f172a;
-        }
-        .hero-subtitle {
-            font-size: 1.1rem;
-            color: #475569;
-            line-height: 1.6;
-        }
-        .illustration-img {
-            max-width: 100%;
-            height: auto;
-            filter: drop-shadow(0 15px 25px rgba(56, 189, 248, 0.15));
-            animation: floatAnimation 6s ease-in-out infinite;
-        }
-        
-        /* Efek melayang pada gambar ilustrasi */
-        @keyframes floatAnimation {
-            0% { transform: translateY(0px); }
-            50% { transform: translateY(-12px); }
-            100% { transform: translateY(0px); }
+            background-color: var(--m-black);
+            color: var(--m-text-primary);
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
         }
 
-        /* Quotes Card */
-        .quote-card {
-            background-color: #ffffff;
-            border: 1px solid #e2e8f0;
-            border-left: 5px solid #38bdf8; /* Accent Biru Muda */
-            border-radius: 12px;
-            padding: 24px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
-            height: 100%;
+        /* Top Navigation Bar */
+        .navbar-m {
+            background-color: var(--m-black);
+            border-bottom: 1px solid #222222;
+            padding: 20px 0;
         }
-        .quote-text {
-            font-size: 1rem;
-            font-style: italic;
-            color: #334155;
-            line-height: 1.5;
-        }
-        .quote-author {
-            font-weight: 700;
-            font-size: 0.85rem;
-            color: #64748b;
+        .navbar-brand-m {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 900;
+            letter-spacing: 2px;
+            color: var(--m-text-primary) !important;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+        }
+        .navbar-brand-m span {
+            color: var(--m-red);
+        }
+        .nav-link-m {
+            color: var(--m-text-secondary) !important;
+            font-weight: 400;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+            transition: color 0.2s ease;
+        }
+        .nav-link-m:hover {
+            color: var(--m-text-primary) !important;
         }
 
-        /* Fitur List */
-        .feature-icon {
-            width: 48px;
-            height: 48px;
-            background-color: #e0f2fe; /* Biru Muda lembut */
-            color: #0284c7;
-            border-radius: 12px;
-            display: flex;
+        /* M-Stripe Line (Divider) */
+        .m-stripe-line {
+            height: 4px;
+            width: 100%;
+            background: linear-gradient(90deg, 
+                var(--m-light-blue) 0%, var(--m-light-blue) 33.33%, 
+                var(--m-dark-blue) 33.33%, var(--m-dark-blue) 66.66%, 
+                var(--m-red) 66.66%, var(--m-red) 100%
+            );
+        }
+
+        /* Typography */
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Space Grotesk', sans-serif;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: -1px;
+        }
+        .display-m {
+            font-size: 3.5rem;
+            line-height: 0.95;
+            letter-spacing: -2px;
+            font-weight: 900;
+        }
+        @media (max-width: 768px) {
+            .display-m {
+                font-size: 2.5rem;
+            }
+        }
+        .lead-m {
+            font-weight: 300;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            color: var(--m-text-secondary);
+        }
+
+        /* Button: Sharp Silhouette & Machined Look */
+        .btn-m-outline {
+            border: 2px solid var(--m-text-primary);
+            background: transparent;
+            color: var(--m-text-primary);
+            border-radius: 0px;
+            text-transform: uppercase;
+            font-weight: 700;
+            font-size: 0.9rem;
+            letter-spacing: 1.5px;
+            padding: 14px 32px;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+            overflow: hidden;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.3rem;
-            margin-bottom: 16px;
+        }
+        .btn-m-outline:hover {
+            background-color: var(--m-text-primary);
+            color: var(--m-black);
+            text-decoration: none;
+        }
+        .btn-m-outline i {
+            font-size: 1.1rem;
         }
 
-        /* Custom Button */
-        .btn-custom-main {
-            padding: 14px 28px;
-            font-size: 1.05rem;
-            border-radius: 12px;
-            border: none;
+        .btn-m-secondary {
+            border: 1px solid #333333;
+            background-color: var(--m-card-bg);
+            color: var(--m-text-primary);
+            border-radius: 0px;
+            text-transform: uppercase;
             font-weight: 700;
-            background: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%); /* Biru muda */
-            color: #ffffff;
-            transition: all 0.3s ease;
-        }
-        .btn-custom-main:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 15px -3px rgba(56, 189, 248, 0.3);
-            color: #ffffff;
-        }
-        
-        .dropdown-menu-custom {
-            border-radius: 14px;
-            border: 1px solid #e2e8f0;
-            padding: 8px;
-            min-width: 220px;
-        }
-        .dropdown-item-custom {
-            padding: 10px 16px;
-            border-radius: 10px;
-            font-weight: 600;
-            font-size: 0.95rem;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+            padding: 10px 24px;
             transition: all 0.2s ease;
         }
-        .dropdown-item-custom:hover {
-            background-color: #f1f5f9;
+        .btn-m-secondary:hover {
+            border-color: var(--m-text-primary);
+            color: var(--m-text-primary);
+            text-decoration: none;
+        }
+
+        /* Hero Section & Glow Backdrops */
+        .hero-section {
+            padding: 100px 0 120px 0;
+            position: relative;
+        }
+        .glow-backdrop {
+            position: absolute;
+            top: 15%;
+            right: 5%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(28,105,212,0.15) 0%, rgba(226,39,24,0.05) 50%, rgba(0,0,0,0) 100%);
+            z-index: 1;
+            pointer-events: none;
+            filter: blur(40px);
+        }
+
+        /* Minimalist High-Fidelity Dashboard Graphic (Right side of Hero) */
+        .m-dashboard-graphic {
+            background-color: var(--m-card-bg);
+            border: 1px solid #222222;
+            padding: 30px;
+            border-radius: 0px;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.8);
+            position: relative;
+            z-index: 2;
+        }
+        .m-dashboard-graphic::before {
+            content: '';
+            position: absolute;
+            top: -1px;
+            left: -1px;
+            width: calc(100% + 2px);
+            height: 3px;
+            background: linear-gradient(90deg, var(--m-light-blue), var(--m-dark-blue), var(--m-red));
+        }
+        .graphic-header {
+            border-bottom: 1px solid #2a2a2a;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        .graphic-pill {
+            background-color: #262626;
+            color: var(--m-text-primary);
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            padding: 4px 10px;
+            border-radius: 0px;
+            display: inline-block;
+        }
+        .graphic-budget-bar {
+            height: 6px;
+            background-color: #262626;
+            width: 100%;
+            margin-top: 8px;
+            position: relative;
+        }
+        .graphic-budget-fill {
+            height: 100%;
+            width: 82%;
+            background-color: var(--m-red);
+        }
+        .graphic-transaction-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #222222;
+            font-size: 0.85rem;
+        }
+        .graphic-transaction-row:last-child {
+            border-bottom: none;
+        }
+
+        /* Feature Cards */
+        .feature-card-m {
+            background-color: var(--m-card-bg);
+            border: 1px solid #222222;
+            padding: 40px 30px;
+            border-radius: 0px;
+            height: 100%;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+        }
+        .feature-card-m:hover {
+            border-color: #444444;
+            transform: translateY(-5px);
+        }
+        .feature-card-m::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0%;
+            height: 3px;
+            background-color: var(--m-red);
+            transition: width 0.3s ease;
+        }
+        .feature-card-m:hover::after {
+            width: 100%;
+        }
+        .feature-icon-m {
+            font-size: 2rem;
+            color: var(--m-text-primary);
+            margin-bottom: 25px;
+            display: inline-block;
+        }
+
+        /* Footer */
+        footer {
+            background-color: var(--m-black);
+            border-top: 1px solid #222222;
+            padding: 40px 0;
+            margin-top: 80px;
         }
     </style>
 </head>
 <body>
 
-    <!-- Navigasi -->
-    <nav class="navbar navbar-expand-lg navbar-light navbar-custom fixed-top py-3">
+    <!-- Top Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-m sticky-top">
         <div class="container">
-            <a class="navbar-brand d-flex align-items-center text-primary" href="index.php">
-                <i class="bi bi-wallet2 me-2"></i> DompetKu
+            <a class="navbar-brand-m" href="index.php">
+                DOMPETKU<span>.M</span>
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation" style="border-radius: 0px;">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto align-items-center gap-2 mt-2 mt-lg-0">
+                <ul class="navbar-nav ml-auto align-items-center">
                     <li class="nav-item">
-                        <a class="nav-link text-dark font-bold px-3" href="#fitur">Fitur</a>
+                        <a class="nav-link nav-link-m px-3" href="#features">Spesifikasi</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link text-dark font-bold px-3" href="#manfaat">Manfaat</a>
+                        <a class="nav-link nav-link-m px-3 mr-3" href="#engineering">Filosofi</a>
                     </li>
                     <?php if ($is_logged_in): ?>
-                        <li class="nav-item text-muted px-2">
-                            <i class="bi bi-person-circle"></i> Halo, <?= escape($username); ?>
+                        <li class="nav-item text-white-50 mr-3 font-weight-light" style="font-size: 0.85rem;">
+                            <i class="bi bi-cpu me-1"></i> PILOT: <strong class="text-white"><?= escape($username); ?></strong>
                         </li>
                         <li class="nav-item">
-                            <a class="btn btn-primary btn-sm px-3" href="dashboard.php">Dashboard</a>
+                            <a class="btn-m-secondary" href="dashboard.php">Cockpit</a>
                         </li>
                     <?php else: ?>
                         <li class="nav-item">
-                            <a class="btn btn-light border btn-sm px-3 font-bold" href="login.php">Masuk</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="btn btn-primary btn-sm px-3 font-bold" href="register.php">Daftar</a>
+                            <a class="btn-m-secondary" href="login.php">Masuk</a>
                         </li>
                     <?php endif; ?>
                 </ul>
@@ -175,132 +305,161 @@ $username = $is_logged_in ? $_SESSION['username'] : '';
         </div>
     </nav>
 
+    <!-- M-Stripe Accent Line -->
+    <div class="m-stripe-line"></div>
+
     <!-- Hero Section -->
     <section class="hero-section">
+        <div class="glow-backdrop"></div>
         <div class="container">
-            <div class="row align-items-center g-5">
-                <!-- Teks Utama -->
-                <div class="col-lg-6 text-center text-lg-start">
-                    <span class="badge bg-info bg-opacity-10 text-info px-3 py-2 rounded-pill font-bold mb-3" style="font-size: 0.85rem;">
-                        <i class="bi bi-shield-check me-1"></i> Aman, Praktis & Terpercaya
-                    </span>
-                    <h1 class="hero-title mb-3">
-                        Kendalikan Uangmu,<br>Rancang Masa Depanmu
+            <div class="row align-items-center">
+                
+                <!-- Hero Left: High-Contrast Heading -->
+                <div class="col-lg-6 mb-5 mb-lg-0">
+                    <div class="graphic-pill mb-3" style="background-color: var(--m-red);">
+                        <i class="bi bi-speedometer2 mr-1"></i> M-Performance
+                    </div>
+                    <h1 class="display-m mb-4">
+                        PRESETS FOR<br>FINANCIAL<br>DYNAMICS.
                     </h1>
-                    <p class="hero-subtitle mb-4">
-                        Mencatat keuangan bukan sekadar membatasi pengeluaran Anda. Ini adalah tentang memberi tahu uang Anda ke mana harus mengalir, alih-alih bertanya-tanya ke mana ia menghilang secara misterius.
+                    <p class="lead-m mb-5">
+                        Menyalurkan arus finansial Anda secara presisi. DompetKu.M bukan sekadar mencatat transaksi, melainkan mengoptimalkan setiap alokasi dana dengan kedisiplinan tingkat tinggi.
                     </p>
                     
-                    <!-- Tombol Aksi Utama (Ayo Catat Keuangan Mu) -->
-                    <div class="d-inline-block">
+                    <div>
                         <?php if ($is_logged_in): ?>
-                            <a href="dashboard.php" class="btn btn-custom-main px-4 py-3 shadow-sm d-flex align-items-center">
-                                <i class="bi bi-grid-1x2-fill me-2"></i> Ayo Catat Keuangan Mu (Ke Dashboard)
+                            <a href="dashboard.php" class="btn-m-outline">
+                                Masuk Cockpit <i class="bi bi-arrow-right-short ml-2"></i>
                             </a>
                         <?php else: ?>
-                            <div class="btn-group shadow">
-                                <button type="button" class="btn btn-custom-main px-4 py-3 font-bold dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <i class="bi bi-wallet2 me-2"></i> Ayo Catat Keuangan Mu
-                                </button>
-                                <ul class="dropdown-menu dropdown-menu-end dropdown-menu-custom shadow-lg mt-2">
-                                    <li>
-                                        <a class="dropdown-item dropdown-item-custom text-primary" href="login.php">
-                                            <i class="bi bi-box-arrow-in-right me-2"></i> Sign In (Masuk Akun)
-                                        </a>
-                                    </li>
-                                    <li><hr class="dropdown-divider my-1"></li>
-                                    <li>
-                                        <a class="dropdown-item dropdown-item-custom text-success" href="register.php">
-                                            <i class="bi bi-person-plus me-2"></i> Register (Buat Akun)
-                                        </a>
-                                    </li>
-                                </ul>
-                            </div>
+                            <a href="login.php" class="btn-m-outline">
+                                Mulai Konfigurasi <i class="bi bi-arrow-right-short ml-2"></i>
+                            </a>
                         <?php endif; ?>
                     </div>
                 </div>
+
+                <!-- Hero Right: Minimalist Dashboard Graphic -->
+                <div class="col-lg-6">
+                    <div class="m-dashboard-graphic">
+                        <div class="graphic-header d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="font-weight-bold text-uppercase" style="font-size: 0.75rem; letter-spacing: 1px;">Sistem Telemetri</div>
+                                <div class="text-white-50" style="font-size: 0.68rem;">AKTIF — USER ID #<?= $is_logged_in ? $user_id : '0'; ?></div>
+                            </div>
+                            <span class="graphic-pill">Active Mode</span>
+                        </div>
+
+                        <!-- Budget Meter -->
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center" style="font-size: 0.8rem;">
+                                <span class="text-white-50 text-uppercase">Batas Anggaran Bulanan</span>
+                                <span class="font-weight-bold text-danger">82.4%</span>
+                            </div>
+                            <div class="graphic-budget-bar">
+                                <div class="graphic-budget-fill"></div>
+                            </div>
+                            <small class="text-white-50 d-block mt-1" style="font-size: 0.65rem;">WARNING: Limit pengeluaran kritis pada kategori <strong>Operasional</strong>.</small>
+                        </div>
+
+                        <!-- Telemetry Log -->
+                        <div>
+                            <div class="text-uppercase font-weight-bold mb-2 text-white-50" style="font-size: 0.7rem; letter-spacing: 0.5px;">Log Transaksi Terakhir</div>
+                            
+                            <div class="graphic-transaction-row">
+                                <span class="text-white-50">28 Jun — Beli Bahan Bakar</span>
+                                <span class="text-danger font-weight-bold">- Rp 350.000</span>
+                            </div>
+                            <div class="graphic-transaction-row">
+                                <span class="text-white-50">27 Jun — Transfer Insentif</span>
+                                <span class="text-success font-weight-bold">+ Rp 4.500.000</span>
+                            </div>
+                            <div class="graphic-transaction-row">
+                                <span class="text-white-50">25 Jun — Perawatan Berkala</span>
+                                <span class="text-danger font-weight-bold">- Rp 1.200.000</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Feature Cards Section -->
+    <section id="features" class="py-5" style="background-color: var(--m-dark-grey);">
+        <div class="container py-4">
+            <div class="mb-5">
+                <div class="graphic-pill mb-2">Spesifikasi Fitur</div>
+                <h2 class="font-weight-bold" style="font-size: 2.2rem; letter-spacing: -1px;">ENGINEERED FOR CONTROL.</h2>
+            </div>
+            <div class="row">
                 
-                <!-- Gambar Ilustrasi Uang (Asset Hasil Generate) -->
-                <div class="col-lg-6 text-center">
-                    <img src="assets/landing_money_illustration.png" alt="Ilustrasi Keuangan DompetKu" class="illustration-img">
+                <!-- Feature 1 -->
+                <div class="col-md-4 mb-4 mb-md-0">
+                    <div class="feature-card-m">
+                        <div class="feature-icon-m">
+                            <i class="bi bi-sliders"></i>
+                        </div>
+                        <h4 class="mb-3" style="font-size: 1.25rem;">Kategori Kustom</h4>
+                        <p class="text-muted font-weight-light mb-0" style="font-size: 0.9rem;">
+                            Klasifikasikan aliran dana Anda secara mandiri. Tambah, edit, dan hapus kategori transaksi khusus yang sesuai dengan karakter berkendara finansial Anda.
+                        </p>
+                    </div>
                 </div>
+
+                <!-- Feature 2 -->
+                <div class="col-md-4 mb-4 mb-md-0">
+                    <div class="feature-card-m">
+                        <div class="feature-icon-m">
+                            <i class="bi bi-speedometer"></i>
+                        </div>
+                        <h4 class="mb-3" style="font-size: 1.25rem;">Batas Anggaran</h4>
+                        <p class="text-muted font-weight-light mb-0" style="font-size: 0.9rem;">
+                            Tentukan batas maksimal pengeluaran bulanan per kategori. Sistem akan memberikan indikator visual presisi (kuning & merah) ketika konsumsi mendekati limit.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Feature 3 -->
+                <div class="col-md-4">
+                    <div class="feature-card-m">
+                        <div class="feature-icon-m">
+                            <i class="bi bi-file-earmark-spreadsheet"></i>
+                        </div>
+                        <h4 class="mb-3" style="font-size: 1.25rem;">Ekspor XLSX & Impor</h4>
+                        <p class="text-muted font-weight-light mb-0" style="font-size: 0.9rem;">
+                            Ekspor seluruh riwayat transaksi Anda ke file Excel (.xlsx) murni secara instan, atau impor data dari dokumen dengan parser berkas berkecepatan tinggi.
+                        </p>
+                    </div>
+                </div>
+
             </div>
         </div>
     </section>
 
-    <!-- Fitur Unggulan -->
-    <section id="fitur" class="py-5 bg-white border-top border-bottom">
+    <!-- Philosophy Section -->
+    <section id="engineering" class="py-5">
         <div class="container py-4">
-            <div class="text-center mb-5">
-                <h2 class="font-bold mb-2">Mengapa Memilih DompetKu?</h2>
-                <p class="text-muted col-lg-6 mx-auto">Kami menyediakan alat bantu pencatatan finansial terlengkap dengan tingkat keamanan tinggi untuk mahasiswa maupun profesional.</p>
-            </div>
-            <div class="row g-4">
-                <div class="col-md-4">
-                    <div class="card p-4 h-100 border border-light shadow-sm">
-                        <div class="feature-icon">
-                            <i class="bi bi-shield-lock-fill"></i>
-                        </div>
-                        <h5 class="font-bold mb-2">Keamanan Berlapis</h5>
-                        <p class="text-muted mb-0" style="font-size: 0.9rem;">Dilindungi dengan pengamanan sesi cookie yang ketat, validasi input berlapis, serta kueri PDO terproteksi dari ancaman SQL Injection.</p>
-                    </div>
+            <div class="row align-items-center">
+                <div class="col-md-6 mb-4 mb-md-0">
+                    <div class="graphic-pill mb-2">Filosofi Performa</div>
+                    <h2 class="font-weight-bold mb-4" style="font-size: 2.2rem; letter-spacing: -1px;">DISIPLIN ADALAH AKSELERASI.</h2>
+                    <p class="lead-m font-weight-light mb-4">
+                        Mengendalikan keuangan pribadi bukanlah tentang mempersempit ruang gerak Anda. Sebaliknya, catatan keuangan yang akurat memberi Anda visualisasi yang jelas untuk melesat lebih cepat menuju kebebasan finansial yang sejati.
+                    </p>
                 </div>
-                <div class="col-md-4">
-                    <div class="card p-4 h-100 border border-light shadow-sm">
-                        <div class="feature-icon">
-                            <i class="bi bi-file-earmark-spreadsheet-fill"></i>
-                        </div>
-                        <h5 class="font-bold mb-2">Ekspor Multi-Format</h5>
-                        <p class="text-muted mb-0" style="font-size: 0.9rem;">Unduh kuitansi per transaksi atau laporan keuangan terfilter secara massal ke dalam berkas Excel (XLSX), Word (DOCX), atau PDF dengan satu kali klik.</p>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card p-4 h-100 border border-light shadow-sm">
-                        <div class="feature-icon">
-                            <i class="bi bi-cloud-arrow-up-fill"></i>
-                        </div>
-                        <h5 class="font-bold mb-2">Impor Cerdas Terpadu</h5>
-                        <p class="text-muted mb-0" style="font-size: 0.9rem;">Unggah berkas Excel (XLSX), Word, atau PDF untuk memulihkan atau menyalin data transaksi secara instan dengan parser biner kustom.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Kata-kata Penting Mencatat Keuangan (Manfaat) -->
-    <section id="manfaat" class="py-5" style="background-color: #f8fafc;">
-        <div class="container py-4">
-            <div class="text-center mb-5">
-                <h2 class="font-bold mb-2">Pentingnya Mencatat Keuangan</h2>
-                <p class="text-muted col-lg-6 mx-auto">Disiplin finansial bukanlah pembatasan, melainkan kebebasan sesungguhnya untuk mengalokasikan masa depan.</p>
-            </div>
-            
-            <div class="row g-4">
-                <div class="col-lg-4 col-md-6">
-                    <div class="quote-card">
-                        <p class="quote-text mb-4">
-                            "Mencatat keuangan harian adalah kunci utama mendeteksi kebocoran finansial sekecil apapun. Tanpa catatan, rupiah kita akan menguap begitu saja tanpa kejelasan."
-                        </p>
-                        <hr class="border-slate my-3">
-                        <div class="quote-author">Deteksi Kebocoran Finansial</div>
-                    </div>
-                </div>
-                <div class="col-lg-4 col-md-6">
-                    <div class="quote-card" style="border-left-color: #0284c7;">
-                        <p class="quote-text mb-4">
-                            "Ketika kita rajin mencatat pemasukan dan pengeluaran, kita sedang menanam kebiasaan disiplin. Disiplin finansial hari ini adalah jaminan ketenangan di masa tua nanti."
-                        </p>
-                        <hr class="border-slate my-3">
-                        <div class="quote-author">Investasi Kedisiplinan</div>
-                    </div>
-                </div>
-                <div class="col-lg-4 col-md-12">
-                    <div class="quote-card" style="border-left-color: #0ea5e9;">
-                        <p class="quote-text mb-4">
-                            "Rencana besar tanpa evaluasi hanyalah angan-angan. Evaluasi terbaik untuk rencana keuangan Anda berasal dari data catatan pengeluaran riil yang tercatat rapi."
-                        </p>
-                        <hr class="border-slate my-3">
-                        <div class="quote-author">Evaluasi Target Nyata</div>
+                <div class="col-md-6 text-center">
+                    <div class="p-5 border border-secondary" style="background-color: var(--m-card-bg); border-radius: 0px;">
+                        <i class="bi bi-quote fs-1 text-danger d-block mb-3"></i>
+                        <blockquote class="blockquote border-0 p-0 m-0">
+                            <p class="mb-3 text-white font-italic" style="font-size: 1.1rem; font-weight: 300;">
+                                "Uang adalah pelayan yang baik, namun merupakan majikan yang sangat buruk. Berikan arahan presisi ke mana ia harus pergi."
+                            </p>
+                            <footer class="blockquote-footer bg-transparent border-0 text-uppercase font-weight-bold text-danger" style="font-size: 0.75rem; letter-spacing: 1px; padding: 0;">
+                                Telemetri DompetKu.M
+                            </footer>
+                        </blockquote>
                     </div>
                 </div>
             </div>
@@ -308,14 +467,19 @@ $username = $is_logged_in ? $_SESSION['username'] : '';
     </section>
 
     <!-- Footer -->
-    <footer class="text-center py-4 bg-white border-top">
-        <div class="container">
-            <p class="mb-1 font-bold text-primary"><i class="bi bi-wallet2 me-1"></i> DompetKu</p>
-            <p class="mb-0 text-muted" style="font-size: 0.85rem;">&copy; <?= date('Y'); ?> DompetKu. Dibuat untuk Keamanan Finansial dan Kemudahan Catatan Keuangan Pribadi Anda.</p>
+    <footer>
+        <div class="container text-center">
+            <p class="mb-2 font-weight-bold text-uppercase" style="letter-spacing: 2px; font-size: 1.1rem;">
+                DOMPETKU<span>.M</span>
+            </p>
+            <p class="mb-0 text-muted" style="font-size: 0.75rem; font-weight: 300; letter-spacing: 0.5px;">
+                &copy; <?= date('Y'); ?> DOMPETKU.M. Dibuat dengan presisi industrial dan standar keamanan tinggi. All Rights Reserved.
+            </p>
         </div>
     </footer>
 
-    <!-- Bootstrap 5 Bundle JS with Popper -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Bootstrap 4.6.2 Bundle JS with jQuery and Popper -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
