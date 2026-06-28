@@ -277,41 +277,75 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['file_dokumen'])) {
                     $rows_data[] = $chunk;
                 }
             }
-        } elseif (in_array($extension, ['csv', 'txt'], true)) {
-            // PROSES BERKAS CSV
-            $delimiter = detect_delimiter($file['tmp_name']);
-            $handle = fopen($file['tmp_name'], 'r');
-            if (!$handle) {
-                throw new Exception("Gagal membuka berkas CSV.");
-            }
+        } elseif ($extension === 'xlsx') {
+            // PROSES BERKAS EXCEL (XLSX)
+            require_once 'lib/SimpleXLSX.php';
             
-            $header = fgetcsv($handle, 1000, $delimiter);
-            if (!$header || count($header) < 4) {
-                fclose($handle);
-                throw new Exception("Format header kolom CSV salah. Harus memiliki minimal 4 kolom: Tanggal, Jenis, Nominal, Keterangan.");
-            }
-            
-            $no_csv = 1;
-            while (($row = fgetcsv($handle, 1000, $delimiter)) !== false) {
-                if (empty($row) || (count($row) === 1 && empty($row[0]))) {
-                    continue;
-                }
-                if (count($row) < 4) {
-                    fclose($handle);
-                    throw new Exception("Baris data CSV tidak lengkap.");
+            if ($xlsx = \Shuchkin\SimpleXLSX::parse($file['tmp_name'])) {
+                $rows = $xlsx->rows();
+                if (empty($rows)) {
+                    throw new Exception("Berkas Excel kosong atau tidak dapat dibaca.");
                 }
                 
-                // Petakan kolom CSV (0=Tanggal, 1=Jenis, 2=Nominal, 3=Keterangan) 
-                // menjadi format standard 5 kolom: [No, Tanggal, Jenis, Keterangan, Nominal]
-                $rows_data[] = [
-                    $no_csv++,
-                    $row[0], // Tanggal
-                    $row[1], // Jenis
-                    $row[3], // Keterangan
-                    $row[2]  // Nominal
+                $header = $rows[0];
+                if (count($header) < 4) {
+                    throw new Exception("Format header kolom Excel salah. Harus memiliki minimal 4 kolom: Tanggal, Jenis, Nominal, Keterangan.");
+                }
+                
+                // Cari index masing-masing kolom secara dinamis berdasarkan nama headernya
+                $col_indices = [
+                    'tanggal' => -1,
+                    'jenis' => -1,
+                    'nominal' => -1,
+                    'keterangan' => -1
                 ];
+                
+                foreach ($header as $idx => $col_name) {
+                    $clean_name = strtolower(trim($col_name));
+                    if (strpos($clean_name, 'tanggal') !== false) {
+                        $col_indices['tanggal'] = $idx;
+                    } elseif (strpos($clean_name, 'jenis') !== false) {
+                        $col_indices['jenis'] = $idx;
+                    } elseif (strpos($clean_name, 'nominal') !== false || strpos($clean_name, 'jumlah') !== false) {
+                        $col_indices['nominal'] = $idx;
+                    } elseif (strpos($clean_name, 'keterangan') !== false) {
+                        $col_indices['keterangan'] = $idx;
+                    }
+                }
+                
+                // Fallback default mapping jika kolom tidak terdeteksi dinamis
+                if ($col_indices['tanggal'] === -1) $col_indices['tanggal'] = 0;
+                if ($col_indices['jenis'] === -1) $col_indices['jenis'] = 1;
+                if ($col_indices['nominal'] === -1) $col_indices['nominal'] = 2;
+                if ($col_indices['keterangan'] === -1) $col_indices['keterangan'] = 3;
+                
+                $no_excel = 1;
+                for ($i = 1; $i < count($rows); $i++) {
+                    $row = $rows[$i];
+                    if (empty($row) || (count($row) === 1 && empty($row[0]))) {
+                        continue;
+                    }
+                    
+                    $val_tanggal = isset($row[$col_indices['tanggal']]) ? $row[$col_indices['tanggal']] : '';
+                    $val_jenis = isset($row[$col_indices['jenis']]) ? $row[$col_indices['jenis']] : '';
+                    $val_nominal = isset($row[$col_indices['nominal']]) ? $row[$col_indices['nominal']] : '';
+                    $val_keterangan = isset($row[$col_indices['keterangan']]) ? $row[$col_indices['keterangan']] : '';
+                    
+                    if (empty($val_tanggal) && empty($val_jenis) && empty($val_nominal) && empty($val_keterangan)) {
+                        continue;
+                    }
+                    
+                    $rows_data[] = [
+                        $no_excel++,
+                        $val_tanggal,
+                        $val_jenis,
+                        $val_keterangan,
+                        $val_nominal
+                    ];
+                }
+            } else {
+                throw new Exception("Gagal membaca berkas Excel: " . \Shuchkin\SimpleXLSX::parseError());
             }
-            fclose($handle);
         } else {
             throw new Exception("Format ekstensi berkas tidak didukung.");
         }

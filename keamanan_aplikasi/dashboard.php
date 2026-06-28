@@ -201,7 +201,7 @@ try {
                         <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="dropdownExport">
                             <li>
                                 <a class="dropdown-item py-2" href="export_excel.php?<?= http_build_query($_GET); ?>">
-                                    <i class="bi bi-file-earmark-excel text-success me-2"></i> Ekspor ke Excel (.xls)
+                                    <i class="bi bi-file-earmark-excel text-success me-2"></i> Ekspor ke Excel (.xlsx)
                                 </a>
                             </li>
                             <li>
@@ -369,7 +369,7 @@ try {
                             <i class="bi bi-info-circle-fill me-1"></i>
                             <strong>Petunjuk Format Dokumen:</strong>
                             <ul class="mb-0 ps-3 mt-1">
-                                <li><strong>Excel/CSV</strong>: Simpan sebagai berkas CSV.</li>
+                                <li><strong>Excel (.xlsx)</strong>: Unggah langsung berkas Excel Anda.</li>
                                 <li><strong>Word (DOCX)</strong>: Tulis data dalam tabel, simpan sebagai .docx.</li>
                                 <li><strong>PDF</strong>: Gunakan format laporan PDF asli yang diunduh dari sistem.</li>
                             </ul>
@@ -377,8 +377,8 @@ try {
                         
                         <div class="mb-4">
                             <label for="file_dokumen" class="form-label font-bold">Pilih File Laporan / Template</label>
-                            <input type="file" class="form-control" id="file_dokumen" name="file_dokumen" accept=".csv, .txt, .docx, .doc, .pdf" required>
-                            <div class="form-text">Mendukung format berkas <code>.csv</code>, <code>.docx</code>, dan <code>.pdf</code>.</div>
+                            <input type="file" class="form-control" id="file_dokumen" name="file_dokumen" accept=".xlsx, .docx, .doc, .pdf" required>
+                            <div class="form-text">Mendukung format berkas <code>.xlsx</code>, <code>.docx</code>, dan <code>.pdf</code>.</div>
                         </div>
 
                         <!-- Area Unduh Template -->

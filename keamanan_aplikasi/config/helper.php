@@ -112,12 +112,12 @@ function in_amount_type($val)
 }
 function send_smtp_mail($to, $subject, $message_body) {
     // Pengaturan Akun SMTP
-    $smtp_host = 'smtp-relay.brevo.com'; 
-    $smtp_port = 587;
-    $smtp_user = '1202407009@students.itspku.ac.id';
-    $smtp_pass = 'bagas2511';
-    $from_email = 'noreply@dompetku.com';
-    $from_name  = 'DompetKu System';
+    $smtp_host = $_ENV['SMTP_HOST']; 
+    $smtp_port = $_ENV['SMTP_PORT'];
+    $smtp_user = $_ENV['SMTP_USERNAME'];
+    $smtp_pass = $_ENV['SMTP_PASSWORD'];
+    $from_email = $_ENV['SMTP_FROM_EMAIL'];
+    $from_name  = $_ENV['SMTP_FROM_NAME'];
 
     // 1. Membuka Koneksi Socket ke Server SMTP
     $socket = fsockopen($smtp_host, $smtp_port, $errno, $errstr, 15);
@@ -180,4 +180,25 @@ function send_smtp_mail($to, $subject, $message_body) {
     fclose($socket);
     return true;
 }
+// Fungsi untuk membaca file .env secara native
+function load_env() {
+    $path = __DIR__ . '/../.env';
+    if (file_exists($path)) {
+        $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        foreach ($lines as $line) {
+            if (strpos(trim($line), '#') === 0) continue; // Lewati komentar
+            list($name, $value) = explode('=', $line, 2);
+            $name = trim($name);
+            $value = trim(trim($value), '"\''); // Hapus kutip jika ada
+            if (!array_key_exists($name, $_SERVER) && !array_key_exists($name, $_ENV)) {
+                putenv("{$name}={$value}");
+                $_ENV[$name] = $value;
+                $_SERVER[$name] = $value;
+            }
+        }
+    }
+}
+
+// Langsung jalankan fungsinya agar env siap dipakai di file lain
+load_env();
 }

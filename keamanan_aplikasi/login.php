@@ -7,8 +7,8 @@ require_once 'config/helper.php';
 guest_check();
 
 // Definisi credential Google SSO 
-$google_client_id = '390686885042-qpcpsdnt5n61v1enq5c9s1gajkheddqs.apps.googleusercontent.com';
-$google_redirect_url = 'http://localhost/pemrogramanweb/keamanan_aplikasi/callback_sso.php';
+$google_client_id = $_ENV['GOOGLE_CLIENT_ID'];
+$google_redirect_url = $_ENV['GOOGLE_REDIRECT_URL'];
 
 // Generate URL Login google (Sudah diperbaiki: 'redirect_uri' & 'access_type')
 $google_login_url = "https://accounts.google.com/o/oauth2/v2/auth?" . http_build_query([

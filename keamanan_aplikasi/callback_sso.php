@@ -2,9 +2,9 @@
 require_once 'config/koneksi.php';
 require_once 'config/helper.php';
 
-$google_client_id = '90686885042-qpcpsdnt5n61v1enq5c9s1gajkheddqs.apps.googleusercontent.com';
-$google_client_secret = 'GOCSPX-7_CwgR';
-$google_redirect_uri = 'http://localhost/pemrogramanweb/keamanan_aplikasi/callback_sso.php';
+$google_client_id = $_ENV['GOOGLE_CLIENT_ID'];
+$google_client_secret = $_ENV['GOOGLE_CLIENT_SECRET'];
+$google_redirect_url = $_ENV['GOOGLE_REDIRECT_URL'];
 
 if (!isset($_GET['code'])) {
     header('Location: login.php');
@@ -14,26 +14,54 @@ if (!isset($_GET['code'])) {
 try {
     // 1. Tukarkan Otentikasi Code dengan Access Token
     $ch = curl_init();
-    curl_setopt($ch, curl_URL, 'https://oauth2.googleapis.com/token');
-    curl_setopt($ch, curl_POST, true);
-    curl_setopt($ch, curl_POSTFIELDS, http_build_query([
+    curl_setopt($ch, CURLOPT_URL, 'https://oauth2.googleapis.com/token');
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
         'code' => $_GET['code'],
         'client_id' => $google_client_id,
         'client_secret' => $google_client_secret,
         'redirect_uri' => $google_redirect_uri,
         'grant_type' => 'authorization_code'
     ]));
-    curl_setopt($ch, curl_RETURNTRANSFER, true);
-    $response = json_decode(curl_exec($ch), true);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    
+    $exec_result = curl_exec($ch);
+    if ($exec_result === false) {
+        $error_msg = curl_error($ch);
+        curl_close($ch);
+        throw new Exception("cURL Error: " . $error_msg);
+    }
+    
+    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
+    
+    $response = json_decode($exec_result, true);
+    if ($http_code !== 200) {
+        $error_desc = isset($response['error_description']) ? $response['error_description'] : (isset($response['error']) ? $response['error'] : 'Unknown error');
+        throw new Exception("Google Token API Error (HTTP $http_code): " . $error_desc);
+    }
 
     if (isset($response['access_token'])) {
         // 2. Ambil Data Profil User dari Google API
         $ch = curl_init();
-        curl_setopt($ch, curl_URL, 'https://www.googleapis.com/oauth2/v3/userinfo?access_token=' . $response['access_token']);
-        curl_setopt($ch, curl_RETURNTRANSFER, true);
-        $user_info = json_decode(curl_exec($ch), true);
+        curl_setopt($ch, CURLOPT_URL, 'https://www.googleapis.com/oauth2/v3/userinfo?access_token=' . $response['access_token']);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        
+        $user_info_result = curl_exec($ch);
+        if ($user_info_result === false) {
+            $error_msg = curl_error($ch);
+            curl_close($ch);
+            throw new Exception("cURL User Info Error: " . $error_msg);
+        }
+        
+        $http_code_user = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
+        
+        $user_info = json_decode($user_info_result, true);
+        if ($http_code_user !== 200) {
+            $error_desc = isset($user_info['error_description']) ? $user_info['error_description'] : (isset($user_info['error']) ? $user_info['error'] : 'Unknown error');
+            throw new Exception("Google UserInfo API Error (HTTP $http_code_user): " . $error_desc);
+        }
 
         $google_id = $user_info['sub'];
         $email = $user_info['email'];
@@ -83,7 +111,7 @@ try {
     }
 } catch (Exception $e) {
     error_log($e->getMessage());
-    set_flash_message('danger', 'Terjadi kesalahan sistem saat SSO.');
+    set_flash_message('danger', 'Terjadi kesalahan sistem saat SSO: ' . $e->getMessage());
     header('Location: login.php');
     exit;
 }

@@ -251,7 +251,7 @@ $username = $is_logged_in ? $_SESSION['username'] : '';
                             <i class="bi bi-file-earmark-spreadsheet-fill"></i>
                         </div>
                         <h5 class="font-bold mb-2">Ekspor Multi-Format</h5>
-                        <p class="text-muted mb-0" style="font-size: 0.9rem;">Unduh kuitansi per transaksi atau laporan keuangan terfilter secara massal ke dalam berkas Excel (XLS), Word (DOCX), atau PDF dengan satu kali klik.</p>
+                        <p class="text-muted mb-0" style="font-size: 0.9rem;">Unduh kuitansi per transaksi atau laporan keuangan terfilter secara massal ke dalam berkas Excel (XLSX), Word (DOCX), atau PDF dengan satu kali klik.</p>
                     </div>
                 </div>
                 <div class="col-md-4">
@@ -260,7 +260,7 @@ $username = $is_logged_in ? $_SESSION['username'] : '';
                             <i class="bi bi-cloud-arrow-up-fill"></i>
                         </div>
                         <h5 class="font-bold mb-2">Impor Cerdas Terpadu</h5>
-                        <p class="text-muted mb-0" style="font-size: 0.9rem;">Unggah berkas CSV, Word, atau PDF untuk memulihkan atau menyalin data transaksi secara instan dengan parser biner kustom.</p>
+                        <p class="text-muted mb-0" style="font-size: 0.9rem;">Unggah berkas Excel (XLSX), Word, atau PDF untuk memulihkan atau menyalin data transaksi secara instan dengan parser biner kustom.</p>
                     </div>
                 </div>
             </div>
