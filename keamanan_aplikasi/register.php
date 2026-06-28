@@ -28,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = "Username hanya boleh huruf, angka, dan underscore (_), minimal 3 karakter dan maksimal 50 karakter.";
     }
 
-    // 3. Validation: Email format validation
+    // 3. Validation: Email format validation//
     if (!empty($email) && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $errors[] = "Format alamat email tidak valid.";
     }

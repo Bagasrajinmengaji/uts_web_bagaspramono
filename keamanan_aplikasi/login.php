@@ -3,7 +3,7 @@
 require_once 'config/koneksi.php';
 require_once 'config/helper.php';
 
-// Redirect logged-in users to the dashboard
+// Redirect logged-in users to the dashboard//
 guest_check();
 
 // Definisi credential Google SSO 

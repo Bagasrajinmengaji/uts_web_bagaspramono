@@ -1,7 +1,7 @@
 <?php
 // Secure Database Connection File (PDO)
 // Suitable for default XAMPP configuration
-
+//
 $host = 'localhost';
 $db   = 'dompetku';
 $user = 'root';
