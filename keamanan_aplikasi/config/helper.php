@@ -110,4 +110,74 @@ function in_amount_type($val)
         true
     );
 }
+function send_smtp_mail($to, $subject, $message_body) {
+    // Pengaturan Akun SMTP
+    $smtp_host = 'smtp-relay.brevo.com'; 
+    $smtp_port = 587;
+    $smtp_user = '1202407009@students.itspku.ac.id';
+    $smtp_pass = 'bagas2511';
+    $from_email = 'noreply@dompetku.com';
+    $from_name  = 'DompetKu System';
+
+    // 1. Membuka Koneksi Socket ke Server SMTP
+    $socket = fsockopen($smtp_host, $smtp_port, $errno, $errstr, 15);
+    if (!$socket) return false;
+
+    function get_smtp_response($socket) {
+        $response = '';
+        while (substr($response, 3, 1) != ' ') {
+            if (!($line = fgets($socket, 256))) break;
+            $response .= $line;
+        }
+        return $response;
+    }
+
+    get_smtp_response($socket); // Baca baris sambutan server
+
+    // 2. Jabat tangan (EHLO) dan Mulai Enkripsi TLS
+    fwrite($socket, "EHLO " . $_SERVER['HTTP_HOST'] . "\r\n");
+    get_smtp_response($socket);
+
+    fwrite($socket, "STARTTLS\r\n");
+    get_smtp_response($socket);
+    stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLS_CLIENT);
+
+    // 3. Jabat tangan ulang setelah enkripsi aktif + Login Otentikasi
+    fwrite($socket, "EHLO " . $_SERVER['HTTP_HOST'] . "\r\n");
+    get_smtp_response($socket);
+
+    fwrite($socket, "AUTH LOGIN\r\n");
+    get_smtp_response($socket);
+
+    fwrite($socket, base64_encode($smtp_user) . "\r\n");
+    get_smtp_response($socket);
+
+    fwrite($socket, base64_encode($smtp_pass) . "\r\n");
+    get_smtp_response($socket);
+
+    // 4. Set Pengirim dan Penerima
+    fwrite($socket, "MAIL FROM: <$from_email>\r\n");
+    get_smtp_response($socket);
+
+    fwrite($socket, "RCPT TO: <$to>\r\n");
+    get_smtp_response($socket);
+
+    // 5. Mengirimkan Konten Email (Header & Body)
+    fwrite($socket, "DATA\r\n");
+    get_smtp_response($socket);
+
+    $headers = "MIME-Version: 1.0\r\n";
+    $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
+    $headers .= "From: =?UTF-8?B?".base64_encode($from_name)."?= <$from_email>\r\n";
+    $headers .= "To: <$to>\r\n";
+    $headers .= "Subject: =?UTF-8?B?".base64_encode($subject)."?=\r\n";
+
+    fwrite($socket, $headers . "\r\n" . $message_body . "\r\n.\r\n");
+    get_smtp_response($socket);
+
+    // 6. Tutup Koneksi
+    fwrite($socket, "QUIT\r\n");
+    fclose($socket);
+    return true;
+}
 }

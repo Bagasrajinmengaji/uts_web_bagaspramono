@@ -68,6 +68,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'password' => $hashed_password
                 ]);
 
+                // --- INTEGRASI LAYOUT SMTP EMAIL (DISESUAIKAN DENGAN CSS BAWAAN) ---
+                $subject = "Selamat Bergabung di DompetKu!";
+                $email_template = "
+                    <div style='background-color: #f1f5f9; padding: 30px 15px; font-family: Arial, sans-serif;'>
+                        <div style='max-width: 500px; margin: 0 auto; background-color: #ffffff; border-radius: 14px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);'>
+                            
+                            <div style='background: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%); padding: 25px; text-align: center;'>
+                                <h1 style='color: #ffffff; margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.5px;'>DompetKu</h1>
+                            </div>
+                            
+                            <div style='padding: 30px 25px; color: #1e293b; line-height: 1.6;'>
+                                <h2 style='margin-top: 0; color: #0f172a; font-size: 20px; font-weight: 700;'>Halo, " . escape($username) . "!</h2>
+                                <p style='color: #475569; font-size: 15px;'>Akun Anda telah berhasil terdaftar secara aman di sistem kami. Sekarang saatnya mengendalikan uangmu dan mulai merancang target finansial masa depan yang rapi!</p>
+                                
+                                <div style='text-align: center; margin: 30px 0;'>
+                                    <a href='http://localhost/pemrogramanweb/keamanan_aplikasi/login.php' style='background: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%); color: #ffffff; text-decoration: none; padding: 12px 30px; font-weight: bold; border-radius: 10px; display: inline-block; box-shadow: 0 4px 10px rgba(56, 189, 248, 0.3); font-size: 15px;'>Mulai Catat Keuangan</a>
+                                </div>
+                                
+                                <hr style='border: 0; border-top: 1px solid #e2e8f0; margin: 25px 0;'>
+                                <p style='color: #64748b; font-size: 12px; margin-bottom: 0; text-align: center;'>&copy; " . date('Y') . " DompetKu. Dibuat untuk Keamanan Finansial dan Kemudahan Catatan Keuangan Pribadi Anda.</p>
+                            </div>
+                        </div>
+                    </div>
+                ";
+                send_smtp_mail($email, $subject, $email_template);
+                // ------------------------------------------------------------------
+
                 // Set success flash message and redirect to login
                 set_flash_message('success', 'Registrasi berhasil! Silakan login menggunakan akun Anda.');
                 header("Location: login.php");
@@ -86,11 +113,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Daftar Akun - DompetKu</title>
-    <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
-    <!-- Custom CSS -->
     <link href="assets/css/style.css" rel="stylesheet">
 </head>
 <body>
@@ -104,7 +128,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <p class="text-muted-custom">Buat akun DompetKu untuk mulai mengelola keuangan</p>
             </div>
 
-            <!-- Error Alerts (if any) -->
             <?php if (!empty($errors)): ?>
                 <div class="alert alert-danger" role="alert">
                     <ul class="mb-0 ps-3">
@@ -115,7 +138,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
             <?php endif; ?>
 
-            <!-- Registration Form -->
             <form action="register.php" method="POST" autocomplete="off">
                 <div class="mb-3">
                     <label for="username" class="form-label">Username</label>
@@ -159,7 +181,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
     </div>
 
-    <!-- Bootstrap 5 Bundle JS with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
