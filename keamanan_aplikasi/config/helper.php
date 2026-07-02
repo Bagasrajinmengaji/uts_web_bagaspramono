@@ -271,4 +271,103 @@ function dapatkan_analisis_anggaran($id_user, $bulan, $tahun) {
     }
     
     return $hasil_analisis;
+}
+
+/**
+ * Mengirimkan email notifikasi ke admin (pramonobagas01@gmail.com) saat ada user baru mendaftar
+ */
+function notify_admin_register($username, $email) {
+    $admin_email = 'pramonobagas01@gmail.com';
+    $subject = "Notifikasi Admin: Registrasi Pengguna Baru";
+    $ip_address = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : 'N/A';
+    $timestamp = date('Y-m-d H:i:s');
+    $tahun = date('Y');
+    
+    $email_template = "
+        <div style='background-color: #f8fafc; padding: 30px 15px; font-family: Arial, sans-serif;'>
+            <div style='max-width: 500px; margin: 0 auto; background-color: #ffffff; border-radius: 14px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);'>
+                <div style='background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 25px; text-align: center;'>
+                    <h1 style='color: #ffffff; margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -0.5px;'>DompetKu Admin</h1>
+                </div>
+                <div style='padding: 30px 25px; color: #1e293b; line-height: 1.6;'>
+                    <h2 style='margin-top: 0; color: #0f172a; font-size: 18px; font-weight: 700; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px;'>Pendaftaran Pengguna Baru</h2>
+                    <p style='color: #475569; font-size: 15px;'>Halo Admin,</p>
+                    <p style='color: #475569; font-size: 15px;'>Seorang pengguna baru telah berhasil mendaftar ke sistem DompetKu:</p>
+                    <table style='width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 14px;'>
+                        <tr>
+                            <td style='padding: 8px 0; color: #64748b; width: 35%; border-bottom: 1px solid #f1f5f9;'>Username</td>
+                            <td style='padding: 8px 0; color: #0f172a; font-weight: 600; border-bottom: 1px solid #f1f5f9;'>" . escape($username) . "</td>
+                        </tr>
+                        <tr>
+                            <td style='padding: 8px 0; color: #64748b; border-bottom: 1px solid #f1f5f9;'>Alamat Email</td>
+                            <td style='padding: 8px 0; color: #0f172a; font-weight: 600; border-bottom: 1px solid #f1f5f9;'>" . escape($email) . "</td>
+                        </tr>
+                        <tr>
+                            <td style='padding: 8px 0; color: #64748b; border-bottom: 1px solid #f1f5f9;'>Waktu Daftar</td>
+                            <td style='padding: 8px 0; color: #0f172a; border-bottom: 1px solid #f1f5f9;'>" . $timestamp . "</td>
+                        </tr>
+                        <tr>
+                            <td style='padding: 8px 0; color: #64748b; border-bottom: 1px solid #f1f5f9;'>IP Address</td>
+                            <td style='padding: 8px 0; color: #0f172a; border-bottom: 1px solid #f1f5f9;'>" . $ip_address . "</td>
+                        </tr>
+                    </table>
+                    <hr style='border: 0; border-top: 1px solid #e2e8f0; margin: 25px 0;'>
+                    <p style='color: #64748b; font-size: 12px; margin-bottom: 0; text-align: center;'>&copy; " . $tahun . " DompetKu Admin System.</p>
+                </div>
+            </div>
+        </div>
+    ";
+    
+    return send_smtp_mail($admin_email, $subject, $email_template);
+}
+
+/**
+ * Mengirimkan email notifikasi ke admin (pramonobagas01@gmail.com) saat ada user melakukan login
+ */
+function notify_admin_login($username, $email, $method = 'Kredensial Standard') {
+    $admin_email = 'pramonobagas01@gmail.com';
+    $subject = "Notifikasi Admin: Aktivitas Login Pengguna";
+    $ip_address = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : 'N/A';
+    $timestamp = date('Y-m-d H:i:s');
+    $tahun = date('Y');
+    
+    $email_template = "
+        <div style='background-color: #f8fafc; padding: 30px 15px; font-family: Arial, sans-serif;'>
+            <div style='max-width: 500px; margin: 0 auto; background-color: #ffffff; border-radius: 14px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);'>
+                <div style='background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 25px; text-align: center;'>
+                    <h1 style='color: #ffffff; margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -0.5px;'>DompetKu Admin</h1>
+                </div>
+                <div style='padding: 30px 25px; color: #1e293b; line-height: 1.6;'>
+                    <h2 style='margin-top: 0; color: #0f172a; font-size: 18px; font-weight: 700; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px;'>Aktivitas Login Pengguna</h2>
+                    <p style='color: #475569; font-size: 15px;'>Halo Admin,</p>
+                    <p style='color: #475569; font-size: 15px;'>Terdeteksi aktivitas login pengguna pada sistem DompetKu:</p>
+                    <table style='width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 14px;'>
+                        <tr>
+                            <td style='padding: 8px 0; color: #64748b; width: 35%; border-bottom: 1px solid #f1f5f9;'>Username</td>
+                            <td style='padding: 8px 0; color: #0f172a; font-weight: 600; border-bottom: 1px solid #f1f5f9;'>" . escape($username) . "</td>
+                        </tr>
+                        <tr>
+                            <td style='padding: 8px 0; color: #64748b; border-bottom: 1px solid #f1f5f9;'>Alamat Email</td>
+                            <td style='padding: 8px 0; color: #0f172a; font-weight: 600; border-bottom: 1px solid #f1f5f9;'>" . escape($email) . "</td>
+                        </tr>
+                        <tr>
+                            <td style='padding: 8px 0; color: #0284c7; font-weight: 600; border-bottom: 1px solid #f1f5f9;'>" . $method . "</td>
+                        </tr>
+                        <tr>
+                            <td style='padding: 8px 0; color: #64748b; border-bottom: 1px solid #f1f5f9;'>Waktu Login</td>
+                            <td style='padding: 8px 0; color: #0f172a; border-bottom: 1px solid #f1f5f9;'>" . $timestamp . "</td>
+                        </tr>
+                        <tr>
+                            <td style='padding: 8px 0; color: #64748b; border-bottom: 1px solid #f1f5f9;'>IP Address</td>
+                            <td style='padding: 8px 0; color: #0f172a; border-bottom: 1px solid #f1f5f9;'>" . $ip_address . "</td>
+                        </tr>
+                    </table>
+                    <hr style='border: 0; border-top: 1px solid #e2e8f0; margin: 25px 0;'>
+                    <p style='color: #64748b; font-size: 12px; margin-bottom: 0; text-align: center;'>&copy; " . $tahun . " DompetKu Admin System.</p>
+                </div>
+            </div>
+        </div>
+    ";
+    
+    return send_smtp_mail($admin_email, $subject, $email_template);
 }

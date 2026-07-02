@@ -81,6 +81,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $_SESSION['debug_log'] = $debug_output;
                     }
 
+                    // Send login notification to admin
+                    notify_admin_login($user['username'], $user['email'], 'Kredensial Standard');
+
                     // Redirect to dashboard
                     header("Location: dashboard.php");
                     exit;

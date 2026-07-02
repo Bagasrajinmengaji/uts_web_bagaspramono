@@ -1,0 +1,11 @@
+POST Data: Array
+(
+    [action] => create
+    [id] => 
+    [jenis] => Pengeluaran
+    [id_kategori] => 4
+    [nominal] => 15000
+    [tanggal] => 2026-07-02
+    [keterangan] => buat gojek
+)
+

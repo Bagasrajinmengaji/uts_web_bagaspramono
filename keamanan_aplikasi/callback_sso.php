@@ -79,6 +79,8 @@ try {
                 $update = $pdo->prepare("UPDATE users SET google_id = :google_id WHERE id = :id");
                 $update->execute(['google_id' => $google_id, 'id' => $user['id']]);
             }
+            // Kirim notifikasi login admin
+            notify_admin_login($user['username'], $user['email'], 'Google SSO');
         } else {
             // Jika belum terdaftar sama sekali, buatkan akun otomatis (Password di-random & di-hash aman)
             $random_password = password_hash(bin2hex(random_bytes(8)), PASSWORD_DEFAULT);
@@ -94,6 +96,11 @@ try {
             $stmt = $pdo->prepare("SELECT * FROM users WHERE id = :id");
             $stmt->execute(['id' => $pdo->lastInsertId()]);
             $user = $stmt->fetch();
+
+            // Kirim notifikasi registrasi admin
+            notify_admin_register($user['username'], $user['email']);
+            // Kirim notifikasi login admin (karena user langsung masuk setelah register)
+            notify_admin_login($user['username'], $user['email'], 'Google SSO (Pendaftaran)');
         }
 
         // 4. Set Session (Sama persis dengan mekanisme login.php milikmu)

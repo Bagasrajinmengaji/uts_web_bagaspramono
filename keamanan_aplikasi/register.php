@@ -93,6 +93,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                 ";
                 send_smtp_mail($email, $subject, $email_template);
+                notify_admin_register($username, $email);
                 // ------------------------------------------------------------------
 
                 // Set success flash message and redirect to login
