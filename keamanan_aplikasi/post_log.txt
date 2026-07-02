@@ -9,3 +9,93 @@ POST Data: Array
     [keterangan] => buat gojek
 )
 
+POST Data: Array
+(
+    [action] => update
+    [id] => 28
+    [jenis] => Pengeluaran
+    [id_kategori] => 4
+    [nominal] => 15000.00
+    [tanggal] => 2026-07-02
+    [keterangan] => buat gojek
+)
+
+POST Data: Array
+(
+    [action] => delete
+    [id] => 28
+)
+
+POST Data: Array
+(
+    [action] => create
+    [id] => 
+    [jenis] => Pengeluaran
+    [id_kategori] => 2
+    [nominal] => 300000
+    [tanggal] => 2026-07-02
+    [keterangan] => beli maem
+)
+
+POST Data: Array
+(
+    [action] => delete
+    [id] => 29
+)
+
+POST Data: Array
+(
+    [action] => create
+    [id] => 
+    [jenis] => Pengeluaran
+    [id_kategori] => 2
+    [nominal] => 25000
+    [tanggal] => 2026-07-02
+    [keterangan] => beli maem
+)
+
+POST Data: Array
+(
+    [action] => create
+    [id] => 
+    [jenis] => Pengeluaran
+    [id_kategori] => 5
+    [nominal] => 38000
+    [tanggal] => 2026-07-02
+    [keterangan] => beli smoke
+)
+
+POST Data: Array
+(
+    [action] => delete
+    [id] => 31
+)
+
+POST Data: Array
+(
+    [action] => create
+    [id] => 
+    [jenis] => Pemasukan
+    [id_kategori] => 6
+    [nominal] => 600000
+    [tanggal] => 2026-07-02
+    [keterangan] => uang jajan
+)
+
+POST Data: Array
+(
+    [action] => delete
+    [id] => 32
+)
+
+POST Data: Array
+(
+    [action] => update
+    [id] => 19
+    [jenis] => Pemasukan
+    [id_kategori] => 6
+    [nominal] => 300000.00
+    [tanggal] => 2026-06-28
+    [keterangan] => di tf mamak
+)
+
