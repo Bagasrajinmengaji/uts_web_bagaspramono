@@ -41,9 +41,23 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $errors[] = "Format alamat email tidak valid.";
     }
 
-    // 4. Validation: Password minimum length (8 characters)
-    if (!empty($password) && strlen($password) < 8) {
-        $errors[] = "Password minimal harus 8 karakter.";
+    // 4. Validation: Password strength requirements (security application assignment compliance)
+    if (!empty($password)) {
+        if (strlen($password) < 8) {
+            $errors[] = "Password minimal harus 8 karakter.";
+        }
+        if (!preg_match('/[A-Z]/', $password)) {
+            $errors[] = "Password harus mengandung minimal satu huruf besar (A-Z).";
+        }
+        if (!preg_match('/[a-z]/', $password)) {
+            $errors[] = "Password harus mengandung minimal satu huruf kecil (a-z).";
+        }
+        if (!preg_match('/[0-9]/', $password)) {
+            $errors[] = "Password harus mengandung minimal satu angka (0-9).";
+        }
+        if (!preg_match('/[^a-zA-Z0-9]/', $password)) {
+            $errors[] = "Password harus mengandung minimal satu karakter spesial (contoh: @, #, $, %, dll.).";
+        }
     }
 
     // 5. Validation: Password match verification
@@ -188,6 +202,18 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-lock"></i></span>
                         <input type="password" class="form-control border-start-0 ps-0" id="password" name="password" placeholder="Minimal 8 karakter" required>
                     </div>
+                    <!-- Password Strength UI -->
+                    <div class="progress mt-2" style="height: 6px; display: none;" id="strength-progress-container">
+                        <div class="progress-bar" role="progressbar" style="width: 0%;" id="strength-bar"></div>
+                    </div>
+                    <small id="strength-text" class="form-text text-muted mt-1 d-block" style="font-size: 0.75rem; display: none;"></small>
+                    <div id="password-checklist" class="mt-2" style="font-size: 0.8rem; display: none;">
+                        <div class="text-danger" id="chk-length"><i class="bi bi-x-circle me-1"></i>Minimal 8 karakter</div>
+                        <div class="text-danger" id="chk-upper"><i class="bi bi-x-circle me-1"></i>Mengandung huruf besar (A-Z)</div>
+                        <div class="text-danger" id="chk-lower"><i class="bi bi-x-circle me-1"></i>Mengandung huruf kecil (a-z)</div>
+                        <div class="text-danger" id="chk-number"><i class="bi bi-x-circle me-1"></i>Mengandung angka (0-9)</div>
+                        <div class="text-danger" id="chk-special"><i class="bi bi-x-circle me-1"></i>Mengandung karakter spesial (e.g. @, #, $, !)</div>
+                    </div>
                 </div>
 
                 <div class="mb-4">
@@ -198,7 +224,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     </div>
                 </div>
 
-                <button type="submit" class="btn btn-primary w-100 mb-3">Daftar Sekarang</button>
+                <button type="submit" class="btn btn-primary w-100 mb-3" id="submit-btn">Daftar Sekarang</button>
             </form>
 
             <div class="text-center mt-2">
@@ -208,5 +234,106 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Client-side Password Strength logic -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const passwordInput = document.getElementById("password");
+            const strengthContainer = document.getElementById("strength-progress-container");
+            const strengthBar = document.getElementById("strength-bar");
+            const strengthText = document.getElementById("strength-text");
+            const checklist = document.getElementById("password-checklist");
+            const submitBtn = document.getElementById("submit-btn");
+
+            // Elements for requirements
+            const chkLength = document.getElementById("chk-length");
+            const chkUpper = document.getElementById("chk-upper");
+            const chkLower = document.getElementById("chk-lower");
+            const chkNumber = document.getElementById("chk-number");
+            const chkSpecial = document.getElementById("chk-special");
+
+            passwordInput.addEventListener("input", function() {
+                const val = passwordInput.value;
+                if (val.length === 0) {
+                    strengthContainer.style.display = "none";
+                    strengthText.style.display = "none";
+                    checklist.style.display = "none";
+                    submitBtn.disabled = false;
+                    return;
+                }
+
+                strengthContainer.style.display = "flex";
+                strengthText.style.display = "block";
+                checklist.style.display = "block";
+
+                // Evaluate criteria
+                const conditions = {
+                    length: val.length >= 8,
+                    upper: /[A-Z]/.test(val),
+                    lower: /[a-z]/.test(val),
+                    number: /[0-9]/.test(val),
+                    special: /[^a-zA-Z0-9]/.test(val)
+                };
+
+                // Update checklist elements helper
+                function updateChecklistItem(el, isMet) {
+                    if (isMet) {
+                        el.classList.remove("text-danger");
+                        el.classList.add("text-success");
+                        el.querySelector("i").className = "bi bi-check-circle me-1";
+                    } else {
+                        el.classList.remove("text-success");
+                        el.classList.add("text-danger");
+                        el.querySelector("i").className = "bi bi-x-circle me-1";
+                    }
+                }
+
+                updateChecklistItem(chkLength, conditions.length);
+                updateChecklistItem(chkUpper, conditions.upper);
+                updateChecklistItem(chkLower, conditions.lower);
+                updateChecklistItem(chkNumber, conditions.number);
+                updateChecklistItem(chkSpecial, conditions.special);
+
+                // Calculate total matched conditions
+                let score = 0;
+                if (conditions.length) score++;
+                if (conditions.upper) score++;
+                if (conditions.lower) score++;
+                if (conditions.number) score++;
+                if (conditions.special) score++;
+
+                // Update progress bar width, color, and strength label
+                let pct = (score / 5) * 100;
+                strengthBar.style.width = pct + "%";
+
+                if (score <= 1) {
+                    strengthBar.className = "progress-bar bg-danger";
+                    strengthText.textContent = "Kekuatan Sandi: Sangat Lemah";
+                    strengthText.className = "form-text text-danger mt-1 d-block";
+                    submitBtn.disabled = true;
+                } else if (score === 2) {
+                    strengthBar.className = "progress-bar bg-warning";
+                    strengthText.textContent = "Kekuatan Sandi: Lemah";
+                    strengthText.className = "form-text text-warning mt-1 d-block";
+                    submitBtn.disabled = true;
+                } else if (score === 3) {
+                    strengthBar.className = "progress-bar bg-info";
+                    strengthText.textContent = "Kekuatan Sandi: Sedang (Butuh angka & karakter spesial)";
+                    strengthText.className = "form-text text-info mt-1 d-block";
+                    submitBtn.disabled = true;
+                } else if (score === 4) {
+                    strengthBar.className = "progress-bar bg-primary";
+                    strengthText.textContent = "Kekuatan Sandi: Cukup Aman (Butuh semua kriteria)";
+                    strengthText.className = "form-text text-primary mt-1 d-block";
+                    submitBtn.disabled = true;
+                } else {
+                    strengthBar.className = "progress-bar bg-success";
+                    strengthText.textContent = "Kekuatan Sandi: Sangat Kuat";
+                    strengthText.className = "form-text text-success mt-1 d-block";
+                    submitBtn.disabled = false; // Enabled only when fully strong (5/5 criteria)
+                }
+            });
+        });
+    </script>
 </body>
 </html>

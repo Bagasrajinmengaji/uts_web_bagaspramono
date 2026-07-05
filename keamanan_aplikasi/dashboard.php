@@ -199,10 +199,63 @@ try {
         $params["search"] = "%" . $search . "%";
     }
 
+    // Filter Lanjutan 1: Rentang Tanggal
+    $tanggal_mulai = isset($_GET["tanggal_mulai"]) ? trim($_GET["tanggal_mulai"]) : "";
+    if ($tanggal_mulai !== "") {
+        $query .= " AND t.tanggal >= :tanggal_mulai";
+        $params["tanggal_mulai"] = $tanggal_mulai;
+    }
+    $tanggal_selesai = isset($_GET["tanggal_selesai"]) ? trim($_GET["tanggal_selesai"]) : "";
+    if ($tanggal_selesai !== "") {
+        $query .= " AND t.tanggal <= :tanggal_selesai";
+        $params["tanggal_selesai"] = $tanggal_selesai;
+    }
+
+    // Filter Lanjutan 2: Kategori Spesifik
+    $id_kategori_filter = isset($_GET["id_kategori_filter"]) ? trim($_GET["id_kategori_filter"]) : "";
+    if ($id_kategori_filter !== "") {
+        if ($id_kategori_filter === "NULL") {
+            $query .= " AND t.id_kategori IS NULL";
+        } else {
+            $query .= " AND t.id_kategori = :id_kategori_filter";
+            $params["id_kategori_filter"] = intval($id_kategori_filter);
+        }
+    }
+
+    // Filter Lanjutan 3: Rentang Nominal
+    $nominal_min = isset($_GET["nominal_min"]) ? trim($_GET["nominal_min"]) : "";
+    if ($nominal_min !== "" && is_numeric($nominal_min)) {
+        $query .= " AND t.nominal >= :nominal_min";
+        $params["nominal_min"] = floatval($nominal_min);
+    }
+    $nominal_max = isset($_GET["nominal_max"]) ? trim($_GET["nominal_max"]) : "";
+    if ($nominal_max !== "" && is_numeric($nominal_max)) {
+        $query .= " AND t.nominal <= :nominal_max";
+        $params["nominal_max"] = floatval($nominal_max);
+    }
+
     $query .= " ORDER BY t.tanggal DESC, t.id DESC";
     $stmt_transactions = $pdo->prepare($query);
     $stmt_transactions->execute($params);
     $transactions = $stmt_transactions->fetchAll();
+
+    // Query Data untuk Grafik Pengeluaran per Kategori
+    $stmt_cat_chart = $pdo->prepare(
+        "SELECT COALESCE(k.nama_kategori, 'Tanpa Kategori') as nama_kategori, SUM(t.nominal) as total 
+         FROM transaksi t 
+         LEFT JOIN kategori k ON t.id_kategori = k.id_kategori 
+         WHERE t.user_id = :user_id AND t.jenis = 'Pengeluaran' 
+         GROUP BY t.id_kategori, k.nama_kategori"
+    );
+    $stmt_cat_chart->execute(["user_id" => $user_id]);
+    $cat_chart_data = $stmt_cat_chart->fetchAll();
+
+    $cat_labels = [];
+    $cat_totals = [];
+    foreach ($cat_chart_data as $c_row) {
+        $cat_labels[] = $c_row['nama_kategori'];
+        $cat_totals[] = floatval($c_row['total']);
+    }
 } catch (\PDOException $e) {
     error_log($e->getMessage());
     $error_msg = "Gagal mengambil data dari database.";
@@ -235,6 +288,7 @@ try {
                     <li class="nav-item"><a class="nav-link active font-bold" href="dashboard.php">Dashboard</a></li>
                     <li class="nav-item"><a class="nav-link" href="kategori.php">Kategori</a></li>
                     <li class="nav-item"><a class="nav-link" href="budgeting.php">Anggaran</a></li>
+                    <li class="nav-item"><a class="nav-link" href="target_tabungan.php">Target Tabungan</a></li>
                 </ul>
                 <ul class="navbar-nav ms-auto align-items-center">
                     <li class="nav-item text-white me-3">
@@ -331,6 +385,26 @@ try {
             </div>
         </div>
 
+        <!-- Row untuk Grafik Ringkasan Keuangan -->
+        <div class="row g-4 mb-5">
+            <div class="col-lg-6">
+                <div class="card p-4 shadow-sm border-0 h-100">
+                    <h5 class="font-bold mb-3 text-secondary"><i class="bi bi-pie-chart-fill me-2 text-primary"></i>Distribusi Pengeluaran per Kategori</h5>
+                    <div style="position: relative; height: 260px;">
+                        <canvas id="categoryExpenseChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card p-4 shadow-sm border-0 h-100">
+                    <h5 class="font-bold mb-3 text-secondary"><i class="bi bi-bar-chart-line-fill me-2 text-success"></i>Perbandingan Aliran Dana (Pemasukan vs Pengeluaran)</h5>
+                    <div style="position: relative; height: 260px;">
+                        <canvas id="flowComparisonChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="card p-4">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h4 class="font-bold mb-0">Daftar Transaksi</h4>
@@ -372,30 +446,66 @@ try {
                 </div>
             </div>
 
-            <form action="dashboard.php" method="GET" class="row g-3 mb-4">
-                <div class="col-md-5">
-                    <input type="text" class="form-control" name="search" placeholder="Cari keterangan..." value="<?= escape(
-                        $search,
-                    ) ?>">
+            <!-- Filter Transaksi Lanjutan -->
+            <form action="dashboard.php" method="GET" class="mb-4">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label text-xs font-bold text-secondary">Cari Deskripsi</label>
+                        <input type="text" class="form-control" name="search" placeholder="Cari keterangan..." value="<?= escape($search) ?>">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label text-xs font-bold text-secondary">Jenis</label>
+                        <select class="form-select select2-init" name="jenis">
+                            <option value="">-- Semua Jenis --</option>
+                            <option value="Pemasukan" <?= $jenis_filter === "Pemasukan" ? "selected" : "" ?>>Pemasukan</option>
+                            <option value="Pengeluaran" <?= $jenis_filter === "Pengeluaran" ? "selected" : "" ?>>Pengeluaran</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label text-xs font-bold text-secondary">Kategori</label>
+                        <select class="form-select select2-init" name="id_kategori_filter">
+                            <option value="">-- Semua Kategori --</option>
+                            <option value="NULL" <?= $id_kategori_filter === "NULL" ? "selected" : "" ?>>Tanpa Kategori</option>
+                            <?php foreach ($categories as $cat): ?>
+                                <option value="<?= $cat['id_kategori'] ?>" <?= $id_kategori_filter == $cat['id_kategori'] ? "selected" : "" ?>>
+                                    <?= escape($cat['nama_kategori']) ?> (<?= escape($cat['tipe']) ?>)
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end gap-1">
+                        <button type="submit" class="btn btn-primary w-100"><i class="bi bi-funnel-fill"></i> Filter</button>
+                        <button class="btn btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#advancedFilterCollapse" aria-expanded="false" aria-controls="advancedFilterCollapse" title="Filter Lanjutan">
+                            <i class="bi bi-sliders"></i>
+                        </button>
+                        <?php if ($search !== "" || $jenis_filter !== "" || $id_kategori_filter !== "" || $tanggal_mulai !== "" || $tanggal_selesai !== "" || $nominal_min !== "" || $nominal_max !== ""): ?>
+                            <a href="dashboard.php" class="btn btn-light border" title="Reset Filter"><i class="bi bi-arrow-counterclockwise"></i></a>
+                        <?php endif; ?>
+                    </div>
                 </div>
-                <div class="col-md-4">
-                    <select class="form-select select2-init" name="jenis">
-                        <option value="">-- Semua Jenis Transaksi --</option>
-                        <option value="Pemasukan" <?= $jenis_filter ===
-                        "Pemasukan"
-                            ? "selected"
-                            : "" ?>>Pemasukan</option>
-                        <option value="Pengeluaran" <?= $jenis_filter ===
-                        "Pengeluaran"
-                            ? "selected"
-                            : "" ?>>Pengeluaran</option>
-                    </select>
-                </div>
-                <div class="col-md-3 d-flex gap-2">
-                    <button type="submit" class="btn btn-outline-primary w-100"><i class="bi bi-funnel-fill"></i> Filter</button>
-                    <?php if ($search !== "" || $jenis_filter !== ""): ?>
-                        <a href="dashboard.php" class="btn btn-light border"><i class="bi bi-arrow-counterclockwise"></i></a>
-                    <?php endif; ?>
+
+                <!-- Collapsible Advanced Filters -->
+                <div class="collapse <?= ($tanggal_mulai !== "" || $tanggal_selesai !== "" || $nominal_min !== "" || $nominal_max !== "") ? "show" : "" ?> mt-3" id="advancedFilterCollapse">
+                    <div class="card card-body bg-light border-0 py-3 shadow-none">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label text-xs font-bold text-secondary">Tanggal Mulai</label>
+                                <input type="date" class="form-control" name="tanggal_mulai" value="<?= escape($tanggal_mulai) ?>">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label text-xs font-bold text-secondary">Tanggal Selesai</label>
+                                <input type="date" class="form-control" name="tanggal_selesai" value="<?= escape($tanggal_selesai) ?>">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label text-xs font-bold text-secondary">Nominal Minimal (Rp)</label>
+                                <input type="number" class="form-control" name="nominal_min" placeholder="Contoh: 10000" value="<?= escape($nominal_min) ?>">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label text-xs font-bold text-secondary">Nominal Maksimal (Rp)</label>
+                                <input type="number" class="form-control" name="nominal_max" placeholder="Contoh: 500000" value="<?= escape($nominal_max) ?>">
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </form>
 
@@ -768,6 +878,97 @@ try {
             $('#jenis').val('').trigger('change');
             $('#id_kategori').empty().append('<option value="">-- Tanpa Kategori --</option>').trigger('change');
         }
+    </script>
+    
+    <!-- Chart.js Library -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // Data untuk Grafik Pie Kategori Pengeluaran
+            const catLabels = <?= json_encode($cat_labels) ?>;
+            const catTotals = <?= json_encode($cat_totals) ?>;
+            const totalIncome = <?= floatval($total_pemasukan) ?>;
+            const totalExpense = <?= floatval($total_pengeluaran) ?>;
+
+            // 1. Doughnut Chart - Distribusi Pengeluaran Kategori
+            const ctxPie = document.getElementById('categoryExpenseChart').getContext('2d');
+            if (catLabels.length === 0) {
+                // Tampilkan teks jika belum ada pengeluaran
+                ctxPie.font = "14px Arial";
+                ctxPie.fillStyle = "#888";
+                ctxPie.textAlign = "center";
+                ctxPie.textBaseline = "middle";
+                ctxPie.fillText("Belum ada pengeluaran untuk divisualisasikan.", ctxPie.canvas.width / 2, ctxPie.canvas.height / 2);
+            } else {
+                new Chart(ctxPie, {
+                    type: 'doughnut',
+                    data: {
+                        labels: catLabels,
+                        datasets: [{
+                            data: catTotals,
+                            backgroundColor: [
+                                '#ff6384', '#36a2eb', '#ffce56', '#4bc0c0', '#9966ff', 
+                                '#ff9f40', '#00a86b', '#c9cbcf', '#ff3366', '#33cc99'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'right',
+                                labels: {
+                                    boxWidth: 10,
+                                    font: { size: 10 }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // 2. Bar Chart - Pemasukan vs Pengeluaran
+            const ctxBar = document.getElementById('flowComparisonChart').getContext('2d');
+            new Chart(ctxBar, {
+                type: 'bar',
+                data: {
+                    labels: ['Pemasukan', 'Pengeluaran'],
+                    datasets: [{
+                        label: 'Total Dana (Rp)',
+                        data: [totalIncome, totalExpense],
+                        backgroundColor: ['#2e7d32', '#c62828'], // Green untuk pemasukan, red untuk pengeluaran
+                        borderRadius: 5,
+                        maxBarThickness: 45
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return 'Rp ' + value.toLocaleString('id-ID');
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Rp ' + context.raw.toLocaleString('id-ID');
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        });
     </script>
 </body>
 </html>

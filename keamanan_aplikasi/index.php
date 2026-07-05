@@ -18,141 +18,147 @@ $username = $is_logged_in ? $_SESSION["username"] : "";
     <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&family=Space+Grotesk:wght@700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
 
         :root {
-            --m-black: #000000;
-            --m-dark-grey: #121212;
-            --m-card-bg: #1a1a1a;
-            --m-text-primary: #ffffff;
-            --m-text-secondary: #bbbbbb;
+            --m-black: #f8fafc;           /* Light bg */
+            --m-dark-grey: #ffffff;       /* Section bg */
+            --m-card-bg: #ffffff;         /* White cards */
+            --m-text-primary: #1e293b;    /* Dark slate/navy text */
+            --m-text-secondary: #64748b;  /* Muted text */
             
-            /* BMW M Tricolor Tokens */
-            --m-light-blue: #0066b1;
-            --m-dark-blue: #1c69d4;
-            --m-red: #e22718;
+            /* DompetKu Colors */
+            --m-light-blue: #3b82f6;
+            --m-dark-blue: #1d4ed8;
+            --m-red: #1d4ed8;             /* Accent (changed from red to primary blue) */
         }
 
         body {
             background-color: var(--m-black);
             color: var(--m-text-primary);
-            font-family: 'Inter', sans-serif;
+            font-family: 'Plus Jakarta Sans', sans-serif;
             overflow-x: hidden;
         }
 
         /* Top Navigation Bar */
         .navbar-m {
-            background-color: var(--m-black);
-            border-bottom: 1px solid #222222;
-            padding: 20px 0;
+            background-color: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid #e2e8f0;
+            padding: 16px 0;
         }
         .navbar-brand-m {
-            font-family: 'Space Grotesk', sans-serif;
+            font-family: 'Plus Jakarta Sans', sans-serif;
             font-size: 1.5rem;
-            font-weight: 900;
-            letter-spacing: 2px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
             color: var(--m-text-primary) !important;
-            text-transform: uppercase;
+            text-transform: none;
+            display: inline-flex;
+            align-items: center;
         }
         .navbar-brand-m span {
-            color: var(--m-red);
+            color: var(--m-light-blue);
         }
         .nav-link-m {
             color: var(--m-text-secondary) !important;
-            font-weight: 400;
-            text-transform: uppercase;
-            font-size: 0.85rem;
-            letter-spacing: 1px;
+            font-weight: 600;
+            text-transform: none;
+            font-size: 0.95rem;
+            letter-spacing: 0px;
             transition: color 0.2s ease;
         }
         .nav-link-m:hover {
-            color: var(--m-text-primary) !important;
+            color: var(--m-dark-blue) !important;
         }
 
         /* M-Stripe Line (Divider) */
         .m-stripe-line {
-            height: 4px;
+            height: 3px;
             width: 100%;
-            background: linear-gradient(90deg, 
-                var(--m-light-blue) 0%, var(--m-light-blue) 33.33%, 
-                var(--m-dark-blue) 33.33%, var(--m-dark-blue) 66.66%, 
-                var(--m-red) 66.66%, var(--m-red) 100%
-            );
+            background: linear-gradient(90deg, var(--m-light-blue) 0%, var(--m-dark-blue) 100%);
         }
 
         /* Typography */
         h1, h2, h3, h4, h5, h6 {
-            font-family: 'Space Grotesk', sans-serif;
-            text-transform: uppercase;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            text-transform: none;
             font-weight: 700;
-            letter-spacing: -1px;
+            letter-spacing: -0.5px;
+            color: var(--m-text-primary);
         }
         .display-m {
-            font-size: 3.5rem;
-            line-height: 0.95;
-            letter-spacing: -2px;
-            font-weight: 900;
+            font-size: 3.2rem;
+            line-height: 1.1;
+            letter-spacing: -1.5px;
+            font-weight: 800;
+            color: var(--m-text-primary);
         }
         @media (max-width: 768px) {
             .display-m {
-                font-size: 2.5rem;
+                font-size: 2.3rem;
             }
         }
         .lead-m {
-            font-weight: 300;
-            font-size: 1.1rem;
+            font-weight: 400;
+            font-size: 1.05rem;
             line-height: 1.6;
             color: var(--m-text-secondary);
         }
 
-        /* Button: Sharp Silhouette & Machined Look */
+        /* Button: Modern rounded pills to match dashboard styling */
         .btn-m-outline {
-            border: 2px solid var(--m-text-primary);
-            background: transparent;
-            color: var(--m-text-primary);
-            border-radius: 0px;
-            text-transform: uppercase;
-            font-weight: 700;
-            font-size: 0.9rem;
-            letter-spacing: 1.5px;
-            padding: 14px 32px;
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            border: 2px solid var(--m-dark-blue);
+            background: var(--m-dark-blue);
+            color: #ffffff;
+            border-radius: 10px;
+            text-transform: none;
+            font-weight: 600;
+            font-size: 0.95rem;
+            letter-spacing: 0px;
+            padding: 12px 28px;
+            transition: all 0.2s ease;
             position: relative;
             overflow: hidden;
             display: inline-flex;
             align-items: center;
             justify-content: center;
+            box-shadow: 0 4px 10px rgba(29, 78, 216, 0.15);
         }
         .btn-m-outline:hover {
-            background-color: var(--m-text-primary);
-            color: var(--m-black);
+            background-color: #1e40af;
+            border-color: #1e40af;
+            color: #ffffff;
             text-decoration: none;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(29, 78, 216, 0.25);
         }
         .btn-m-outline i {
             font-size: 1.1rem;
         }
 
         .btn-m-secondary {
-            border: 1px solid #333333;
-            background-color: var(--m-card-bg);
-            color: var(--m-text-primary);
-            border-radius: 0px;
-            text-transform: uppercase;
-            font-weight: 700;
-            font-size: 0.85rem;
-            letter-spacing: 1px;
-            padding: 10px 24px;
+            border: 1px solid var(--m-light-blue);
+            background-color: transparent;
+            color: var(--m-light-blue);
+            border-radius: 10px;
+            text-transform: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            letter-spacing: 0px;
+            padding: 8px 22px;
             transition: all 0.2s ease;
         }
         .btn-m-secondary:hover {
-            border-color: var(--m-text-primary);
-            color: var(--m-text-primary);
+            background-color: var(--m-light-blue);
+            color: #ffffff;
             text-decoration: none;
+            transform: translateY(-1px);
         }
 
         /* Hero Section & Glow Backdrops */
         .hero-section {
-            padding: 100px 0 120px 0;
+            padding: 80px 0 100px 0;
             position: relative;
         }
         .glow-backdrop {
@@ -161,7 +167,7 @@ $username = $is_logged_in ? $_SESSION["username"] : "";
             right: 5%;
             width: 400px;
             height: 400px;
-            background: radial-gradient(circle, rgba(28,105,212,0.15) 0%, rgba(226,39,24,0.05) 50%, rgba(0,0,0,0) 100%);
+            background: radial-gradient(circle, rgba(59,130,246,0.12) 0%, rgba(29,78,216,0.04) 50%, rgba(0,0,0,0) 100%);
             z-index: 1;
             pointer-events: none;
             filter: blur(40px);
@@ -170,10 +176,10 @@ $username = $is_logged_in ? $_SESSION["username"] : "";
         /* Minimalist High-Fidelity Dashboard Graphic (Right side of Hero) */
         .m-dashboard-graphic {
             background-color: var(--m-card-bg);
-            border: 1px solid #222222;
+            border: 1px solid #e2e8f0;
             padding: 30px;
-            border-radius: 0px;
-            box-shadow: 0 30px 60px rgba(0,0,0,0.8);
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.06);
             position: relative;
             z-index: 2;
         }
@@ -183,44 +189,51 @@ $username = $is_logged_in ? $_SESSION["username"] : "";
             top: -1px;
             left: -1px;
             width: calc(100% + 2px);
-            height: 3px;
-            background: linear-gradient(90deg, var(--m-light-blue), var(--m-dark-blue), var(--m-red));
+            height: 4px;
+            border-top-left-radius: 16px;
+            border-top-right-radius: 16px;
+            background: linear-gradient(90deg, var(--m-light-blue), var(--m-dark-blue));
         }
         .graphic-header {
-            border-bottom: 1px solid #2a2a2a;
+            border-bottom: 1px solid #e2e8f0;
             padding-bottom: 15px;
             margin-bottom: 20px;
         }
         .graphic-pill {
-            background-color: #262626;
-            color: var(--m-text-primary);
-            font-size: 0.7rem;
+            background-color: #eff6ff;
+            color: var(--m-dark-blue);
+            font-size: 0.72rem;
             font-weight: 700;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
             text-transform: uppercase;
-            padding: 4px 10px;
-            border-radius: 0px;
+            padding: 4px 12px;
+            border-radius: 8px;
             display: inline-block;
+            border: 1px solid #dbeafe;
         }
         .graphic-budget-bar {
             height: 6px;
-            background-color: #262626;
+            background-color: #e2e8f0;
             width: 100%;
             margin-top: 8px;
             position: relative;
+            border-radius: 3px;
+            overflow: hidden;
         }
         .graphic-budget-fill {
             height: 100%;
             width: 82%;
-            background-color: var(--m-red);
+            background-color: #ef4444; /* Keep red warning for critical budget */
+            border-radius: 3px;
         }
         .graphic-transaction-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding: 12px 0;
-            border-bottom: 1px solid #222222;
+            border-bottom: 1px solid #e2e8f0;
             font-size: 0.85rem;
+            color: var(--m-text-secondary);
         }
         .graphic-transaction-row:last-child {
             border-bottom: none;
@@ -229,68 +242,61 @@ $username = $is_logged_in ? $_SESSION["username"] : "";
         /* Feature Cards */
         .feature-card-m {
             background-color: var(--m-card-bg);
-            border: 1px solid #222222;
+            border: 1px solid #e2e8f0;
             padding: 40px 30px;
-            border-radius: 0px;
+            border-radius: 16px;
             height: 100%;
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            transition: all 0.2s ease;
             position: relative;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.01);
         }
         .feature-card-m:hover {
-            border-color: #444444;
+            border-color: var(--m-light-blue);
             transform: translateY(-5px);
+            box-shadow: 0 12px 20px rgba(59, 130, 246, 0.08);
         }
         .feature-card-m::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 0%;
-            height: 3px;
-            background-color: var(--m-red);
-            transition: width 0.3s ease;
-        }
-        .feature-card-m:hover::after {
-            width: 100%;
+            display: none;
         }
         .feature-icon-m {
-            font-size: 2rem;
-            color: var(--m-text-primary);
-            margin-bottom: 25px;
+            font-size: 2.2rem;
+            color: var(--m-dark-blue);
+            margin-bottom: 20px;
             display: inline-block;
         }
 
         /* Footer */
         footer {
-            background-color: var(--m-black);
-            border-top: 1px solid #222222;
-            padding: 40px 0;
+            background-color: #1e293b;
+            border-top: 1px solid #0f172a;
+            padding: 50px 0;
             margin-top: 80px;
+            color: #ffffff;
         }
     </style>
 </head>
 <body>
 
     <!-- Top Navigation Bar -->
-    <nav class="navbar navbar-expand-lg navbar-dark navbar-m sticky-top">
+    <nav class="navbar navbar-expand-lg navbar-light navbar-m sticky-top">
         <div class="container">
             <a class="navbar-brand-m" href="index.php">
-                DOMPETKU<span>.M</span>
+                <i class="bi bi-wallet2 mr-2 text-primary"></i>Dompet<span>Ku</span>
             </a>
-            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation" style="border-radius: 0px;">
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation" style="border-radius: 10px;">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ml-auto align-items-center">
                     <li class="nav-item">
-                        <a class="nav-link nav-link-m px-3" href="#features">Spesifikasi</a>
+                        <a class="nav-link nav-link-m px-3" href="#features">Fitur Utama</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link nav-link-m px-3 mr-3" href="#engineering">Filosofi</a>
                     </li>
                     <?php if ($is_logged_in): ?>
-                        <li class="nav-item text-white-50 mr-3 font-weight-light" style="font-size: 0.85rem;">
-                            <i class="bi bi-cpu me-1"></i> PILOT: <strong class="text-white"><?= escape(
+                        <li class="nav-item text-secondary mr-3 font-weight-light" style="font-size: 0.85rem;">
+                            <i class="bi bi-cpu me-1 text-primary"></i> PILOT: <strong class="text-dark"><?= escape(
                                 $username,
                             ) ?></strong>
                         </li>
@@ -318,14 +324,14 @@ $username = $is_logged_in ? $_SESSION["username"] : "";
                 
                 <!-- Hero Left: High-Contrast Heading -->
                 <div class="col-lg-6 mb-5 mb-lg-0">
-                    <div class="graphic-pill mb-3" style="background-color: var(--m-red);">
-                        <i class="bi bi-speedometer2 mr-1"></i> M-Performance
+                    <div class="graphic-pill mb-3">
+                        <i class="bi bi-speedometer2 mr-1"></i> Keamanan & Presisi
                     </div>
                     <h1 class="display-m mb-4">
-                        PRESETS FOR<br>FINANCIAL<br>DYNAMICS.
+                        Kendalikan Arus<br>Keuangan Anda<br>Dengan Presisi.
                     </h1>
                     <p class="lead-m mb-5">
-                        Menyalurkan arus finansial Anda secara presisi. DompetKu.M bukan sekadar mencatat transaksi, melainkan mengoptimalkan setiap alokasi dana dengan kedisiplinan tingkat tinggi.
+                        Menyalurkan arus finansial Anda secara presisi. DompetKu bukan sekadar mencatat transaksi, melainkan mengoptimalkan setiap alokasi dana dengan kedisiplinan tingkat tinggi.
                     </p>
                     
                     <div>
@@ -346,8 +352,8 @@ $username = $is_logged_in ? $_SESSION["username"] : "";
                     <div class="m-dashboard-graphic">
                         <div class="graphic-header d-flex justify-content-between align-items-center">
                             <div>
-                                <div class="font-weight-bold text-uppercase" style="font-size: 0.75rem; letter-spacing: 1px;">Sistem Telemetri</div>
-                                <div class="text-white-50" style="font-size: 0.68rem;">AKTIF — USER ID #<?= $is_logged_in
+                                <div class="font-weight-bold text-uppercase text-dark" style="font-size: 0.75rem; letter-spacing: 1px;">Sistem Telemetri</div>
+                                <div class="text-muted" style="font-size: 0.68rem;">AKTIF — USER ID #<?= $is_logged_in
                                     ? $user_id
                                     : "0" ?></div>
                             </div>
@@ -357,29 +363,29 @@ $username = $is_logged_in ? $_SESSION["username"] : "";
                         <!-- Budget Meter -->
                         <div class="mb-4">
                             <div class="d-flex justify-content-between align-items-center" style="font-size: 0.8rem;">
-                                <span class="text-white-50 text-uppercase">Batas Anggaran Bulanan</span>
+                                <span class="text-muted text-uppercase">Batas Anggaran Bulanan</span>
                                 <span class="font-weight-bold text-danger">82.4%</span>
                             </div>
                             <div class="graphic-budget-bar">
                                 <div class="graphic-budget-fill"></div>
                             </div>
-                            <small class="text-white-50 d-block mt-1" style="font-size: 0.65rem;">WARNING: Limit pengeluaran kritis pada kategori <strong>Operasional</strong>.</small>
+                            <small class="text-muted d-block mt-1" style="font-size: 0.65rem;">WARNING: Limit pengeluaran kritis pada kategori <strong>Operasional</strong>.</small>
                         </div>
 
                         <!-- Telemetry Log -->
                         <div>
-                            <div class="text-uppercase font-weight-bold mb-2 text-white-50" style="font-size: 0.7rem; letter-spacing: 0.5px;">Log Transaksi Terakhir</div>
+                            <div class="text-uppercase font-weight-bold mb-2 text-muted" style="font-size: 0.7rem; letter-spacing: 0.5px;">Log Transaksi Terakhir</div>
                             
                             <div class="graphic-transaction-row">
-                                <span class="text-white-50">28 Jun — Beli Bahan Bakar</span>
+                                <span class="text-secondary">28 Jun — Beli Bahan Bakar</span>
                                 <span class="text-danger font-weight-bold">- Rp 350.000</span>
                             </div>
                             <div class="graphic-transaction-row">
-                                <span class="text-white-50">27 Jun — Transfer Insentif</span>
+                                <span class="text-secondary">27 Jun — Transfer Insentif</span>
                                 <span class="text-success font-weight-bold">+ Rp 4.500.000</span>
                             </div>
                             <div class="graphic-transaction-row">
-                                <span class="text-white-50">25 Jun — Perawatan Berkala</span>
+                                <span class="text-secondary">25 Jun — Perawatan Berkala</span>
                                 <span class="text-danger font-weight-bold">- Rp 1.200.000</span>
                             </div>
                         </div>
@@ -395,7 +401,7 @@ $username = $is_logged_in ? $_SESSION["username"] : "";
         <div class="container py-4">
             <div class="mb-5">
                 <div class="graphic-pill mb-2">Spesifikasi Fitur</div>
-                <h2 class="font-weight-bold" style="font-size: 2.2rem; letter-spacing: -1px;">ENGINEERED FOR CONTROL.</h2>
+                <h2 class="font-weight-bold text-dark" style="font-size: 2.2rem; letter-spacing: -1px;">Didesain Untuk Kendali Penuh.</h2>
             </div>
             <div class="row">
                 
@@ -443,25 +449,25 @@ $username = $is_logged_in ? $_SESSION["username"] : "";
     </section>
 
     <!-- Philosophy Section -->
-    <section id="engineering" class="py-5">
+    <section id="engineering" class="py-5" style="background-color: var(--m-black);">
         <div class="container py-4">
             <div class="row align-items-center">
                 <div class="col-md-6 mb-4 mb-md-0">
                     <div class="graphic-pill mb-2">Filosofi Performa</div>
-                    <h2 class="font-weight-bold mb-4" style="font-size: 2.2rem; letter-spacing: -1px;">DISIPLIN ADALAH AKSELERASI.</h2>
-                    <p class="lead-m font-weight-light mb-4">
+                    <h2 class="font-weight-bold mb-4 text-dark" style="font-size: 2.2rem; letter-spacing: -1px;">Disiplin Adalah Akselerasi.</h2>
+                    <p class="lead-m font-weight-light mb-4 text-secondary">
                         Mengendalikan keuangan pribadi bukanlah tentang mempersempit ruang gerak Anda. Sebaliknya, catatan keuangan yang akurat memberi Anda visualisasi yang jelas untuk melesat lebih cepat menuju kebebasan finansial yang sejati.
                     </p>
                 </div>
                 <div class="col-md-6 text-center">
-                    <div class="p-5 border border-secondary" style="background-color: var(--m-card-bg); border-radius: 0px;">
+                    <div class="p-5 border border-light shadow-sm" style="background-color: var(--m-card-bg); border-radius: 16px;">
                         <i class="bi bi-quote fs-1 text-danger d-block mb-3"></i>
                         <blockquote class="blockquote border-0 p-0 m-0">
-                            <p class="mb-3 text-white font-italic" style="font-size: 1.1rem; font-weight: 300;">
+                            <p class="mb-3 text-dark font-italic" style="font-size: 1.1rem; font-weight: 300;">
                                 "Uang adalah pelayan yang baik, namun merupakan majikan yang sangat buruk. Berikan arahan presisi ke mana ia harus pergi."
                             </p>
-                            <footer class="blockquote-footer bg-transparent border-0 text-uppercase font-weight-bold text-danger" style="font-size: 0.75rem; letter-spacing: 1px; padding: 0;">
-                                Telemetri DompetKu.M
+                            <footer class="blockquote-footer bg-transparent border-0 text-uppercase font-weight-bold text-primary" style="font-size: 0.75rem; letter-spacing: 1px; padding: 0;">
+                                Telemetri DompetKu
                             </footer>
                         </blockquote>
                     </div>
@@ -473,13 +479,13 @@ $username = $is_logged_in ? $_SESSION["username"] : "";
     <!-- Footer -->
     <footer>
         <div class="container text-center">
-            <p class="mb-2 font-weight-bold text-uppercase" style="letter-spacing: 2px; font-size: 1.1rem;">
-                DOMPETKU<span>.M</span>
+            <p class="mb-2 font-weight-bold text-uppercase text-white" style="letter-spacing: 2px; font-size: 1.1rem;">
+                DOMPETKU<span class="text-primary">.M</span>
             </p>
-            <p class="mb-0 text-muted" style="font-size: 0.75rem; font-weight: 300; letter-spacing: 0.5px;">
+            <p class="mb-0 text-white-50" style="font-size: 0.75rem; font-weight: 300; letter-spacing: 0.5px;">
                 &copy; <?= date(
                     "Y",
-                ) ?> DOMPETKU.M. Dibuat dengan presisi industrial dan standar keamanan tinggi. All Rights Reserved.
+                ) ?> DompetKu. Dibuat dengan presisi industrial dan standar keamanan tinggi. All Rights Reserved.
             </p>
         </div>
     </footer>

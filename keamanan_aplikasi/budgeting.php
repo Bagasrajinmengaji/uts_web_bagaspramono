@@ -76,6 +76,7 @@ try {
                     <li class="nav-item"><a class="nav-link" href="dashboard.php">Dashboard</a></li>
                     <li class="nav-item"><a class="nav-link" href="kategori.php">Kategori</a></li>
                     <li class="nav-item"><a class="nav-link active font-bold" href="budgeting.php">Anggaran</a></li>
+                    <li class="nav-item"><a class="nav-link" href="target_tabungan.php">Target Tabungan</a></li>
                 </ul>
                 <ul class="navbar-nav ms-auto align-items-center">
                     <li class="nav-item text-white me-3">
