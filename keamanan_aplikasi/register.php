@@ -1,31 +1,39 @@
 <?php
 // Include configuration and security helper files
-require_once 'config/koneksi.php';
-require_once 'config/helper.php';
+require_once "config/koneksi.php";
+require_once "config/helper.php";
 
 // Redirect logged-in users to the dashboard
 guest_check();
 
 $errors = [];
-$username = '';
-$email = '';
+$username = "";
+$email = "";
 
 // Handle POST request
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
     // Trim input data to remove redundant spaces
-    $username = isset($_POST['username']) ? trim($_POST['username']) : '';
-    $email = isset($_POST['email']) ? trim($_POST['email']) : '';
-    $password = isset($_POST['password']) ? $_POST['password'] : '';
-    $confirm_password = isset($_POST['confirm_password']) ? $_POST['confirm_password'] : '';
+    $username = isset($_POST["username"]) ? trim($_POST["username"]) : "";
+    $email = isset($_POST["email"]) ? trim($_POST["email"]) : "";
+    $password = isset($_POST["password"]) ? $_POST["password"] : "";
+    $confirm_password = isset($_POST["confirm_password"])
+        ? $_POST["confirm_password"]
+        : "";
 
     // 1. Validation: Check empty inputs
-    if (empty($username) || empty($email) || empty($password) || empty($confirm_password)) {
+    if (
+        empty($username) ||
+        empty($email) ||
+        empty($password) ||
+        empty($confirm_password)
+    ) {
         $errors[] = "Semua field wajib diisi.";
     }
 
     // 2. Validation: Username characters and length (3-50 chars, alphanumeric & underscore)
     if (!empty($username) && !preg_match('/^[a-zA-Z0-9_]{3,50}$/', $username)) {
-        $errors[] = "Username hanya boleh huruf, angka, dan underscore (_), minimal 3 karakter dan maksimal 50 karakter.";
+        $errors[] =
+            "Username hanya boleh huruf, angka, dan underscore (_), minimal 3 karakter dan maksimal 50 karakter.";
     }
 
     // 3. Validation: Email format validation//
@@ -47,10 +55,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($errors)) {
         try {
             // Check if username or email already exists using PDO Prepared Statements (mitigating SQL Injection)
-            $stmt = $pdo->prepare("SELECT id FROM users WHERE username = :username OR email = :email");
+            $stmt = $pdo->prepare(
+                "SELECT id FROM users WHERE username = :username OR email = :email",
+            );
             $stmt->execute([
-                'username' => $username,
-                'email'    => $email
+                "username" => $username,
+                "email" => $email,
             ]);
             $existing_user = $stmt->fetch();
 
@@ -61,16 +71,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $hashed_password = password_hash($password, PASSWORD_DEFAULT);
 
                 // Insert new user into database
-                $insert_stmt = $pdo->prepare("INSERT INTO users (username, email, password) VALUES (:username, :email, :password)");
+                $insert_stmt = $pdo->prepare(
+                    "INSERT INTO users (username, email, password) VALUES (:username, :email, :password)",
+                );
                 $insert_stmt->execute([
-                    'username' => $username,
-                    'email'    => $email,
-                    'password' => $hashed_password
+                    "username" => $username,
+                    "email" => $email,
+                    "password" => $hashed_password,
                 ]);
 
                 // --- INTEGRASI LAYOUT SMTP EMAIL (DISESUAIKAN DENGAN CSS BAWAAN) ---
                 $subject = "Selamat Bergabung di DompetKu!";
-                $email_template = "
+                $email_template =
+                    "
                     <div style='background-color: #f1f5f9; padding: 30px 15px; font-family: Arial, sans-serif;'>
                         <div style='max-width: 500px; margin: 0 auto; background-color: #ffffff; border-radius: 14px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);'>
                             
@@ -79,7 +92,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </div>
                             
                             <div style='padding: 30px 25px; color: #1e293b; line-height: 1.6;'>
-                                <h2 style='margin-top: 0; color: #0f172a; font-size: 20px; font-weight: 700;'>Halo, " . escape($username) . "!</h2>
+                                <h2 style='margin-top: 0; color: #0f172a; font-size: 20px; font-weight: 700;'>Halo, " .
+                    escape($username) .
+                    "!</h2>
                                 <p style='color: #475569; font-size: 15px;'>Akun Anda telah berhasil terdaftar secara aman di sistem kami. Sekarang saatnya mengendalikan uangmu dan mulai merancang target finansial masa depan yang rapi!</p>
                                 
                                 <div style='text-align: center; margin: 30px 0;'>
@@ -87,7 +102,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 </div>
                                 
                                 <hr style='border: 0; border-top: 1px solid #e2e8f0; margin: 25px 0;'>
-                                <p style='color: #64748b; font-size: 12px; margin-bottom: 0; text-align: center;'>&copy; " . date('Y') . " DompetKu. Dibuat untuk Keamanan Finansial dan Kemudahan Catatan Keuangan Pribadi Anda.</p>
+                                <p style='color: #64748b; font-size: 12px; margin-bottom: 0; text-align: center;'>&copy; " .
+                    date("Y") .
+                    " DompetKu. Dibuat untuk Keamanan Finansial dan Kemudahan Catatan Keuangan Pribadi Anda.</p>
                             </div>
                         </div>
                     </div>
@@ -97,13 +114,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // ------------------------------------------------------------------
 
                 // Set success flash message and redirect to login
-                set_flash_message('success', 'Registrasi berhasil! Silakan login menggunakan akun Anda.');
+                set_flash_message(
+                    "success",
+                    "Registrasi berhasil! Silakan login menggunakan akun Anda.",
+                );
                 header("Location: login.php");
-                exit;
+                exit();
             }
         } catch (\PDOException $e) {
             error_log($e->getMessage());
-            $errors[] = "Terjadi kesalahan pada server. Silakan coba beberapa saat lagi.";
+            $errors[] =
+                "Terjadi kesalahan pada server. Silakan coba beberapa saat lagi.";
         }
     }
 }
@@ -133,7 +154,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="alert alert-danger" role="alert">
                     <ul class="mb-0 ps-3">
                         <?php foreach ($errors as $error): ?>
-                            <li><?= escape($error); ?></li>
+                            <li><?= escape($error) ?></li>
                         <?php endforeach; ?>
                     </ul>
                 </div>
@@ -144,7 +165,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <label for="username" class="form-label">Username</label>
                     <div class="input-group">
                         <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-person"></i></span>
-                        <input type="text" class="form-control border-start-0 ps-0" id="username" name="username" placeholder="Masukkan username" value="<?= escape($username); ?>" required>
+                        <input type="text" class="form-control border-start-0 ps-0" id="username" name="username" placeholder="Masukkan username" value="<?= escape(
+                            $username,
+                        ) ?>" required>
                     </div>
                     <div class="form-text text-xs text-muted-custom">Hanya boleh huruf, angka, dan underscore (3-50 karakter).</div>
                 </div>
@@ -153,7 +176,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <label for="email" class="form-label">Alamat Email</label>
                     <div class="input-group">
                         <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-envelope"></i></span>
-                        <input type="email" class="form-control border-start-0 ps-0" id="email" name="email" placeholder="nama@email.com" value="<?= escape($email); ?>" required>
+                        <input type="email" class="form-control border-start-0 ps-0" id="email" name="email" placeholder="nama@email.com" value="<?= escape(
+                            $email,
+                        ) ?>" required>
                     </div>
                 </div>
 

@@ -1,6 +1,6 @@
 <?php
 // Manggil helper
-require_once 'config/helper.php';
+require_once "config/helper.php";
 auth_check();
 
 // Set header agar diunduh sebagai dokumen Word (.doc)
@@ -9,7 +9,6 @@ header("Content-Type: application/vnd.ms-word");
 header("Content-Disposition: attachment; filename=\"$filename\"");
 header("Pragma: no-cache");
 header("Expires: 0");
-
 ?>
 <!DOCTYPE html>
 <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>

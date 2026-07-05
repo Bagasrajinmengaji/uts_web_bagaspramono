@@ -1,145 +1,208 @@
 <?php
 // manggil file koneksi dan helper
-require_once 'config/koneksi.php';
-require_once 'config/helper.php';
+require_once "config/koneksi.php";
+require_once "config/helper.php";
 
 //pastikan user dah log in
 auth_check();
 
-$user_id = $_SESSION['user_id'];
-$username = $_SESSION['username'];
+$user_id = $_SESSION["user_id"];
+$username = $_SESSION["username"];
 
 // backend crud pake post
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
-    file_put_contents('post_log.txt', "POST Data: " . print_r($_POST, true) . "\n", FILE_APPEND);
-    header('Content-Type: application/json');
-    $action = $_POST['action'];
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"])) {
+    file_put_contents(
+        "post_log.txt",
+        "POST Data: " . print_r($_POST, true) . "\n",
+        FILE_APPEND,
+    );
+    header("Content-Type: application/json");
+    $action = $_POST["action"];
 
     try {
         // Aksi 1: Tambah Transaksi (Create)
-        if ($action === 'create') {
-            $jenis = isset($_POST['jenis']) ? trim($_POST['jenis']) : '';
-            $id_kategori = isset($_POST['id_kategori']) && $_POST['id_kategori'] !== '' ? intval($_POST['id_kategori']) : null;
-            $nominal = isset($_POST['nominal']) ? trim($_POST['nominal']) : '';
-            $keterangan = isset($_POST['keterangan']) ? trim($_POST['keterangan']) : '';
-            $tanggal = isset($_POST['tanggal']) ? trim($_POST['tanggal']) : '';
+        if ($action === "create") {
+            $jenis = isset($_POST["jenis"]) ? trim($_POST["jenis"]) : "";
+            $id_kategori =
+                isset($_POST["id_kategori"]) && $_POST["id_kategori"] !== ""
+                    ? intval($_POST["id_kategori"])
+                    : null;
+            $nominal = isset($_POST["nominal"]) ? trim($_POST["nominal"]) : "";
+            $keterangan = isset($_POST["keterangan"])
+                ? trim($_POST["keterangan"])
+                : "";
+            $tanggal = isset($_POST["tanggal"]) ? trim($_POST["tanggal"]) : "";
 
-            if (empty($jenis) || empty($nominal) || empty($keterangan) || empty($tanggal)) {
-                echo json_encode(['status' => 'error', 'message' => 'Semua field wajib diisi.']);
-                exit;
+            if (
+                empty($jenis) ||
+                empty($nominal) ||
+                empty($keterangan) ||
+                empty($tanggal)
+            ) {
+                echo json_encode([
+                    "status" => "error",
+                    "message" => "Semua field wajib diisi.",
+                ]);
+                exit();
             }
-            if (!in_array($jenis, ['Pemasukan', 'Pengeluaran'], true)) {
-                echo json_encode(['status' => 'error', 'message' => 'Jenis transaksi tidak valid.']);
-                exit;
+            if (!in_array($jenis, ["Pemasukan", "Pengeluaran"], true)) {
+                echo json_encode([
+                    "status" => "error",
+                    "message" => "Jenis transaksi tidak valid.",
+                ]);
+                exit();
             }
             if (!is_numeric($nominal) || floatval($nominal) <= 0) {
-                echo json_encode(['status' => 'error', 'message' => 'Nominal harus angka positif.']);
-                exit;
+                echo json_encode([
+                    "status" => "error",
+                    "message" => "Nominal harus angka positif.",
+                ]);
+                exit();
             }
 
-            $stmt = $pdo->prepare("INSERT INTO transaksi (user_id, id_kategori, jenis, nominal, keterangan, tanggal) VALUES (:user_id, :id_kategori, :jenis, :nominal, :keterangan, :tanggal)");
+            $stmt = $pdo->prepare(
+                "INSERT INTO transaksi (user_id, id_kategori, jenis, nominal, keterangan, tanggal) VALUES (:user_id, :id_kategori, :jenis, :nominal, :keterangan, :tanggal)",
+            );
             $stmt->execute([
-                'user_id'     => $user_id,
-                'id_kategori' => $id_kategori,
-                'jenis'       => $jenis,
-                'nominal'     => floatval($nominal),
-                'keterangan'  => $keterangan,
-                'tanggal'     => $tanggal
+                "user_id" => $user_id,
+                "id_kategori" => $id_kategori,
+                "jenis" => $jenis,
+                "nominal" => floatval($nominal),
+                "keterangan" => $keterangan,
+                "tanggal" => $tanggal,
             ]);
 
-            echo json_encode(['status' => 'success', 'message' => 'Transaksi berhasil ditambahkan!']);
-            exit;
+            echo json_encode([
+                "status" => "success",
+                "message" => "Transaksi berhasil ditambahkan!",
+            ]);
+            exit();
         }
 
         // Aksi 2: Edit Transaksi (Update)
-        if ($action === 'update') {
-            $id = isset($_POST['id']) ? trim($_POST['id']) : '';
-            $jenis = isset($_POST['jenis']) ? trim($_POST['jenis']) : '';
-            $id_kategori = isset($_POST['id_kategori']) && $_POST['id_kategori'] !== '' ? intval($_POST['id_kategori']) : null;
-            $nominal = isset($_POST['nominal']) ? trim($_POST['nominal']) : '';
-            $keterangan = isset($_POST['keterangan']) ? trim($_POST['keterangan']) : '';
-            $tanggal = isset($_POST['tanggal']) ? trim($_POST['tanggal']) : '';
+        if ($action === "update") {
+            $id = isset($_POST["id"]) ? trim($_POST["id"]) : "";
+            $jenis = isset($_POST["jenis"]) ? trim($_POST["jenis"]) : "";
+            $id_kategori =
+                isset($_POST["id_kategori"]) && $_POST["id_kategori"] !== ""
+                    ? intval($_POST["id_kategori"])
+                    : null;
+            $nominal = isset($_POST["nominal"]) ? trim($_POST["nominal"]) : "";
+            $keterangan = isset($_POST["keterangan"])
+                ? trim($_POST["keterangan"])
+                : "";
+            $tanggal = isset($_POST["tanggal"]) ? trim($_POST["tanggal"]) : "";
 
-            if (empty($id) || empty($jenis) || empty($nominal) || empty($keterangan) || empty($tanggal)) {
-                echo json_encode(['status' => 'error', 'message' => 'Semua field wajib diisi.']);
-                exit;
+            if (
+                empty($id) ||
+                empty($jenis) ||
+                empty($nominal) ||
+                empty($keterangan) ||
+                empty($tanggal)
+            ) {
+                echo json_encode([
+                    "status" => "error",
+                    "message" => "Semua field wajib diisi.",
+                ]);
+                exit();
             }
 
-            $stmt = $pdo->prepare("UPDATE transaksi SET id_kategori = :id_kategori, jenis = :jenis, nominal = :nominal, keterangan = :keterangan, tanggal = :tanggal WHERE id = :id AND user_id = :user_id");
+            $stmt = $pdo->prepare(
+                "UPDATE transaksi SET id_kategori = :id_kategori, jenis = :jenis, nominal = :nominal, keterangan = :keterangan, tanggal = :tanggal WHERE id = :id AND user_id = :user_id",
+            );
             $stmt->execute([
-                'id_kategori' => $id_kategori,
-                'jenis'       => $jenis,
-                'nominal'     => floatval($nominal),
-                'keterangan'  => $keterangan,
-                'tanggal'     => $tanggal,
-                'id'          => $id,
-                'user_id'     => $user_id
+                "id_kategori" => $id_kategori,
+                "jenis" => $jenis,
+                "nominal" => floatval($nominal),
+                "keterangan" => $keterangan,
+                "tanggal" => $tanggal,
+                "id" => $id,
+                "user_id" => $user_id,
             ]);
 
-            echo json_encode(['status' => 'success', 'message' => 'Transaksi berhasil diperbarui!']);
-            exit;
+            echo json_encode([
+                "status" => "success",
+                "message" => "Transaksi berhasil diperbarui!",
+            ]);
+            exit();
         }
 
         // Aksi 3: Hapus Transaksi (Delete)
-        if ($action === 'delete') {
-            $id = isset($_POST['id']) ? trim($_POST['id']) : '';
-            
-            $stmt = $pdo->prepare("DELETE FROM transaksi WHERE id = :id AND user_id = :user_id");
-            $stmt->execute(['id' => $id, 'user_id' => $user_id]);
+        if ($action === "delete") {
+            $id = isset($_POST["id"]) ? trim($_POST["id"]) : "";
+
+            $stmt = $pdo->prepare(
+                "DELETE FROM transaksi WHERE id = :id AND user_id = :user_id",
+            );
+            $stmt->execute(["id" => $id, "user_id" => $user_id]);
 
             if ($stmt->rowCount() > 0) {
-                echo json_encode(['status' => 'success', 'message' => 'Transaksi berhasil dihapus!']);
+                echo json_encode([
+                    "status" => "success",
+                    "message" => "Transaksi berhasil dihapus!",
+                ]);
             } else {
-                echo json_encode(['status' => 'error', 'message' => 'Data tidak ditemukan atau tidak ada akses.']);
+                echo json_encode([
+                    "status" => "error",
+                    "message" => "Data tidak ditemukan atau tidak ada akses.",
+                ]);
             }
-            exit;
+            exit();
         }
-
     } catch (\PDOException $e) {
         error_log($e->getMessage());
-        echo json_encode(['status' => 'error', 'message' => 'Kesalahan server backend.']);
-        exit;
+        echo json_encode([
+            "status" => "error",
+            "message" => "Kesalahan server backend.",
+        ]);
+        exit();
     }
 }
 
 // --- LOGIK UTAMA: MENAMPILKAN DATA (Read) ---
 try {
-    $stmt_income = $pdo->prepare("SELECT SUM(nominal) as total FROM transaksi WHERE user_id = :user_id AND jenis = 'Pemasukan'");
-    $stmt_income->execute(['user_id' => $user_id]);
-    $total_pemasukan = $stmt_income->fetch()['total'] ?? 0;
+    $stmt_income = $pdo->prepare(
+        "SELECT SUM(nominal) as total FROM transaksi WHERE user_id = :user_id AND jenis = 'Pemasukan'",
+    );
+    $stmt_income->execute(["user_id" => $user_id]);
+    $total_pemasukan = $stmt_income->fetch()["total"] ?? 0;
 
-    $stmt_expense = $pdo->prepare("SELECT SUM(nominal) as total FROM transaksi WHERE user_id = :user_id AND jenis = 'Pengeluaran'");
-    $stmt_expense->execute(['user_id' => $user_id]);
-    $total_pengeluaran = $stmt_expense->fetch()['total'] ?? 0;
+    $stmt_expense = $pdo->prepare(
+        "SELECT SUM(nominal) as total FROM transaksi WHERE user_id = :user_id AND jenis = 'Pengeluaran'",
+    );
+    $stmt_expense->execute(["user_id" => $user_id]);
+    $total_pengeluaran = $stmt_expense->fetch()["total"] ?? 0;
 
     $saldo_sekarang = $total_pemasukan - $total_pengeluaran;
 
     // Ambil daftar kategori kustom milik user
-    $stmt_cat = $pdo->prepare("SELECT * FROM kategori WHERE id_user = :user_id ORDER BY nama_kategori ASC");
-    $stmt_cat->execute(['user_id' => $user_id]);
+    $stmt_cat = $pdo->prepare(
+        "SELECT * FROM kategori WHERE id_user = :user_id ORDER BY nama_kategori ASC",
+    );
+    $stmt_cat->execute(["user_id" => $user_id]);
     $categories = $stmt_cat->fetchAll();
 
     // Query Transaksi dengan Left Join Kategori
-    $query = "SELECT t.*, k.nama_kategori FROM transaksi t LEFT JOIN kategori k ON t.id_kategori = k.id_kategori WHERE t.user_id = :user_id";
-    $params = ['user_id' => $user_id];
+    $query =
+        "SELECT t.*, k.nama_kategori FROM transaksi t LEFT JOIN kategori k ON t.id_kategori = k.id_kategori WHERE t.user_id = :user_id";
+    $params = ["user_id" => $user_id];
 
-    $jenis_filter = isset($_GET['jenis']) ? trim($_GET['jenis']) : '';
-    if ($jenis_filter === 'Pemasukan' || $jenis_filter === 'Pengeluaran') {
+    $jenis_filter = isset($_GET["jenis"]) ? trim($_GET["jenis"]) : "";
+    if ($jenis_filter === "Pemasukan" || $jenis_filter === "Pengeluaran") {
         $query .= " AND t.jenis = :jenis";
-        $params['jenis'] = $jenis_filter;
+        $params["jenis"] = $jenis_filter;
     }
 
-    $search = isset($_GET['search']) ? trim($_GET['search']) : '';
-    if ($search !== '') {
+    $search = isset($_GET["search"]) ? trim($_GET["search"]) : "";
+    if ($search !== "") {
         $query .= " AND t.keterangan LIKE :search";
-        $params['search'] = '%' . $search . '%';
+        $params["search"] = "%" . $search . "%";
     }
 
     $query .= " ORDER BY t.tanggal DESC, t.id DESC";
     $stmt_transactions = $pdo->prepare($query);
     $stmt_transactions->execute($params);
     $transactions = $stmt_transactions->fetchAll();
-
 } catch (\PDOException $e) {
     error_log($e->getMessage());
     $error_msg = "Gagal mengambil data dari database.";
@@ -175,7 +238,9 @@ try {
                 </ul>
                 <ul class="navbar-nav ms-auto align-items-center">
                     <li class="nav-item text-white me-3">
-                        <i class="bi bi-person-circle me-1"></i> Halo, <strong><?= escape($username); ?></strong>
+                        <i class="bi bi-person-circle me-1"></i> Halo, <strong><?= escape(
+                            $username,
+                        ) ?></strong>
                     </li>
                     <li class="nav-item"><a class="btn btn-light btn-sm text-primary" href="logout.php">Logout</a></li>
                 </ul>
@@ -190,23 +255,30 @@ try {
         <div class="row mb-4">
             <div class="col-12">
                 <?php
-                $bulan_sekarang = intval(date('m'));
-                $tahun_sekarang = intval(date('Y'));
-                $daftar_anggaran = dapatkan_analisis_anggaran($user_id, $bulan_sekarang, $tahun_sekarang);
+                $bulan_sekarang = intval(date("m"));
+                $tahun_sekarang = intval(date("Y"));
+                $daftar_anggaran = dapatkan_analisis_anggaran(
+                    $user_id,
+                    $bulan_sekarang,
+                    $tahun_sekarang,
+                );
 
                 foreach ($daftar_anggaran as $anggaran):
-                    $persentase = $anggaran['persentase'];
-                    $nama_kategori = escape($anggaran['nama_kategori']);
-                    $sisa = $anggaran['budget'] - $anggaran['pengeluaran'];
-                    
-                    if ($persentase >= 90): 
-                ?>
+                    $persentase = $anggaran["persentase"];
+                    $nama_kategori = escape($anggaran["nama_kategori"]);
+                    $sisa = $anggaran["budget"] - $anggaran["pengeluaran"];
+
+                    if ($persentase >= 90): ?>
                         <div class="alert alert-danger border-0 shadow-sm d-flex align-items-center mb-2" role="alert">
                             <i class="bi bi-exclamation-octagon-fill fs-5 me-3"></i>
                             <div class="flex-grow-1">
-                                <strong>Kritis!</strong> Anggaran untuk kategori <strong><?= $nama_kategori; ?></strong> hampir habis atau telah terlampaui.
+                                <strong>Kritis!</strong> Anggaran untuk kategori <strong><?= $nama_kategori ?></strong> hampir habis atau telah terlampaui.
                                 <br>
-                                <small>Terpakai: <strong><?= format_rupiah($anggaran['pengeluaran']); ?></strong> dari limit <strong><?= format_rupiah($anggaran['budget']); ?></strong> (<?= number_format($persentase, 1); ?>%)</small>
+                                <small>Terpakai: <strong><?= format_rupiah(
+                                    $anggaran["pengeluaran"],
+                                ) ?></strong> dari limit <strong><?= format_rupiah(
+    $anggaran["budget"],
+) ?></strong> (<?= number_format($persentase, 1) ?>%)</small>
                             </div>
                             <span class="badge bg-danger p-2 fs-7 text-uppercase">Limit Kritis</span>
                         </div>
@@ -215,15 +287,18 @@ try {
                         <div class="alert alert-warning border-0 shadow-sm d-flex align-items-center mb-2" role="alert">
                             <i class="bi bi-exclamation-triangle-fill fs-5 me-3 text-warning"></i>
                             <div class="flex-grow-1">
-                                <strong>Peringatan!</strong> Pengeluaran untuk kategori <strong><?= $nama_kategori; ?></strong> sudah mendekati batas limit anggaran bulanan.
+                                <strong>Peringatan!</strong> Pengeluaran untuk kategori <strong><?= $nama_kategori ?></strong> sudah mendekati batas limit anggaran bulanan.
                                 <br>
-                                <small>Sisa Saldo Anggaran: <strong><?= format_rupiah($sisa); ?></strong> lagi dari total <strong><?= format_rupiah($anggaran['budget']); ?></strong> (<?= number_format($persentase, 1); ?>% terpakai)</small>
+                                <small>Sisa Saldo Anggaran: <strong><?= format_rupiah(
+                                    $sisa,
+                                ) ?></strong> lagi dari total <strong><?= format_rupiah(
+    $anggaran["budget"],
+) ?></strong> (<?= number_format($persentase, 1) ?>% terpakai)</small>
                             </div>
                             <span class="badge bg-warning text-dark p-2 fs-7 text-uppercase">Waspada</span>
                         </div>
-                <?php 
-                    endif;
-                endforeach; 
+                <?php endif;
+                endforeach;
                 ?>
             </div>
         </div>
@@ -231,19 +306,27 @@ try {
             <div class="col-md-4">
                 <div class="card p-4">
                     <span class="text-muted text-uppercase text-xs font-bold">Total Pemasukan</span>
-                    <h3 class="text-success font-bold mt-2"><?= format_rupiah($total_pemasukan); ?></h3>
+                    <h3 class="text-success font-bold mt-2"><?= format_rupiah(
+                        $total_pemasukan,
+                    ) ?></h3>
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="card p-4">
                     <span class="text-muted text-uppercase text-xs font-bold">Total Pengeluaran</span>
-                    <h3 class="text-danger font-bold mt-2"><?= format_rupiah($total_pengeluaran); ?></h3>
+                    <h3 class="text-danger font-bold mt-2"><?= format_rupiah(
+                        $total_pengeluaran,
+                    ) ?></h3>
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="card p-4">
                     <span class="text-muted text-uppercase text-xs font-bold">Saldo Saat Ini</span>
-                    <h3 class="font-bold mt-2 <?= $saldo_sekarang >= 0 ? 'text-primary' : 'text-danger'; ?>"><?= format_rupiah($saldo_sekarang); ?></h3>
+                    <h3 class="font-bold mt-2 <?= $saldo_sekarang >= 0
+                        ? "text-primary"
+                        : "text-danger" ?>"><?= format_rupiah(
+    $saldo_sekarang,
+) ?></h3>
                 </div>
             </div>
         </div>
@@ -261,17 +344,23 @@ try {
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="dropdownExport">
                             <li>
-                                <a class="dropdown-item py-2" href="export_excel.php?<?= http_build_query($_GET); ?>">
+                                <a class="dropdown-item py-2" href="export_excel.php?<?= http_build_query(
+                                    $_GET,
+                                ) ?>">
                                     <i class="bi bi-file-earmark-excel text-success me-2"></i> Ekspor ke Excel (.xlsx)
                                 </a>
                             </li>
                             <li>
-                                <a class="dropdown-item py-2" href="export_docx.php?<?= http_build_query($_GET); ?>">
+                                <a class="dropdown-item py-2" href="export_docx.php?<?= http_build_query(
+                                    $_GET,
+                                ) ?>">
                                     <i class="bi bi-file-earmark-word text-primary me-2"></i> Ekspor ke Word (.doc)
                                 </a>
                             </li>
                             <li>
-                                <a class="dropdown-item py-2" href="export_pdf.php?<?= http_build_query($_GET); ?>">
+                                <a class="dropdown-item py-2" href="export_pdf.php?<?= http_build_query(
+                                    $_GET,
+                                ) ?>">
                                     <i class="bi bi-file-earmark-pdf text-danger me-2"></i> Ekspor ke PDF (.pdf)
                                 </a>
                             </li>
@@ -285,18 +374,26 @@ try {
 
             <form action="dashboard.php" method="GET" class="row g-3 mb-4">
                 <div class="col-md-5">
-                    <input type="text" class="form-control" name="search" placeholder="Cari keterangan..." value="<?= escape($search); ?>">
+                    <input type="text" class="form-control" name="search" placeholder="Cari keterangan..." value="<?= escape(
+                        $search,
+                    ) ?>">
                 </div>
                 <div class="col-md-4">
                     <select class="form-select select2-init" name="jenis">
                         <option value="">-- Semua Jenis Transaksi --</option>
-                        <option value="Pemasukan" <?= $jenis_filter === 'Pemasukan' ? 'selected' : ''; ?>>Pemasukan</option>
-                        <option value="Pengeluaran" <?= $jenis_filter === 'Pengeluaran' ? 'selected' : ''; ?>>Pengeluaran</option>
+                        <option value="Pemasukan" <?= $jenis_filter ===
+                        "Pemasukan"
+                            ? "selected"
+                            : "" ?>>Pemasukan</option>
+                        <option value="Pengeluaran" <?= $jenis_filter ===
+                        "Pengeluaran"
+                            ? "selected"
+                            : "" ?>>Pengeluaran</option>
                     </select>
                 </div>
                 <div class="col-md-3 d-flex gap-2">
                     <button type="submit" class="btn btn-outline-primary w-100"><i class="bi bi-funnel-fill"></i> Filter</button>
-                    <?php if ($search !== '' || $jenis_filter !== ''): ?>
+                    <?php if ($search !== "" || $jenis_filter !== ""): ?>
                         <a href="dashboard.php" class="btn btn-light border"><i class="bi bi-arrow-counterclockwise"></i></a>
                     <?php endif; ?>
                 </div>
@@ -319,15 +416,35 @@ try {
                         <?php if (empty($transactions)): ?>
                             <tr><td colspan="7" class="text-center py-4 text-muted">Tidak ada data transaksi.</td></tr>
                         <?php else: ?>
-                            <?php $no = 1; foreach ($transactions as $row): ?>
+                            <?php
+                            $no = 1;
+                            foreach ($transactions as $row): ?>
                                 <tr>
-                                    <td><?= $no++; ?></td>
-                                    <td><?= date('d M Y', strtotime($row['tanggal'])); ?></td>
-                                    <td><span class="<?= $row['jenis'] === 'Pemasukan' ? 'badge bg-success' : 'badge bg-danger'; ?>"><?= escape($row['jenis']); ?></span></td>
-                                    <td><span class="badge bg-secondary"><?= $row['nama_kategori'] ? escape($row['nama_kategori']) : 'Tanpa Kategori'; ?></span></td>
-                                    <td><?= escape($row['keterangan']); ?></td>
-                                    <td class="font-bold <?= $row['jenis'] === 'Pemasukan' ? 'text-success' : 'text-danger'; ?>">
-                                        <?= ($row['jenis'] === 'Pemasukan' ? '+ ' : '- ') . format_rupiah($row['nominal']); ?>
+                                    <td><?= $no++ ?></td>
+                                    <td><?= date(
+                                        "d M Y",
+                                        strtotime($row["tanggal"]),
+                                    ) ?></td>
+                                    <td><span class="<?= $row["jenis"] ===
+                                    "Pemasukan"
+                                        ? "badge bg-success"
+                                        : "badge bg-danger" ?>"><?= escape(
+    $row["jenis"],
+) ?></span></td>
+                                    <td><span class="badge bg-secondary"><?= $row[
+                                        "nama_kategori"
+                                    ]
+                                        ? escape($row["nama_kategori"])
+                                        : "Tanpa Kategori" ?></span></td>
+                                    <td><?= escape($row["keterangan"]) ?></td>
+                                    <td class="font-bold <?= $row["jenis"] ===
+                                    "Pemasukan"
+                                        ? "text-success"
+                                        : "text-danger" ?>">
+                                        <?= ($row["jenis"] === "Pemasukan"
+                                            ? "+ "
+                                            : "- ") .
+                                            format_rupiah($row["nominal"]) ?>
                                     </td>
                                     <td class="text-center">
                                         <div class="d-flex justify-content-center gap-2">
@@ -337,39 +454,58 @@ try {
                                                 </button>
                                                 <ul class="dropdown-menu shadow">
                                                     <li>
-                                                        <a class="dropdown-item py-1" href="export_excel.php?id=<?= $row['id']; ?>">
+                                                        <a class="dropdown-item py-1" href="export_excel.php?id=<?= $row[
+                                                            "id"
+                                                        ] ?>">
                                                             <i class="bi bi-file-earmark-excel text-success me-2"></i> Kuitansi Excel
                                                         </a>
                                                     </li>
                                                     <li>
-                                                        <a class="dropdown-item py-1" href="export_docx.php?id=<?= $row['id']; ?>">
+                                                        <a class="dropdown-item py-1" href="export_docx.php?id=<?= $row[
+                                                            "id"
+                                                        ] ?>">
                                                             <i class="bi bi-file-earmark-word text-primary me-2"></i> Kuitansi Word
                                                         </a>
                                                     </li>
                                                     <li>
-                                                        <a class="dropdown-item py-1" href="export_pdf.php?id=<?= $row['id']; ?>">
+                                                        <a class="dropdown-item py-1" href="export_pdf.php?id=<?= $row[
+                                                            "id"
+                                                        ] ?>">
                                                             <i class="bi bi-file-earmark-pdf text-danger me-2"></i> Kuitansi PDF
                                                         </a>
                                                     </li>
                                                 </ul>
                                             </div>
                                             <button type="button" class="btn btn-sm btn-outline-primary btn-edit" 
-                                                    data-id="<?= $row['id']; ?>" 
-                                                    data-jenis="<?= $row['jenis']; ?>" 
-                                                    data-kategori="<?= $row['id_kategori']; ?>" 
-                                                    data-nominal="<?= $row['nominal']; ?>" 
-                                                    data-tanggal="<?= $row['tanggal']; ?>" 
-                                                    data-keterangan="<?= escape($row['keterangan']); ?>"
+                                                    data-id="<?= $row["id"] ?>" 
+                                                    data-jenis="<?= $row[
+                                                        "jenis"
+                                                    ] ?>" 
+                                                    data-kategori="<?= $row[
+                                                        "id_kategori"
+                                                    ] ?>" 
+                                                    data-nominal="<?= $row[
+                                                        "nominal"
+                                                    ] ?>" 
+                                                    data-tanggal="<?= $row[
+                                                        "tanggal"
+                                                    ] ?>" 
+                                                    data-keterangan="<?= escape(
+                                                        $row["keterangan"],
+                                                    ) ?>"
                                                     title="Edit Transaksi">
                                                 <i class="bi bi-pencil-square"></i>
                                             </button>
-                                            <button type="button" class="btn btn-sm btn-outline-danger btn-delete" data-id="<?= $row['id']; ?>" title="Hapus Transaksi">
+                                            <button type="button" class="btn btn-sm btn-outline-danger btn-delete" data-id="<?= $row[
+                                                "id"
+                                            ] ?>" title="Hapus Transaksi">
                                                 <i class="bi bi-trash"></i>
                                             </button>
                                         </div>
                                     </td>
                                 </tr>
-                            <?php endforeach; ?>
+                            <?php endforeach;
+                            ?>
                         <?php endif; ?>
                     </tbody>
                 </table>
@@ -409,7 +545,9 @@ try {
                         </div>
                         <div class="mb-3">
                             <label for="tanggal" class="form-label">Tanggal Transaksi</label>
-                            <input type="date" class="form-control" id="tanggal" name="tanggal" value="<?= date('Y-m-d'); ?>" required>
+                            <input type="date" class="form-control" id="tanggal" name="tanggal" value="<?= date(
+                                "Y-m-d",
+                            ) ?>" required>
                         </div>
                         <div class="mb-3">
                             <label for="keterangan" class="form-label">Keterangan</label>
@@ -483,7 +621,7 @@ try {
 
     <script>
         // Data Kategori dari PHP
-        const categories = <?= json_encode($categories); ?>;
+        const categories = <?= json_encode($categories) ?>;
 
         $(document).ready(function() {
             // --- INISIALISASI SELECT2 ---

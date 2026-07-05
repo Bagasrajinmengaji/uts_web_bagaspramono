@@ -1,26 +1,29 @@
 <?php
 // Include configuration and security helper files
-require_once 'config/koneksi.php';
-require_once 'config/helper.php';
+require_once "config/koneksi.php";
+require_once "config/helper.php";
 
 // Redirect logged-in users to the dashboard//
 guest_check();
 
-// Definisi credential Google SSO 
-$google_client_id = $_ENV['GOOGLE_CLIENT_ID'];
-$google_redirect_url = $_ENV['GOOGLE_REDIRECT_URL'];
+// Definisi credential Google SSO
+$google_client_id = $_ENV["GOOGLE_CLIENT_ID"];
+$google_redirect_url = $_ENV["GOOGLE_REDIRECT_URL"];
 
 // Generate URL Login google (Sudah diperbaiki: 'redirect_uri' & 'access_type')
-$google_login_url = "https://accounts.google.com/o/oauth2/v2/auth?" . http_build_query([
-    'client_id'     => $google_client_id,
-    'redirect_uri'  => $google_redirect_url, 
-    'response_type' => 'code',
-    'scope'         => 'https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
-    'access_type'   => 'offline', // Perbaikan di sini
-    'prompt'        => 'select_account'
-]);
+$google_login_url =
+    "https://accounts.google.com/o/oauth2/v2/auth?" .
+    http_build_query([
+        "client_id" => $google_client_id,
+        "redirect_uri" => $google_redirect_url,
+        "response_type" => "code",
+        "scope" =>
+            "https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email",
+        "access_type" => "offline", // Perbaikan di sini
+        "prompt" => "select_account",
+    ]);
 
-$identity = '';
+$identity = "";
 $errors = [];
 
 // Enable/disable temporary debugging (set to true for college testing, can be toggled to false later)
@@ -28,10 +31,10 @@ $debug = true;
 $debug_output = [];
 
 // Handle POST request
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
     // Trim user input
-    $identity = isset($_POST['identity']) ? trim($_POST['identity']) : '';
-    $password = isset($_POST['password']) ? $_POST['password'] : '';
+    $identity = isset($_POST["identity"]) ? trim($_POST["identity"]) : "";
+    $password = isset($_POST["password"]) ? $_POST["password"] : "";
 
     // 1. Validation: Check empty inputs
     if (empty($identity) || empty($password)) {
@@ -41,29 +44,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($errors)) {
         try {
             // Retrieve user details using PDO prepared statements to block SQL Injection
-            $stmt = $pdo->prepare("SELECT * FROM users WHERE username = :username_identity OR email = :email_identity");
+            $stmt = $pdo->prepare(
+                "SELECT * FROM users WHERE username = :username_identity OR email = :email_identity",
+            );
             $stmt->execute([
-                'username_identity' => $identity,
-                'email_identity'    => $identity
+                "username_identity" => $identity,
+                "email_identity" => $identity,
             ]);
             $user = $stmt->fetch();
 
             if ($debug) {
                 if ($user) {
-                    $debug_output[] = "DEBUG: User ditemukan di database! (ID: " . $user['id'] . ", Username: " . $user['username'] . ", Email: " . $user['email'] . ")";
+                    $debug_output[] =
+                        "DEBUG: User ditemukan di database! (ID: " .
+                        $user["id"] .
+                        ", Username: " .
+                        $user["username"] .
+                        ", Email: " .
+                        $user["email"] .
+                        ")";
                 } else {
-                    $debug_output[] = "DEBUG: User TIDAK ditemukan di database untuk identitas '" . $identity . "'.";
+                    $debug_output[] =
+                        "DEBUG: User TIDAK ditemukan di database untuk identitas '" .
+                        $identity .
+                        "'.";
                 }
             }
 
             // Verify password using password_verify() to process the secure hash (bcrypt)
             if ($user) {
-                $password_matches = password_verify($password, $user['password']);
+                $password_matches = password_verify(
+                    $password,
+                    $user["password"],
+                );
                 if ($debug) {
                     if ($password_matches) {
-                        $debug_output[] = "DEBUG: Password cocok dengan hash bcrypt di database.";
+                        $debug_output[] =
+                            "DEBUG: Password cocok dengan hash bcrypt di database.";
                     } else {
-                        $debug_output[] = "DEBUG: Password TIDAK cocok dengan hash bcrypt di database.";
+                        $debug_output[] =
+                            "DEBUG: Password TIDAK cocok dengan hash bcrypt di database.";
                     }
                 }
 
@@ -72,35 +92,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     session_regenerate_id(true);
 
                     // Set session variables
-                    $_SESSION['user_id'] = $user['id'];
-                    $_SESSION['username'] = $user['username'];
-                    $_SESSION['email'] = $user['email'];
+                    $_SESSION["user_id"] = $user["id"];
+                    $_SESSION["username"] = $user["username"];
+                    $_SESSION["email"] = $user["email"];
 
                     if ($debug) {
-                        $debug_output[] = "DEBUG: Session berhasil disimpan! (\$_SESSION['user_id'] = " . $_SESSION['user_id'] . ", \$_SESSION['username'] = '" . $_SESSION['username'] . "', \$_SESSION['email'] = '" . $_SESSION['email'] . "')";
-                        $_SESSION['debug_log'] = $debug_output;
+                        $debug_output[] =
+                            "DEBUG: Session berhasil disimpan! (\$_SESSION['user_id'] = " .
+                            $_SESSION["user_id"] .
+                            ", \$_SESSION['username'] = '" .
+                            $_SESSION["username"] .
+                            "', \$_SESSION['email'] = '" .
+                            $_SESSION["email"] .
+                            "')";
+                        $_SESSION["debug_log"] = $debug_output;
                     }
 
                     // Send login notification to admin
-                    notify_admin_login($user['username'], $user['email'], 'Kredensial Standard');
+                    notify_admin_login(
+                        $user["username"],
+                        $user["email"],
+                        "Kredensial Standard",
+                    );
 
                     // Redirect to dashboard
                     header("Location: dashboard.php");
-                    exit;
+                    exit();
                 }
             }
 
             // If we reach here, authentication failed
             $errors[] = "Username/Email atau Password Anda salah.";
             if ($debug && !empty($debug_output)) {
-                $_SESSION['debug_log'] = $debug_output;
+                $_SESSION["debug_log"] = $debug_output;
             }
         } catch (\PDOException $e) {
             error_log($e->getMessage());
             if ($debug) {
                 $errors[] = "Database Error (Debug): " . $e->getMessage();
             } else {
-                $errors[] = "Terjadi kesalahan pada server. Silakan coba beberapa saat lagi.";
+                $errors[] =
+                    "Terjadi kesalahan pada server. Silakan coba beberapa saat lagi.";
             }
         }
     }
@@ -129,25 +161,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <?php display_flash_message(); ?>
 
-            <?php if (isset($_SESSION['sso_error'])): ?>
+            <?php if (isset($_SESSION["sso_error"])): ?>
                 <div class="alert alert-danger alert-dismissible fade show font-bold" role="alert" style="font-size: 0.9rem;">
-                    <i class="bi bi-exclamation-octagon-fill me-2"></i> <?= htmlspecialchars($_SESSION['sso_error']); ?>
+                    <i class="bi bi-exclamation-octagon-fill me-2"></i> <?= htmlspecialchars(
+                        $_SESSION["sso_error"],
+                    ) ?>
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
-                <?php unset($_SESSION['sso_error']); ?>
+                <?php unset($_SESSION["sso_error"]); ?>
             <?php endif; ?>
 
-            <?php if (isset($_SESSION['debug_log'])): ?>
+            <?php if (isset($_SESSION["debug_log"])): ?>
                 <div class="alert alert-info border-2 font-monospace mb-3" style="font-size: 0.82rem; border-color: #3b82f6; background-color: #eff6ff;">
                     <strong class="text-primary"><i class="bi bi-bug-fill me-1"></i> DEBUG AUTENTIKASI:</strong>
                     <hr class="my-2 text-muted">
                     <ul class="mb-0 ps-3">
-                        <?php foreach ($_SESSION['debug_log'] as $log): ?>
-                            <li><?= escape($log); ?></li>
+                        <?php foreach ($_SESSION["debug_log"] as $log): ?>
+                            <li><?= escape($log) ?></li>
                         <?php endforeach; ?>
                     </ul>
                 </div>
-                <?php unset($_SESSION['debug_log']); ?>
+                <?php unset($_SESSION["debug_log"]); ?>
             <?php endif; ?>
 
             <?php if (!empty($errors)): ?>
@@ -156,7 +190,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div>
                         <ul class="mb-0 ps-3">
                             <?php foreach ($errors as $error): ?>
-                                <li><?= escape($error); ?></li>
+                                <li><?= escape($error) ?></li>
                             <?php endforeach; ?>
                         </ul>
                     </div>
@@ -168,7 +202,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <label for="identity" class="form-label">Username atau Email</label>
                     <div class="input-group">
                         <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-person"></i></span>
-                        <input type="text" class="form-control border-start-0 ps-0" id="identity" name="identity" placeholder="Username atau email" value="<?= escape($identity); ?>" required>
+                        <input type="text" class="form-control border-start-0 ps-0" id="identity" name="identity" placeholder="Username atau email" value="<?= escape(
+                            $identity,
+                        ) ?>" required>
                     </div>
                 </div>
 
@@ -188,7 +224,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <hr class="flex-grow-1 text-muted my-0">
                 </div>
 
-                <a href="<?= $google_login_url; ?>" class="btn btn-light border w-100 mb-3 d-flex align-items-center justify-content-center py-2 shadow-sm style-sso-btn" style="border-radius: 8px; transition: all 0.2s ease;">
+                <a href="<?= $google_login_url ?>" class="btn btn-light border w-100 mb-3 d-flex align-items-center justify-content-center py-2 shadow-sm style-sso-btn" style="border-radius: 8px; transition: all 0.2s ease;">
                     <img src="https://fonts.gstatic.com/s/i/productlogos/googleg/v6/24px.svg" alt="Google Logo" class="me-2" style="width: 18px; height: 18px;">
                     <span class="font-bold text-dark" style="font-size: 0.95rem;">Google Account</span>
                 </a>

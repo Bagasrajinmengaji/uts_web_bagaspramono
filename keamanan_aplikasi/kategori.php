@@ -1,90 +1,126 @@
 <?php
 // kategori.php
-require_once 'config/koneksi.php';
-require_once 'config/helper.php';
+require_once "config/koneksi.php";
+require_once "config/helper.php";
 
 // Pastikan user sudah login
 auth_check();
 
-$user_id = $_SESSION['user_id'];
-$username = $_SESSION['username'];
+$user_id = $_SESSION["user_id"];
+$username = $_SESSION["username"];
 
 // Backend CRUD via POST
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
-    header('Content-Type: application/json');
-    $action = $_POST['action'];
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"])) {
+    header("Content-Type: application/json");
+    $action = $_POST["action"];
 
     try {
-        if ($action === 'create') {
-            $nama_kategori = isset($_POST['nama_kategori']) ? trim($_POST['nama_kategori']) : '';
-            $tipe = isset($_POST['tipe']) ? trim($_POST['tipe']) : '';
+        if ($action === "create") {
+            $nama_kategori = isset($_POST["nama_kategori"])
+                ? trim($_POST["nama_kategori"])
+                : "";
+            $tipe = isset($_POST["tipe"]) ? trim($_POST["tipe"]) : "";
 
             if (empty($nama_kategori) || empty($tipe)) {
-                echo json_encode(['status' => 'error', 'message' => 'Semua field wajib diisi.']);
-                exit;
+                echo json_encode([
+                    "status" => "error",
+                    "message" => "Semua field wajib diisi.",
+                ]);
+                exit();
             }
-            if (!in_array($tipe, ['Pemasukan', 'Pengeluaran'], true)) {
-                echo json_encode(['status' => 'error', 'message' => 'Tipe kategori tidak valid.']);
-                exit;
+            if (!in_array($tipe, ["Pemasukan", "Pengeluaran"], true)) {
+                echo json_encode([
+                    "status" => "error",
+                    "message" => "Tipe kategori tidak valid.",
+                ]);
+                exit();
             }
 
-            $stmt = $pdo->prepare("INSERT INTO kategori (id_user, nama_kategori, tipe) VALUES (:id_user, :nama_kategori, :tipe)");
+            $stmt = $pdo->prepare(
+                "INSERT INTO kategori (id_user, nama_kategori, tipe) VALUES (:id_user, :nama_kategori, :tipe)",
+            );
             $stmt->execute([
-                'id_user'       => $user_id,
-                'nama_kategori' => $nama_kategori,
-                'tipe'          => $tipe
+                "id_user" => $user_id,
+                "nama_kategori" => $nama_kategori,
+                "tipe" => $tipe,
             ]);
 
-            echo json_encode(['status' => 'success', 'message' => 'Kategori berhasil ditambahkan!']);
-            exit;
+            echo json_encode([
+                "status" => "success",
+                "message" => "Kategori berhasil ditambahkan!",
+            ]);
+            exit();
         }
 
-        if ($action === 'update') {
-            $id = isset($_POST['id']) ? intval($_POST['id']) : 0;
-            $nama_kategori = isset($_POST['nama_kategori']) ? trim($_POST['nama_kategori']) : '';
-            $tipe = isset($_POST['tipe']) ? trim($_POST['tipe']) : '';
+        if ($action === "update") {
+            $id = isset($_POST["id"]) ? intval($_POST["id"]) : 0;
+            $nama_kategori = isset($_POST["nama_kategori"])
+                ? trim($_POST["nama_kategori"])
+                : "";
+            $tipe = isset($_POST["tipe"]) ? trim($_POST["tipe"]) : "";
 
             if ($id <= 0 || empty($nama_kategori) || empty($tipe)) {
-                echo json_encode(['status' => 'error', 'message' => 'Semua field wajib diisi.']);
-                exit;
+                echo json_encode([
+                    "status" => "error",
+                    "message" => "Semua field wajib diisi.",
+                ]);
+                exit();
             }
 
-            $stmt = $pdo->prepare("UPDATE kategori SET nama_kategori = :nama_kategori, tipe = :tipe WHERE id_kategori = :id AND id_user = :id_user");
+            $stmt = $pdo->prepare(
+                "UPDATE kategori SET nama_kategori = :nama_kategori, tipe = :tipe WHERE id_kategori = :id AND id_user = :id_user",
+            );
             $stmt->execute([
-                'nama_kategori' => $nama_kategori,
-                'tipe'          => $tipe,
-                'id'            => $id,
-                'id_user'       => $user_id
+                "nama_kategori" => $nama_kategori,
+                "tipe" => $tipe,
+                "id" => $id,
+                "id_user" => $user_id,
             ]);
 
-            echo json_encode(['status' => 'success', 'message' => 'Kategori berhasil diperbarui!']);
-            exit;
+            echo json_encode([
+                "status" => "success",
+                "message" => "Kategori berhasil diperbarui!",
+            ]);
+            exit();
         }
 
-        if ($action === 'delete') {
-            $id = isset($_POST['id']) ? intval($_POST['id']) : 0;
+        if ($action === "delete") {
+            $id = isset($_POST["id"]) ? intval($_POST["id"]) : 0;
 
-            $stmt = $pdo->prepare("DELETE FROM kategori WHERE id_kategori = :id AND id_user = :id_user");
-            $stmt->execute(['id' => $id, 'id_user' => $user_id]);
+            $stmt = $pdo->prepare(
+                "DELETE FROM kategori WHERE id_kategori = :id AND id_user = :id_user",
+            );
+            $stmt->execute(["id" => $id, "id_user" => $user_id]);
 
             if ($stmt->rowCount() > 0) {
-                echo json_encode(['status' => 'success', 'message' => 'Kategori berhasil dihapus!']);
+                echo json_encode([
+                    "status" => "success",
+                    "message" => "Kategori berhasil dihapus!",
+                ]);
             } else {
-                echo json_encode(['status' => 'error', 'message' => 'Data tidak ditemukan atau tidak ada akses.']);
+                echo json_encode([
+                    "status" => "error",
+                    "message" => "Data tidak ditemukan atau tidak ada akses.",
+                ]);
             }
-            exit;
+            exit();
         }
     } catch (\PDOException $e) {
         error_log($e->getMessage());
-        echo json_encode(['status' => 'error', 'message' => 'Kesalahan server backend.']);
-        exit;
+        echo json_encode([
+            "status" => "error",
+            "message" => "Kesalahan server backend.",
+        ]);
+        exit();
     }
 }
 
 // Ambil semua kategori milik user
 try {
-    $stmt = $pdo->prepare("SELECT * FROM kategori WHERE id_user = :id_user ORDER BY tipe ASC, nama_kategori ASC");
-    $stmt->execute(['id_user' => $user_id]);
+    $stmt = $pdo->prepare(
+        "SELECT * FROM kategori WHERE id_user = :id_user ORDER BY tipe ASC, nama_kategori ASC",
+    );
+    $stmt->execute(["id_user" => $user_id]);
     $categories = $stmt->fetchAll();
 } catch (\PDOException $e) {
     error_log($e->getMessage());
@@ -117,7 +153,9 @@ try {
                 </ul>
                 <ul class="navbar-nav ms-auto align-items-center">
                     <li class="nav-item text-white me-3">
-                        <i class="bi bi-person-circle me-1"></i> Halo, <strong><?= escape($username); ?></strong>
+                        <i class="bi bi-person-circle me-1"></i> Halo, <strong><?= escape(
+                            $username,
+                        ) ?></strong>
                     </li>
                     <li class="nav-item"><a class="btn btn-light btn-sm text-primary" href="logout.php">Logout</a></li>
                 </ul>
@@ -153,31 +191,47 @@ try {
                         <?php if (empty($categories)): ?>
                             <tr><td colspan="4" class="text-center py-4 text-muted">Belum ada kategori kustom. Silakan klik "Tambah Kategori".</td></tr>
                         <?php else: ?>
-                            <?php $no = 1; foreach ($categories as $row): ?>
+                            <?php
+                            $no = 1;
+                            foreach ($categories as $row): ?>
                                 <tr>
-                                    <td><?= $no++; ?></td>
-                                    <td class="font-bold"><?= escape($row['nama_kategori']); ?></td>
+                                    <td><?= $no++ ?></td>
+                                    <td class="font-bold"><?= escape(
+                                        $row["nama_kategori"],
+                                    ) ?></td>
                                     <td>
-                                        <span class="<?= $row['tipe'] === 'Pemasukan' ? 'badge bg-success' : 'badge bg-danger'; ?>">
-                                            <?= escape($row['tipe']); ?>
+                                        <span class="<?= $row["tipe"] ===
+                                        "Pemasukan"
+                                            ? "badge bg-success"
+                                            : "badge bg-danger" ?>">
+                                            <?= escape($row["tipe"]) ?>
                                         </span>
                                     </td>
                                     <td class="text-center">
                                         <div class="d-flex justify-content-center gap-2">
                                             <button type="button" class="btn btn-sm btn-outline-primary btn-edit" 
-                                                    data-id="<?= $row['id_kategori']; ?>" 
-                                                    data-nama="<?= escape($row['nama_kategori']); ?>" 
-                                                    data-tipe="<?= $row['tipe']; ?>" 
+                                                    data-id="<?= $row[
+                                                        "id_kategori"
+                                                    ] ?>" 
+                                                    data-nama="<?= escape(
+                                                        $row["nama_kategori"],
+                                                    ) ?>" 
+                                                    data-tipe="<?= $row[
+                                                        "tipe"
+                                                    ] ?>" 
                                                     title="Edit Kategori">
                                                 <i class="bi bi-pencil-square"></i>
                                             </button>
-                                            <button type="button" class="btn btn-sm btn-outline-danger btn-delete" data-id="<?= $row['id_kategori']; ?>" title="Hapus Kategori">
+                                            <button type="button" class="btn btn-sm btn-outline-danger btn-delete" data-id="<?= $row[
+                                                "id_kategori"
+                                            ] ?>" title="Hapus Kategori">
                                                 <i class="bi bi-trash"></i>
                                             </button>
                                         </div>
                                     </td>
                                 </tr>
-                            <?php endforeach; ?>
+                            <?php endforeach;
+                            ?>
                         <?php endif; ?>
                     </tbody>
                 </table>

@@ -1,11 +1,11 @@
 <?php
 // Manggil helper untuk memantau status login
-require_once 'config/helper.php';
+require_once "config/helper.php";
 
 // Cek apakah user sudah login
-$is_logged_in = isset($_SESSION['user_id']);
-$user_id = $is_logged_in ? $_SESSION['user_id'] : 0;
-$username = $is_logged_in ? $_SESSION['username'] : '';
+$is_logged_in = isset($_SESSION["user_id"]);
+$user_id = $is_logged_in ? $_SESSION["user_id"] : 0;
+$username = $is_logged_in ? $_SESSION["username"] : "";
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -290,7 +290,9 @@ $username = $is_logged_in ? $_SESSION['username'] : '';
                     </li>
                     <?php if ($is_logged_in): ?>
                         <li class="nav-item text-white-50 mr-3 font-weight-light" style="font-size: 0.85rem;">
-                            <i class="bi bi-cpu me-1"></i> PILOT: <strong class="text-white"><?= escape($username); ?></strong>
+                            <i class="bi bi-cpu me-1"></i> PILOT: <strong class="text-white"><?= escape(
+                                $username,
+                            ) ?></strong>
                         </li>
                         <li class="nav-item">
                             <a class="btn-m-secondary" href="dashboard.php">Cockpit</a>
@@ -345,7 +347,9 @@ $username = $is_logged_in ? $_SESSION['username'] : '';
                         <div class="graphic-header d-flex justify-content-between align-items-center">
                             <div>
                                 <div class="font-weight-bold text-uppercase" style="font-size: 0.75rem; letter-spacing: 1px;">Sistem Telemetri</div>
-                                <div class="text-white-50" style="font-size: 0.68rem;">AKTIF — USER ID #<?= $is_logged_in ? $user_id : '0'; ?></div>
+                                <div class="text-white-50" style="font-size: 0.68rem;">AKTIF — USER ID #<?= $is_logged_in
+                                    ? $user_id
+                                    : "0" ?></div>
                             </div>
                             <span class="graphic-pill">Active Mode</span>
                         </div>
@@ -473,7 +477,9 @@ $username = $is_logged_in ? $_SESSION['username'] : '';
                 DOMPETKU<span>.M</span>
             </p>
             <p class="mb-0 text-muted" style="font-size: 0.75rem; font-weight: 300; letter-spacing: 0.5px;">
-                &copy; <?= date('Y'); ?> DOMPETKU.M. Dibuat dengan presisi industrial dan standar keamanan tinggi. All Rights Reserved.
+                &copy; <?= date(
+                    "Y",
+                ) ?> DOMPETKU.M. Dibuat dengan presisi industrial dan standar keamanan tinggi. All Rights Reserved.
             </p>
         </div>
     </footer>
