@@ -347,48 +347,10 @@ $username = $is_logged_in ? $_SESSION["username"] : "";
                     </div>
                 </div>
 
-                <!-- Hero Right: Minimalist Dashboard Graphic -->
+                <!-- Hero Right: Real Dashboard Screenshot Preview -->
                 <div class="col-lg-6">
-                    <div class="m-dashboard-graphic">
-                        <div class="graphic-header d-flex justify-content-between align-items-center">
-                            <div>
-                                <div class="font-weight-bold text-uppercase text-dark" style="font-size: 0.75rem; letter-spacing: 1px;">Sistem Telemetri</div>
-                                <div class="text-muted" style="font-size: 0.68rem;">AKTIF — USER ID #<?= $is_logged_in
-                                    ? $user_id
-                                    : "0" ?></div>
-                            </div>
-                            <span class="graphic-pill">Active Mode</span>
-                        </div>
-
-                        <!-- Budget Meter -->
-                        <div class="mb-4">
-                            <div class="d-flex justify-content-between align-items-center" style="font-size: 0.8rem;">
-                                <span class="text-muted text-uppercase">Batas Anggaran Bulanan</span>
-                                <span class="font-weight-bold text-danger">82.4%</span>
-                            </div>
-                            <div class="graphic-budget-bar">
-                                <div class="graphic-budget-fill"></div>
-                            </div>
-                            <small class="text-muted d-block mt-1" style="font-size: 0.65rem;">WARNING: Limit pengeluaran kritis pada kategori <strong>Operasional</strong>.</small>
-                        </div>
-
-                        <!-- Telemetry Log -->
-                        <div>
-                            <div class="text-uppercase font-weight-bold mb-2 text-muted" style="font-size: 0.7rem; letter-spacing: 0.5px;">Log Transaksi Terakhir</div>
-                            
-                            <div class="graphic-transaction-row">
-                                <span class="text-secondary">28 Jun — Beli Bahan Bakar</span>
-                                <span class="text-danger font-weight-bold">- Rp 350.000</span>
-                            </div>
-                            <div class="graphic-transaction-row">
-                                <span class="text-secondary">27 Jun — Transfer Insentif</span>
-                                <span class="text-success font-weight-bold">+ Rp 4.500.000</span>
-                            </div>
-                            <div class="graphic-transaction-row">
-                                <span class="text-secondary">25 Jun — Perawatan Berkala</span>
-                                <span class="text-danger font-weight-bold">- Rp 1.200.000</span>
-                            </div>
-                        </div>
+                    <div class="position-relative shadow-lg rounded border border-light" style="border-radius: 16px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.15); transition: transform 0.3s ease;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                        <img src="assets/dashboard_preview.png" alt="Gambaran Dashboard DompetKu" class="img-fluid w-100" style="border-radius: 15px;">
                     </div>
                 </div>
 
@@ -406,7 +368,7 @@ $username = $is_logged_in ? $_SESSION["username"] : "";
             <div class="row">
                 
                 <!-- Feature 1 -->
-                <div class="col-md-4 mb-4 mb-md-0">
+                <div class="col-lg-3 col-md-6 mb-4">
                     <div class="feature-card-m">
                         <div class="feature-icon-m">
                             <i class="bi bi-sliders"></i>
@@ -419,7 +381,7 @@ $username = $is_logged_in ? $_SESSION["username"] : "";
                 </div>
 
                 <!-- Feature 2 -->
-                <div class="col-md-4 mb-4 mb-md-0">
+                <div class="col-lg-3 col-md-6 mb-4">
                     <div class="feature-card-m">
                         <div class="feature-icon-m">
                             <i class="bi bi-speedometer"></i>
@@ -432,7 +394,7 @@ $username = $is_logged_in ? $_SESSION["username"] : "";
                 </div>
 
                 <!-- Feature 3 -->
-                <div class="col-md-4">
+                <div class="col-lg-3 col-md-6 mb-4">
                     <div class="feature-card-m">
                         <div class="feature-icon-m">
                             <i class="bi bi-file-earmark-spreadsheet"></i>
@@ -440,6 +402,19 @@ $username = $is_logged_in ? $_SESSION["username"] : "";
                         <h4 class="mb-3" style="font-size: 1.25rem;">Ekspor XLSX & Impor</h4>
                         <p class="text-muted font-weight-light mb-0" style="font-size: 0.9rem;">
                             Ekspor seluruh riwayat transaksi Anda ke file Excel (.xlsx) murni secara instan, atau impor data dari dokumen dengan parser berkas berkecepatan tinggi.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Feature 4 -->
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <div class="feature-card-m">
+                        <div class="feature-icon-m">
+                            <i class="bi bi-shield-lock"></i>
+                        </div>
+                        <h4 class="mb-3" style="font-size: 1.25rem;">Keamanan Terjamin</h4>
+                        <p class="text-muted font-weight-light mb-0" style="font-size: 0.9rem;">
+                            Sistem terlindungi dari serangan SQL Injection, XSS, dan kebocoran data sesi, serta dilengkapi hashing kata sandi tingkat tinggi dan otentikasi aman Google SSO.
                         </p>
                     </div>
                 </div>
@@ -481,6 +456,12 @@ $username = $is_logged_in ? $_SESSION["username"] : "";
         <div class="container text-center">
             <p class="mb-2 font-weight-bold text-uppercase text-white" style="letter-spacing: 2px; font-size: 1.1rem;">
                 DOMPETKU<span class="text-primary">.M</span>
+            </p>
+            <p class="mb-3 text-white-50" style="font-size: 0.85rem; font-weight: 400; letter-spacing: 0.5px;">
+                <i class="bi bi-whatsapp text-success mr-2"></i>Contact Person (WhatsApp): 
+                <a href="https://wa.me/6281270143139" target="_blank" rel="noopener noreferrer" class="text-white font-weight-bold" style="text-decoration: none; border-bottom: 1px dashed rgba(255,255,255,0.4); padding-bottom: 1px;">
+                    0812-7014-3139
+                </a>
             </p>
             <p class="mb-0 text-white-50" style="font-size: 0.75rem; font-weight: 300; letter-spacing: 0.5px;">
                 &copy; <?= date(
