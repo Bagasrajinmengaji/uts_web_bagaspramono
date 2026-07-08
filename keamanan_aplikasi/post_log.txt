@@ -272,3 +272,163 @@ POST Data: Array
     [id] => 44
 )
 
+POST Data: Array
+(
+    [action] => create
+    [id] => 
+    [jenis] => Pengeluaran
+    [id_kategori] => 10
+    [id_dompet] => 11
+    [nominal] => 30000
+    [tanggal] => 2026-07-08
+    [keterangan] => buat beli ayam gepuk
+)
+
+POST Data: Array
+(
+    [action] => delete
+    [id] => 45
+)
+
+POST Data: Array
+(
+    [action] => create
+    [id] => 
+    [jenis] => Pengeluaran
+    [id_kategori] => 10
+    [id_dompet] => 11
+    [nominal] => 50000
+    [tanggal] => 2026-07-08
+    [keterangan] => buat beli mam
+)
+
+POST Data: Array
+(
+    [action] => delete
+    [id] => 46
+)
+
+POST Data: Array
+(
+    [action] => create
+    [id] => 
+    [jenis] => Transfer
+    [id_kategori] => 
+    [id_dompet] => 
+    [id_dompet_asal] => 11
+    [id_dompet_tujuan] => 12
+    [nominal] => 30000
+    [tanggal] => 2026-07-08
+    [keterangan] => pindah saldo
+)
+
+POST Data: Array
+(
+    [action] => delete
+    [id] => 48
+)
+
+POST Data: Array
+(
+    [action] => delete
+    [id] => 41
+)
+
+POST Data: Array
+(
+    [action] => delete
+    [id] => 42
+)
+
+POST Data: Array
+(
+    [action] => delete
+    [id] => 43
+)
+
+POST Data: Array
+(
+    [action] => delete
+    [id] => 47
+)
+
+POST Data: Array
+(
+    [action] => create
+    [id] => 
+    [jenis] => Transfer
+    [id_kategori] => 10
+    [id_dompet] => 
+    [id_dompet_asal] => 11
+    [id_dompet_tujuan] => 12
+    [nominal] => 30000
+    [tanggal] => 2026-07-08
+    [keterangan] => buat beli mam
+)
+
+POST Data: Array
+(
+    [action] => delete
+    [id] => 49
+)
+
+POST Data: Array
+(
+    [action] => delete
+    [id] => 50
+)
+
+POST Data: Array
+(
+    [action] => delete
+    [id] => 38
+)
+
+POST Data: Array
+(
+    [action] => create
+    [id] => 
+    [jenis] => Transfer
+    [id_kategori] => 10
+    [id_dompet] => 
+    [id_dompet_asal] => 11
+    [id_dompet_tujuan] => 12
+    [nominal] => 30000
+    [tanggal] => 2026-07-08
+    [keterangan] => buat beli mam
+)
+
+POST Data: Array
+(
+    [action] => delete
+    [id] => 37
+)
+
+POST Data: Array
+(
+    [action] => create
+    [id] => 
+    [jenis] => Pemasukan
+    [id_kategori] => 6
+    [id_dompet] => 11
+    [id_dompet_asal] => 
+    [id_dompet_tujuan] => 
+    [nominal] => 1800000
+    [tanggal] => 2026-07-08
+    [keterangan] => buat ukt
+)
+
+POST Data: Array
+(
+    [action] => create
+    [id] => 
+    [jenis] => Pengeluaran
+    [id_kategori] => 11
+    [id_dompet] => 11
+    [id_dompet_asal] => 
+    [id_dompet_tujuan] => 
+    [nominal] => 1752000
+    [tanggal] => 2026-07-08
+    [keterangan] => bayar ukt
+)
+

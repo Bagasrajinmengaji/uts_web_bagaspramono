@@ -23,6 +23,88 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"])) {
         // Aksi 1: Tambah Transaksi (Create)
         if ($action === "create") {
             $jenis = isset($_POST["jenis"]) ? trim($_POST["jenis"]) : "";
+
+            if ($jenis === "Transfer") {
+                $id_dompet_asal = isset($_POST["id_dompet_asal"]) && $_POST["id_dompet_asal"] !== "" ? intval($_POST["id_dompet_asal"]) : null;
+                $id_dompet_tujuan = isset($_POST["id_dompet_tujuan"]) && $_POST["id_dompet_tujuan"] !== "" ? intval($_POST["id_dompet_tujuan"]) : null;
+                $id_kategori = isset($_POST["id_kategori"]) && $_POST["id_kategori"] !== "" ? intval($_POST["id_kategori"]) : null;
+                $nominal = isset($_POST["nominal"]) ? trim($_POST["nominal"]) : "";
+                $keterangan = isset($_POST["keterangan"]) ? trim($_POST["keterangan"]) : "";
+                $tanggal = isset($_POST["tanggal"]) ? trim($_POST["tanggal"]) : "";
+
+                if (empty($id_dompet_asal) || empty($id_dompet_tujuan) || empty($nominal) || empty($keterangan) || empty($tanggal)) {
+                    echo json_encode([
+                        "status" => "error",
+                        "message" => "Semua field transfer wajib diisi.",
+                    ]);
+                    exit();
+                }
+                if ($id_dompet_asal === $id_dompet_tujuan) {
+                    echo json_encode([
+                        "status" => "error",
+                        "message" => "Dompet asal dan tujuan tidak boleh sama.",
+                    ]);
+                    exit();
+                }
+                if (!is_numeric($nominal) || floatval($nominal) <= 0) {
+                    echo json_encode([
+                        "status" => "error",
+                        "message" => "Nominal harus angka positif.",
+                    ]);
+                    exit();
+                }
+
+                // Ambil nama dompet untuk dicatat di keterangan otomatis
+                $stmtDompet = $pdo->prepare("SELECT id_dompet, nama_dompet FROM dompet WHERE id_dompet IN (:asal, :tujuan) AND id_user = :user_id");
+                $stmtDompet->execute([
+                    "asal" => $id_dompet_asal,
+                    "tujuan" => $id_dompet_tujuan,
+                    "user_id" => $user_id
+                ]);
+                $dompetNames = [];
+                foreach ($stmtDompet->fetchAll() as $d) {
+                    $dompetNames[$d['id_dompet']] = $d['nama_dompet'];
+                }
+
+                $nama_asal = isset($dompetNames[$id_dompet_asal]) ? $dompetNames[$id_dompet_asal] : "E-Wallet Asal";
+                $nama_tujuan = isset($dompetNames[$id_dompet_tujuan]) ? $dompetNames[$id_dompet_tujuan] : "E-Wallet Tujuan";
+
+                $pdo->beginTransaction();
+
+                // 1. Catat Pengeluaran dari Dompet Asal
+                $stmt1 = $pdo->prepare(
+                    "INSERT INTO transaksi (user_id, id_kategori, id_dompet, jenis, nominal, keterangan, tanggal) VALUES (:user_id, :id_kategori, :id_dompet, 'Pengeluaran', :nominal, :keterangan, :tanggal)"
+                );
+                $stmt1->execute([
+                    "user_id" => $user_id,
+                    "id_kategori" => $id_kategori,
+                    "id_dompet" => $id_dompet_asal,
+                    "nominal" => floatval($nominal),
+                    "keterangan" => "Transfer ke " . $nama_tujuan . " (" . $keterangan . ")",
+                    "tanggal" => $tanggal,
+                ]);
+
+                // 2. Catat Pemasukan ke Dompet Tujuan
+                $stmt2 = $pdo->prepare(
+                    "INSERT INTO transaksi (user_id, id_kategori, id_dompet, jenis, nominal, keterangan, tanggal) VALUES (:user_id, :id_kategori, :id_dompet, 'Pemasukan', :nominal, :keterangan, :tanggal)"
+                );
+                $stmt2->execute([
+                    "user_id" => $user_id,
+                    "id_kategori" => $id_kategori,
+                    "id_dompet" => $id_dompet_tujuan,
+                    "nominal" => floatval($nominal),
+                    "keterangan" => "Transfer dari " . $nama_asal . " (" . $keterangan . ")",
+                    "tanggal" => $tanggal,
+                ]);
+
+                $pdo->commit();
+
+                echo json_encode([
+                    "status" => "success",
+                    "message" => "Transfer saldo berhasil dilakukan!",
+                ]);
+                exit();
+            }
             $id_kategori =
                 isset($_POST["id_kategori"]) && $_POST["id_kategori"] !== ""
                     ? intval($_POST["id_kategori"])
@@ -724,22 +806,51 @@ try {
                                 <option value="">-- Pilih Jenis --</option>
                                 <option value="Pemasukan">Pemasukan (Uang Masuk)</option>
                                 <option value="Pengeluaran">Pengeluaran (Uang Keluar)</option>
+                                <option value="Transfer">Transfer Saldo (Pindah E-Wallet)</option>
                             </select>
                         </div>
-                        <div class="mb-3">
+                        
+                        <!-- Kategori Field (Visible for Pemasukan, Pengeluaran, and Transfer) -->
+                        <div class="mb-3" id="kategori_field_container">
                             <label for="id_kategori" class="form-label">Kategori</label>
                             <select class="form-select modal-select2" id="id_kategori" name="id_kategori" style="width: 100%;">
                                 <option value="">-- Tanpa Kategori --</option>
                             </select>
                         </div>
-                        <div class="mb-3">
-                            <label for="id_dompet" class="form-label">Dompet / Rekening</label>
-                            <select class="form-select modal-select2" id="id_dompet" name="id_dompet" required style="width: 100%;">
-                                <option value="">-- Pilih Dompet --</option>
-                                <?php foreach ($wallets as $w): ?>
-                                    <option value="<?= $w['id_dompet'] ?>"><?= escape($w['nama_dompet']) ?></option>
-                                <?php endforeach; ?>
-                            </select>
+
+                        <!-- Bidang standar untuk Pemasukan / Pengeluaran -->
+                        <div id="standard_fields">
+                            <div class="mb-3">
+                                <label for="id_dompet" class="form-label">Dompet / Rekening</label>
+                                <select class="form-select modal-select2" id="id_dompet" name="id_dompet" required style="width: 100%;">
+                                    <option value="">-- Pilih Dompet --</option>
+                                    <?php foreach ($wallets as $w): ?>
+                                        <option value="<?= $w['id_dompet'] ?>"><?= escape($w['nama_dompet']) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Bidang khusus untuk Transfer Saldo -->
+                        <div id="transfer_fields" style="display: none;">
+                            <div class="mb-3">
+                                <label for="id_dompet_asal" class="form-label">Dompet Asal (Dikurangi)</label>
+                                <select class="form-select modal-select2" id="id_dompet_asal" name="id_dompet_asal" style="width: 100%;">
+                                    <option value="">-- Pilih Dompet Asal --</option>
+                                    <?php foreach ($wallets as $w): ?>
+                                        <option value="<?= $w['id_dompet'] ?>"><?= escape($w['nama_dompet']) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="id_dompet_tujuan" class="form-label">Dompet Tujuan (Ditambahkan)</label>
+                                <select class="form-select modal-select2" id="id_dompet_tujuan" name="id_dompet_tujuan" style="width: 100%;">
+                                    <option value="">-- Pilih Dompet Tujuan --</option>
+                                    <?php foreach ($wallets as $w): ?>
+                                        <option value="<?= $w['id_dompet'] ?>"><?= escape($w['nama_dompet']) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
                         </div>
                         <div class="mb-3">
                             <label for="nominal" class="form-label">Nominal (Rupiah)</label>
@@ -846,6 +957,16 @@ try {
                 dropdownParent: $('#modalTransaksi')
             });
 
+            $('#id_dompet_asal').select2({
+                theme: 'bootstrap-5',
+                dropdownParent: $('#modalTransaksi')
+            });
+
+            $('#id_dompet_tujuan').select2({
+                theme: 'bootstrap-5',
+                dropdownParent: $('#modalTransaksi')
+            });
+
             // --- PILIHAN KATEGORI DINAMIS ---
             function updateCategoryOptions(selectedJenis, selectedKategoriId = null) {
                 const $catSelect = $('#id_kategori');
@@ -858,10 +979,16 @@ try {
                 $catSelect.empty().append('<option value="">-- Tanpa Kategori --</option>');
                 
                 if (selectedJenis) {
-                    const filtered = categories.filter(c => c.tipe === selectedJenis);
+                    let filtered = [];
+                    if (selectedJenis === 'Transfer') {
+                        filtered = categories; // Tampilkan semua kategori untuk transfer
+                    } else {
+                        filtered = categories.filter(c => c.tipe === selectedJenis);
+                    }
                     filtered.forEach(c => {
                         const isSelected = (selectedKategoriId && parseInt(c.id_kategori) === parseInt(selectedKategoriId)) ? 'selected' : '';
-                        $catSelect.append(`<option value="${c.id_kategori}" ${isSelected}>${c.nama_kategori}</option>`);
+                        const labelTipe = (selectedJenis === 'Transfer') ? ` (${c.tipe === 'Pemasukan' ? 'Masuk' : 'Keluar'})` : '';
+                        $catSelect.append(`<option value="${c.id_kategori}" ${isSelected}>${c.nama_kategori}${labelTipe}</option>`);
                     });
                 }
                 
@@ -876,6 +1003,21 @@ try {
 
             $('#jenis').on('change', function() {
                 const selectedJenis = $(this).val();
+                if (selectedJenis === 'Transfer') {
+                    $('#standard_fields').hide();
+                    $('#id_dompet').prop('required', false);
+                    
+                    $('#transfer_fields').show();
+                    $('#id_dompet_asal').prop('required', true);
+                    $('#id_dompet_tujuan').prop('required', true);
+                } else {
+                    $('#transfer_fields').hide();
+                    $('#id_dompet_asal').prop('required', false);
+                    $('#id_dompet_tujuan').prop('required', false);
+                    
+                    $('#standard_fields').show();
+                    $('#id_dompet').prop('required', true);
+                }
                 updateCategoryOptions(selectedJenis);
             });
 
@@ -919,6 +1061,9 @@ try {
                 $('#modalTransaksiLabel').text('Edit Transaksi');
                 $('#formAction').val('update');
                 $('#transaksiId').val(id);
+                
+                // Matikan opsi Transfer saat dalam Mode Edit
+                $('#jenis option[value="Transfer"]').prop('disabled', true);
                 $('#jenis').val(jenis).trigger('change'); // Update Select2 value
                 
                 // Perbarui opsi kategori dan set terpilih
@@ -976,9 +1121,15 @@ try {
             $('#formAction').val('create');
             $('#transaksiId').val('');
             $('#formTransaksi')[0].reset();
+            
+            // Aktifkan kembali opsi Transfer untuk transaksi baru
+            $('#jenis option[value="Transfer"]').prop('disabled', false);
             $('#jenis').val('').trigger('change');
+            
             $('#id_kategori').empty().append('<option value="">-- Tanpa Kategori --</option>').trigger('change');
             $('#id_dompet').val('').trigger('change');
+            $('#id_dompet_asal').val('').trigger('change');
+            $('#id_dompet_tujuan').val('').trigger('change');
         }
     </script>
     
