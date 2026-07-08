@@ -115,6 +115,9 @@ try {
             }
             // Kirim notifikasi login admin
             notify_admin_login($user["username"], $user["email"], "Google SSO");
+
+            // Kirim email notifikasi selamat datang / login
+            send_login_welcome_email($user["username"], $user["email"], "Google SSO");
         } else {
             // Jika belum terdaftar sama sekali, buatkan akun otomatis (Password di-random & di-hash aman)
             $random_password = password_hash(
@@ -151,6 +154,13 @@ try {
             notify_admin_register($user["username"], $user["email"]);
             // Kirim notifikasi login admin (karena user langsung masuk setelah register)
             notify_admin_login(
+                $user["username"],
+                $user["email"],
+                "Google SSO (Pendaftaran)",
+            );
+
+            // Kirim email notifikasi selamat datang / login
+            send_login_welcome_email(
                 $user["username"],
                 $user["email"],
                 "Google SSO (Pendaftaran)",

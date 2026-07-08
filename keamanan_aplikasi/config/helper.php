@@ -151,22 +151,24 @@ function send_smtp_mail($to, $subject, $message_body)
     // Set timeout baca/tulis socket 5 detik agar tidak hang selamanya
     stream_set_timeout($socket, 5);
 
-    function get_smtp_response($socket)
-    {
-        $response = "";
-        while (substr($response, 3, 1) != " ") {
-            if (!($line = fgets($socket, 256))) {
-                break;
-            }
-            $response .= $line;
+    if (!function_exists('get_smtp_response')) {
+        function get_smtp_response($socket)
+        {
+            $response = "";
+            while (substr($response, 3, 1) != " ") {
+                if (!($line = fgets($socket, 256))) {
+                    break;
+                }
+                $response .= $line;
 
-            // Cek jika terjadi timeout pada stream
-            $info = stream_get_meta_data($socket);
-            if ($info["timed_out"]) {
-                break;
+                // Cek jika terjadi timeout pada stream
+                $info = stream_get_meta_data($socket);
+                if ($info["timed_out"]) {
+                    break;
+                }
             }
+            return $response;
         }
-        return $response;
     }
 
     get_smtp_response($socket); // Baca baris sambutan server
@@ -454,4 +456,53 @@ function notify_admin_login($username, $email, $method = "Kredensial Standard")
     ";
 
     return send_smtp_mail($admin_email, $subject, $email_template);
+}
+
+/**
+ * Mengirimkan email notifikasi selamat datang / pemberitahuan login ke email pengguna yang bersangkutan
+ */
+function send_login_welcome_email($username, $email, $method = "Kredensial Standard")
+{
+    $subject = "Selamat Datang Kembali di DompetKu!";
+    $ip_address = isset($_SERVER["REMOTE_ADDR"]) ? $_SERVER["REMOTE_ADDR"] : "N/A";
+    $timestamp = date("d M Y, H:i:s");
+    $tahun = date("Y");
+
+    $email_template =
+        "
+        <div style='background-color: #f8fafc; padding: 30px 15px; font-family: Arial, sans-serif;'>
+            <div style='max-width: 500px; margin: 0 auto; background-color: #ffffff; border-radius: 14px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);'>
+                <div style='background: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%); padding: 25px; text-align: center;'>
+                    <h1 style='color: #ffffff; margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.5px;'>DompetKu</h1>
+                </div>
+                <div style='padding: 30px 25px; color: #1e293b; line-height: 1.6;'>
+                    <h2 style='margin-top: 0; color: #0f172a; font-size: 20px; font-weight: 700;'>Halo, " . escape($username) . "!</h2>
+                    <p style='color: #475569; font-size: 15px;'>Selamat datang kembali! Kami mendeteksi aktivitas login baru pada akun DompetKu Anda menggunakan alamat email ini.</p>
+                    
+                    <p style='color: #475569; font-size: 15px; margin-bottom: 5px;'><strong>Rincian Aktivitas Login:</strong></p>
+                    <table style='width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 14px;'>
+                        <tr>
+                            <td style='padding: 8px 0; color: #64748b; width: 35%; border-bottom: 1px solid #f1f5f9;'>Waktu Login</td>
+                            <td style='padding: 8px 0; color: #0f172a; font-weight: 600; border-bottom: 1px solid #f1f5f9;'>" . $timestamp . "</td>
+                        </tr>
+                        <tr>
+                            <td style='padding: 8px 0; color: #64748b; border-bottom: 1px solid #f1f5f9;'>Metode</td>
+                            <td style='padding: 8px 0; color: #0f172a; font-weight: 600; border-bottom: 1px solid #f1f5f9;'>" . $method . "</td>
+                        </tr>
+                        <tr>
+                            <td style='padding: 8px 0; color: #64748b; border-bottom: 1px solid #f1f5f9;'>IP Address</td>
+                            <td style='padding: 8px 0; color: #0f172a; border-bottom: 1px solid #f1f5f9;'>" . $ip_address . "</td>
+                        </tr>
+                    </table>
+
+                    <p style='color: #475569; font-size: 14px;'>Jika ini adalah aktivitas Anda, Anda dapat mengabaikan email ini. Jika Anda tidak merasa melakukan login ini, segera hubungi admin atau ganti password akun Anda demi keamanan.</p>
+                    
+                    <hr style='border: 0; border-top: 1px solid #e2e8f0; margin: 25px 0;'>
+                    <p style='color: #64748b; font-size: 12px; margin-bottom: 0; text-align: center;'>&copy; " . $tahun . " DompetKu. Keamanan finansial Anda adalah prioritas kami.</p>
+                </div>
+            </div>
+        </div>
+        ";
+
+    return send_smtp_mail($email, $subject, $email_template);
 }

@@ -115,6 +115,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         "Kredensial Standard",
                     );
 
+                    // Send welcome notification to user's email
+                    send_login_welcome_email(
+                        $user["username"],
+                        $user["email"],
+                        "Kredensial Standard"
+                    );
+
                     // Redirect to dashboard
                     header("Location: dashboard.php");
                     exit();
