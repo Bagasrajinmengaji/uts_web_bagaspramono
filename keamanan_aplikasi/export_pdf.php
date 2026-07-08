@@ -1,4 +1,7 @@
 <?php
+// Nonaktifkan penampilan error ke layar agar tidak merusak file pdf
+ini_set('display_errors', 0);
+
 // Manggil file koneksi, helper, dan class SimplePDF
 require_once "config/koneksi.php";
 require_once "config/helper.php";
@@ -248,6 +251,11 @@ $pdf->addText(
 );
 
 // Output berkas PDF ke browser
+// Bersihkan semua tingkatan output buffer untuk mencegah kebocoran karakter
+while (ob_get_level() > 0) {
+    ob_end_clean();
+}
+
 header("Content-Type: application/pdf");
 header("Content-Disposition: attachment; filename=\"$filename\"");
 header("Pragma: no-cache");

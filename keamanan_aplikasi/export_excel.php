@@ -1,8 +1,11 @@
 <?php
+// Nonaktifkan penampilan error ke layar agar tidak merusak file excel
+ini_set('display_errors', 0);
+
 // Manggil file koneksi, helper, dan Composer autoloader
 require_once "config/koneksi.php";
 require_once "config/helper.php";
-require_once __DIR__ . "/../vendor/autoload.php";
+require_once __DIR__ . "/vendor/autoload.php";
 
 // Pastikan user sudah login
 auth_check();
@@ -429,8 +432,8 @@ foreach (range("A", "G") as $col) {
 }
 
 // 10. Pengamanan & Pengiriman Berkas Langsung
-// Bersihkan output buffer untuk mencegah kebocoran karakter HTML
-if (ob_get_level()) {
+// Bersihkan semua tingkatan output buffer untuk mencegah kebocoran karakter HTML
+while (ob_get_level() > 0) {
     ob_end_clean();
 }
 

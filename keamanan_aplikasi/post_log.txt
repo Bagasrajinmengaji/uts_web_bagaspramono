@@ -218,3 +218,57 @@ POST Data: Array
     [id] => 40
 )
 
+POST Data: Array
+(
+    [action] => create
+    [id] => 
+    [jenis] => Pemasukan
+    [id_kategori] => 7
+    [id_dompet] => 14
+    [nominal] => 20000
+    [tanggal] => 2026-07-08
+    [keterangan] => top up limpul
+)
+
+POST Data: Array
+(
+    [action] => create
+    [id] => 
+    [jenis] => Pengeluaran
+    [id_kategori] => 4
+    [id_dompet] => 14
+    [nominal] => 18000
+    [tanggal] => 2026-07-08
+    [keterangan] => buat gojek
+)
+
+POST Data: Array
+(
+    [action] => create
+    [id] => 
+    [jenis] => Pengeluaran
+    [id_kategori] => 2
+    [id_dompet] => 12
+    [nominal] => 20000
+    [tanggal] => 2026-07-08
+    [keterangan] => beli ayam taliwang
+)
+
+POST Data: Array
+(
+    [action] => create
+    [id] => 
+    [jenis] => Pemasukan
+    [id_kategori] => 6
+    [id_dompet] => 11
+    [nominal] => 1000000
+    [tanggal] => 2026-07-08
+    [keterangan] => buat jajan
+)
+
+POST Data: Array
+(
+    [action] => delete
+    [id] => 44
+)
+
