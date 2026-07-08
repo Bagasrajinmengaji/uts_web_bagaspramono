@@ -131,6 +131,17 @@ try {
                 "google_id" => $google_id,
             ]);
 
+            $new_user_id = $pdo->lastInsertId();
+
+            // Buatkan Dompet Utama secara otomatis untuk user baru
+            $dompet_stmt = $pdo->prepare(
+                "INSERT INTO dompet (id_user, nama_dompet) VALUES (:id_user, :nama_dompet)",
+            );
+            $dompet_stmt->execute([
+                "id_user" => $new_user_id,
+                "nama_dompet" => "Dompet Utama",
+            ]);
+
             // Ambil data user yang baru dimasukkan
             $stmt = $pdo->prepare("SELECT * FROM users WHERE id = :id");
             $stmt->execute(["id" => $pdo->lastInsertId()]);

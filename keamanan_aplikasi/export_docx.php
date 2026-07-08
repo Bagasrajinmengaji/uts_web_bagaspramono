@@ -17,23 +17,23 @@ $search = isset($_GET["search"]) ? trim($_GET["search"]) : "";
 try {
     if ($id !== "") {
         $query =
-            "SELECT * FROM transaksi WHERE id = :id AND user_id = :user_id";
+            "SELECT t.*, k.nama_kategori, d.nama_dompet FROM transaksi t LEFT JOIN kategori k ON t.id_kategori = k.id_kategori LEFT JOIN dompet d ON t.id_dompet = d.id_dompet WHERE t.id = :id AND t.user_id = :user_id";
         $params = ["id" => $id, "user_id" => $user_id];
     } else {
-        $query = "SELECT * FROM transaksi WHERE user_id = :user_id";
+        $query = "SELECT t.*, k.nama_kategori, d.nama_dompet FROM transaksi t LEFT JOIN kategori k ON t.id_kategori = k.id_kategori LEFT JOIN dompet d ON t.id_dompet = d.id_dompet WHERE t.user_id = :user_id";
         $params = ["user_id" => $user_id];
 
         if ($jenis_filter === "Pemasukan" || $jenis_filter === "Pengeluaran") {
-            $query .= " AND jenis = :jenis";
+            $query .= " AND t.jenis = :jenis";
             $params["jenis"] = $jenis_filter;
         }
 
         if ($search !== "") {
-            $query .= " AND keterangan LIKE :search";
+            $query .= " AND t.keterangan LIKE :search";
             $params["search"] = "%" . $search . "%";
         }
 
-        $query .= " ORDER BY tanggal DESC, id DESC";
+        $query .= " ORDER BY t.tanggal DESC, t.id DESC";
     }
 
     $stmt = $pdo->prepare($query);
@@ -197,14 +197,15 @@ header("Expires: 0");
                 <th width="40" style="background-color: #0d6efd; color: #ffffff; font-weight: bold; border: 1px solid #cccccc;">No</th>
                 <th width="120" style="background-color: #0d6efd; color: #ffffff; font-weight: bold; border: 1px solid #cccccc;">Tanggal</th>
                 <th width="100" style="background-color: #0d6efd; color: #ffffff; font-weight: bold; border: 1px solid #cccccc;">Jenis</th>
-                <th width="280" style="background-color: #0d6efd; color: #ffffff; font-weight: bold; border: 1px solid #cccccc;">Keterangan</th>
+                <th width="100" style="background-color: #0d6efd; color: #ffffff; font-weight: bold; border: 1px solid #cccccc;">Dompet</th>
+                <th width="180" style="background-color: #0d6efd; color: #ffffff; font-weight: bold; border: 1px solid #cccccc;">Keterangan</th>
                 <th width="120" style="background-color: #0d6efd; color: #ffffff; font-weight: bold; border: 1px solid #cccccc;">Nominal</th>
             </tr>
         </thead>
         <tbody>
             <?php if (empty($transactions)): ?>
                 <tr>
-                    <td colspan="5" class="text-center" style="padding: 20px; color: #777777; border: 1px solid #cccccc;">Tidak ada data transaksi.</td>
+                    <td colspan="6" class="text-center" style="padding: 20px; color: #777777; border: 1px solid #cccccc;">Tidak ada data transaksi.</td>
                 </tr>
             <?php else: ?>
                 <?php
@@ -224,6 +225,9 @@ header("Expires: 0");
                             : "#dc3545" ?>;">
                             <?= escape($row["jenis"]) ?>
                         </td>
+                        <td class="text-center" style="border: 1px solid #cccccc;">
+                            <?= $row["nama_dompet"] ? escape($row["nama_dompet"]) : "Tanpa Dompet" ?>
+                        </td>
                         <td style="border: 1px solid #cccccc;"><?= escape(
                             $row["keterangan"],
                         ) ?></td>
@@ -233,8 +237,8 @@ header("Expires: 0");
                             : "text-danger" ?>" style="border: 1px solid #cccccc;">
                             <?=
                             $row["jenis"] === "Pemasukan" ? "+" : "-"
-                            number_format($row["nominal"], 0, ",", ".")
                             ?>
+                            <?= number_format($row["nominal"], 0, ",", ".") ?>
                         </td>
                     </tr>
                 <?php
@@ -242,11 +246,11 @@ header("Expires: 0");
                 ?>
                 
                 <!-- Spacer Row -->
-                <tr><td colspan="5" style="border: none; height: 15px; background-color: transparent;"></td></tr>
+                <tr><td colspan="6" style="border: none; height: 15px; background-color: transparent;"></td></tr>
                 
                 <!-- Summary Rows -->
                 <tr class="summary-row" style="background-color: #e9ecef; font-weight: bold;">
-                    <td colspan="4" class="text-right" style="border: 1px solid #cccccc; padding: 8px;">Total Pemasukan:</td>
+                    <td colspan="5" class="text-right" style="border: 1px solid #cccccc; padding: 8px;">Total Pemasukan:</td>
                     <td class="text-right text-success" style="border: 1px solid #cccccc; padding: 8px;"><?= number_format(
                         $total_pemasukan,
                         0,
@@ -255,7 +259,7 @@ header("Expires: 0");
                     ) ?></td>
                 </tr>
                 <tr class="summary-row" style="background-color: #e9ecef; font-weight: bold;">
-                    <td colspan="4" class="text-right" style="border: 1px solid #cccccc; padding: 8px;">Total Pengeluaran:</td>
+                    <td colspan="5" class="text-right" style="border: 1px solid #cccccc; padding: 8px;">Total Pengeluaran:</td>
                     <td class="text-right text-danger" style="border: 1px solid #cccccc; padding: 8px;">-<?= number_format(
                         $total_pengeluaran,
                         0,
@@ -264,7 +268,7 @@ header("Expires: 0");
                     ) ?></td>
                 </tr>
                 <tr class="summary-row" style="background-color: #e9ecef; font-weight: bold;">
-                    <td colspan="4" class="text-right" style="border: 1px solid #cccccc; padding: 8px;">Saldo Akhir:</td>
+                    <td colspan="5" class="text-right" style="border: 1px solid #cccccc; padding: 8px;">Saldo Akhir:</td>
                     <td class="text-right <?= $saldo_sekarang >= 0
                         ? "text-primary"
                         : "text-danger" ?>" style="border: 1px solid #cccccc; padding: 8px;">

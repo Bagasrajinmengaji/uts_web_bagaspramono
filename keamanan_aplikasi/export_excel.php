@@ -25,11 +25,11 @@ $search = isset($_GET["search"]) ? trim($_GET["search"]) : "";
 try {
     if ($id !== "") {
         $query =
-            "SELECT t.*, k.nama_kategori FROM transaksi t LEFT JOIN kategori k ON t.id_kategori = k.id_kategori WHERE t.id = :id AND t.user_id = :user_id";
+            "SELECT t.*, k.nama_kategori, d.nama_dompet FROM transaksi t LEFT JOIN kategori k ON t.id_kategori = k.id_kategori LEFT JOIN dompet d ON t.id_dompet = d.id_dompet WHERE t.id = :id AND t.user_id = :user_id";
         $params = ["id" => $id, "user_id" => $user_id];
     } else {
         $query =
-            "SELECT t.*, k.nama_kategori FROM transaksi t LEFT JOIN kategori k ON t.id_kategori = k.id_kategori WHERE t.user_id = :user_id";
+            "SELECT t.*, k.nama_kategori, d.nama_dompet FROM transaksi t LEFT JOIN kategori k ON t.id_kategori = k.id_kategori LEFT JOIN dompet d ON t.id_dompet = d.id_dompet WHERE t.user_id = :user_id";
         $params = ["user_id" => $user_id];
 
         if ($jenis_filter === "Pemasukan" || $jenis_filter === "Pengeluaran") {
@@ -72,7 +72,7 @@ $sheet->setShowGridlines(true);
 
 // 2. Styling Judul Laporan
 $sheet->setCellValue("A1", $title_report);
-$sheet->mergeCells("A1:F1");
+$sheet->mergeCells("A1:G1");
 $sheet
     ->getStyle("A1")
     ->getFont()
@@ -88,7 +88,7 @@ $sheet->setCellValue(
     "A2",
     "Aplikasi Pencatatan Keuangan Pribadi yang Aman & Presisi",
 );
-$sheet->mergeCells("A2:F2");
+$sheet->mergeCells("A2:G2");
 $sheet
     ->getStyle("A2")
     ->getFont()
@@ -132,11 +132,11 @@ if ($search !== "") {
 $header_row = $metadata_end_row + 2;
 
 // 4. Header Tabel
-$headers = ["No", "Tanggal", "Kategori", "Keterangan", "Nominal", "Tipe"];
+$headers = ["No", "Tanggal", "Kategori", "Dompet", "Keterangan", "Nominal", "Tipe"];
 $sheet->fromArray($headers, null, "A" . $header_row);
 
 // Styling Header Tabel (Bold, Putih di atas Abu-abu Gelap #262626, Rata Tengah)
-$headerStyleRange = "A" . $header_row . ":F" . $header_row;
+$headerStyleRange = "A" . $header_row . ":G" . $header_row;
 $sheet->getStyle($headerStyleRange)->applyFromArray([
     "font" => [
         "name" => "Segoe UI",
@@ -167,7 +167,7 @@ $current_row = $start_data_row;
 
 if (empty($transactions)) {
     $sheet->setCellValue("A" . $current_row, "Tidak ada data transaksi.");
-    $sheet->mergeCells("A" . $current_row . ":F" . $current_row);
+    $sheet->mergeCells("A" . $current_row . ":G" . $current_row);
     $sheet
         ->getStyle("A" . $current_row)
         ->getAlignment()
@@ -179,7 +179,7 @@ if (empty($transactions)) {
 
     // Border tipis untuk baris kosong
     $sheet
-        ->getStyle("A" . $current_row . ":F" . $current_row)
+        ->getStyle("A" . $current_row . ":G" . $current_row)
         ->getBorders()
         ->getAllBorders()
         ->setBorderStyle(Border::BORDER_THIN);
@@ -191,18 +191,22 @@ if (empty($transactions)) {
         $kategori_name = $row["nama_kategori"]
             ? $row["nama_kategori"]
             : "Tanpa Kategori";
+        $dompet_name = $row["nama_dompet"]
+            ? $row["nama_dompet"]
+            : "Tanpa Dompet";
 
         $sheet->setCellValue("A" . $current_row, $no);
         $sheet->setCellValue("B" . $current_row, $date_formatted);
         $sheet->setCellValue("C" . $current_row, $kategori_name);
-        $sheet->setCellValue("D" . $current_row, $row["keterangan"]);
-        $sheet->setCellValue("E" . $current_row, (float) $row["nominal"]);
-        $sheet->setCellValue("F" . $current_row, $row["jenis"]);
+        $sheet->setCellValue("D" . $current_row, $dompet_name);
+        $sheet->setCellValue("E" . $current_row, $row["keterangan"]);
+        $sheet->setCellValue("F" . $current_row, (float) $row["nominal"]);
+        $sheet->setCellValue("G" . $current_row, $row["jenis"]);
 
         // Zebra Striping (Baris genap abu-abu sangat tipis #F9F9F9)
         if ($no % 2 === 0) {
             $sheet
-                ->getStyle("A" . $current_row . ":F" . $current_row)
+                ->getStyle("A" . $current_row . ":G" . $current_row)
                 ->getFill()
                 ->setFillType(Fill::FILL_SOLID)
                 ->getStartColor()
@@ -225,19 +229,23 @@ if (empty($transactions)) {
         $sheet
             ->getStyle("D" . $current_row)
             ->getAlignment()
-            ->setHorizontal(Alignment::HORIZONTAL_LEFT); // Keterangan
+            ->setHorizontal(Alignment::HORIZONTAL_CENTER); // Dompet
         $sheet
             ->getStyle("E" . $current_row)
             ->getAlignment()
-            ->setHorizontal(Alignment::HORIZONTAL_RIGHT); // Nominal
+            ->setHorizontal(Alignment::HORIZONTAL_LEFT); // Keterangan
         $sheet
             ->getStyle("F" . $current_row)
+            ->getAlignment()
+            ->setHorizontal(Alignment::HORIZONTAL_RIGHT); // Nominal
+        $sheet
+            ->getStyle("G" . $current_row)
             ->getAlignment()
             ->setHorizontal(Alignment::HORIZONTAL_CENTER); // Tipe
 
         // Format Mata Uang Rupiah untuk Nominal
         $sheet
-            ->getStyle("E" . $current_row)
+            ->getStyle("F" . $current_row)
             ->getNumberFormat()
             ->setFormatCode(
                 '_-* "Rp" #,##0_-;\-* "Rp" #,##0_-;_-* "-"_-;_-@_-',
@@ -245,7 +253,7 @@ if (empty($transactions)) {
 
         // Border tipis untuk sel data
         $sheet
-            ->getStyle("A" . $current_row . ":F" . $current_row)
+            ->getStyle("A" . $current_row . ":G" . $current_row)
             ->getBorders()
             ->getAllBorders()
             ->setBorderStyle(Border::BORDER_THIN)
@@ -263,22 +271,22 @@ if (empty($transactions)) {
 
     // 6. Baris Total Pemasukan
     $sheet->setCellValue("A" . $current_row, "TOTAL PEMASUKAN");
-    $sheet->mergeCells("A" . $current_row . ":D" . $current_row);
+    $sheet->mergeCells("A" . $current_row . ":E" . $current_row);
     $sheet->setCellValue(
-        "E" . $current_row,
-        "=SUMIF(F" .
+        "F" . $current_row,
+        "=SUMIF(G" .
+            $start_data_row .
+            ":G" .
+            $last_data_row .
+            ', "Pemasukan", F' .
             $start_data_row .
             ":F" .
-            $last_data_row .
-            ', "Pemasukan", E' .
-            $start_data_row .
-            ":E" .
             $last_data_row .
             ")",
     );
 
     // Styling Total Pemasukan (Abu-abu Muda, Bold, Border Atas-Bawah)
-    $pemasukan_range = "A" . $current_row . ":F" . $current_row;
+    $pemasukan_range = "A" . $current_row . ":G" . $current_row;
     $sheet->getStyle($pemasukan_range)->applyFromArray([
         "font" => ["bold" => true, "name" => "Segoe UI"],
         "fill" => [
@@ -304,11 +312,11 @@ if (empty($transactions)) {
         ->getAlignment()
         ->setHorizontal(Alignment::HORIZONTAL_RIGHT);
     $sheet
-        ->getStyle("E" . $current_row)
+        ->getStyle("F" . $current_row)
         ->getAlignment()
         ->setHorizontal(Alignment::HORIZONTAL_RIGHT);
     $sheet
-        ->getStyle("E" . $current_row)
+        ->getStyle("F" . $current_row)
         ->getNumberFormat()
         ->setFormatCode('_-* "Rp" #,##0_-;\-* "Rp" #,##0_-;_-* "-"_-;_-@_-');
     $row_pemasukan = $current_row;
@@ -316,22 +324,22 @@ if (empty($transactions)) {
 
     // 7. Baris Total Pengeluaran
     $sheet->setCellValue("A" . $current_row, "TOTAL PENGELUARAN");
-    $sheet->mergeCells("A" . $current_row . ":D" . $current_row);
+    $sheet->mergeCells("A" . $current_row . ":E" . $current_row);
     $sheet->setCellValue(
-        "E" . $current_row,
-        "=SUMIF(F" .
+        "F" . $current_row,
+        "=SUMIF(G" .
+            $start_data_row .
+            ":G" .
+            $last_data_row .
+            ', "Pengeluaran", F' .
             $start_data_row .
             ":F" .
-            $last_data_row .
-            ', "Pengeluaran", E' .
-            $start_data_row .
-            ":E" .
             $last_data_row .
             ")",
     );
 
     // Styling Total Pengeluaran (Abu-abu Muda, Bold, Border Atas-Bawah)
-    $pengeluaran_range = "A" . $current_row . ":F" . $current_row;
+    $pengeluaran_range = "A" . $current_row . ":G" . $current_row;
     $sheet->getStyle($pengeluaran_range)->applyFromArray([
         "font" => ["bold" => true, "name" => "Segoe UI"],
         "fill" => [
@@ -357,11 +365,11 @@ if (empty($transactions)) {
         ->getAlignment()
         ->setHorizontal(Alignment::HORIZONTAL_RIGHT);
     $sheet
-        ->getStyle("E" . $current_row)
+        ->getStyle("F" . $current_row)
         ->getAlignment()
         ->setHorizontal(Alignment::HORIZONTAL_RIGHT);
     $sheet
-        ->getStyle("E" . $current_row)
+        ->getStyle("F" . $current_row)
         ->getNumberFormat()
         ->setFormatCode('_-* "Rp" #,##0_-;\-* "Rp" #,##0_-;_-* "-"_-;_-@_-');
     $row_pengeluaran = $current_row;
@@ -369,14 +377,14 @@ if (empty($transactions)) {
 
     // 8. Baris Saldo Akhir
     $sheet->setCellValue("A" . $current_row, "SALDO AKHIR");
-    $sheet->mergeCells("A" . $current_row . ":D" . $current_row);
+    $sheet->mergeCells("A" . $current_row . ":E" . $current_row);
     $sheet->setCellValue(
-        "E" . $current_row,
-        "=E" . $row_pemasukan . "-E" . $row_pengeluaran,
+        "F" . $current_row,
+        "=F" . $row_pemasukan . "-F" . $row_pengeluaran,
     );
 
     // Styling Saldo Akhir (Biru Muda Lembut #D9E1F2, Bold, Border Atas-Bawah Akuntansi Double)
-    $saldo_range = "A" . $current_row . ":F" . $current_row;
+    $saldo_range = "A" . $current_row . ":G" . $current_row;
     $sheet->getStyle($saldo_range)->applyFromArray([
         "font" => [
             "bold" => true,
@@ -406,17 +414,17 @@ if (empty($transactions)) {
         ->getAlignment()
         ->setHorizontal(Alignment::HORIZONTAL_RIGHT);
     $sheet
-        ->getStyle("E" . $current_row)
+        ->getStyle("F" . $current_row)
         ->getAlignment()
         ->setHorizontal(Alignment::HORIZONTAL_RIGHT);
     $sheet
-        ->getStyle("E" . $current_row)
+        ->getStyle("F" . $current_row)
         ->getNumberFormat()
         ->setFormatCode('_-* "Rp" #,##0_-;\-* "Rp" #,##0_-;_-* "-"_-;_-@_-');
 }
 
 // 9. Auto-Fit Lebar Kolom untuk Semua Kolom
-foreach (range("A", "F") as $col) {
+foreach (range("A", "G") as $col) {
     $sheet->getColumnDimension($col)->setAutoSize(true);
 }
 
@@ -429,7 +437,7 @@ if (ob_get_level()) {
 header(
     "Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 );
-header('Content-Disposition: attachment;filename="' . $filename . '"');
+header('Content-Disposition: attachment; filename="' . $filename . '"');
 header("Cache-Control: max-age=0");
 // Jika ada IE 9, aktifkan berikut:
 header("Cache-Control: max-age=1");

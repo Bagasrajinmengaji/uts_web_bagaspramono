@@ -94,6 +94,17 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     "password" => $hashed_password,
                 ]);
 
+                $new_user_id = $pdo->lastInsertId();
+
+                // Buatkan Dompet Utama secara otomatis untuk user baru
+                $dompet_stmt = $pdo->prepare(
+                    "INSERT INTO dompet (id_user, nama_dompet) VALUES (:id_user, :nama_dompet)",
+                );
+                $dompet_stmt->execute([
+                    "id_user" => $new_user_id,
+                    "nama_dompet" => "Dompet Utama",
+                ]);
+
                 // --- INTEGRASI LAYOUT SMTP EMAIL (DISESUAIKAN DENGAN CSS BAWAAN) ---
                 $subject = "Selamat Bergabung di DompetKu!";
                 $email_template =

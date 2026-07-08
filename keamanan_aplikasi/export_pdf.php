@@ -18,23 +18,23 @@ $search = isset($_GET["search"]) ? trim($_GET["search"]) : "";
 try {
     if ($id !== "") {
         $query =
-            "SELECT * FROM transaksi WHERE id = :id AND user_id = :user_id";
+            "SELECT t.*, k.nama_kategori, d.nama_dompet FROM transaksi t LEFT JOIN kategori k ON t.id_kategori = k.id_kategori LEFT JOIN dompet d ON t.id_dompet = d.id_dompet WHERE t.id = :id AND t.user_id = :user_id";
         $params = ["id" => $id, "user_id" => $user_id];
     } else {
-        $query = "SELECT * FROM transaksi WHERE user_id = :user_id";
+        $query = "SELECT t.*, k.nama_kategori, d.nama_dompet FROM transaksi t LEFT JOIN kategori k ON t.id_kategori = k.id_kategori LEFT JOIN dompet d ON t.id_dompet = d.id_dompet WHERE t.user_id = :user_id";
         $params = ["user_id" => $user_id];
 
         if ($jenis_filter === "Pemasukan" || $jenis_filter === "Pengeluaran") {
-            $query .= " AND jenis = :jenis";
+            $query .= " AND t.jenis = :jenis";
             $params["jenis"] = $jenis_filter;
         }
 
         if ($search !== "") {
-            $query .= " AND keterangan LIKE :search";
+            $query .= " AND t.keterangan LIKE :search";
             $params["search"] = "%" . $search . "%";
         }
 
-        $query .= " ORDER BY tanggal DESC, id DESC";
+        $query .= " ORDER BY t.tanggal DESC, t.id DESC";
     }
 
     $stmt = $pdo->prepare($query);
@@ -113,10 +113,11 @@ $pdf->addRect(40, $y_header, 510, 20, [13, 110, 253]);
 // Tulis label header (Warna putih)
 $white = [255, 255, 255];
 $pdf->addText(45, $y_header + 5, "No", 10, true, $white);
-$pdf->addText(75, $y_header + 5, "Tanggal", 10, true, $white);
-$pdf->addText(155, $y_header + 5, "Jenis", 10, true, $white);
-$pdf->addText(235, $y_header + 5, "Keterangan", 10, true, $white);
-$pdf->addText(455, $y_header + 5, "Nominal", 10, true, $white);
+$pdf->addText(70, $y_header + 5, "Tanggal", 10, true, $white);
+$pdf->addText(125, $y_header + 5, "Jenis", 10, true, $white);
+$pdf->addText(185, $y_header + 5, "Dompet", 10, true, $white);
+$pdf->addText(255, $y_header + 5, "Keterangan", 10, true, $white);
+$pdf->addText(460, $y_header + 5, "Nominal", 10, true, $white);
 
 // 4. Baris Data
 $y_row = 655;
@@ -165,7 +166,7 @@ if (empty($transactions)) {
         // Tulis isi kolom
         $pdf->addText(45, $y_row, $no++, 10, false);
         $pdf->addText(
-            75,
+            70,
             $y_row,
             date("d M Y", strtotime($row["tanggal"])),
             10,
@@ -174,23 +175,30 @@ if (empty($transactions)) {
 
         // Warna jenis
         if ($row["jenis"] === "Pemasukan") {
-            $pdf->addText(155, $y_row, "Pemasukan", 10, true, [25, 135, 84]); // Hijau
+            $pdf->addText(125, $y_row, "Pemasukan", 10, true, [25, 135, 84]); // Hijau
             $nominal_text = "+" . number_format($row["nominal"], 0, ",", ".");
             $nominal_color = [25, 135, 84];
         } else {
-            $pdf->addText(155, $y_row, "Pengeluaran", 10, true, [220, 53, 69]); // Merah
+            $pdf->addText(125, $y_row, "Pengeluaran", 10, true, [220, 53, 69]); // Merah
             $nominal_text = "-" . number_format($row["nominal"], 0, ",", ".");
             $nominal_color = [220, 53, 69];
         }
 
+        // Tulis dompet
+        $dompet_name = $row["nama_dompet"] ? $row["nama_dompet"] : "Tanpa Dompet";
+        if (strlen($dompet_name) > 12) {
+            $dompet_name = substr($dompet_name, 0, 10) . "..";
+        }
+        $pdf->addText(185, $y_row, $dompet_name, 10, false);
+
         // Potong keterangan jika terlalu panjang agar tidak melewati lebar kolom
         $keterangan = $row["keterangan"];
-        if (strlen($keterangan) > 40) {
-            $keterangan = substr($keterangan, 0, 38) . "..";
+        if (strlen($keterangan) > 35) {
+            $keterangan = substr($keterangan, 0, 33) . "..";
         }
 
-        $pdf->addText(235, $y_row, $keterangan, 10, false);
-        $pdf->addText(455, $y_row, $nominal_text, 10, true, $nominal_color);
+        $pdf->addText(255, $y_row, $keterangan, 10, false);
+        $pdf->addText(460, $y_row, $nominal_text, 10, true, $nominal_color);
 
         // Gambar garis pemisah baris
         $pdf->addLine(40, $y_row - 5, 550, $y_row - 5, [220, 220, 220], 0.5);

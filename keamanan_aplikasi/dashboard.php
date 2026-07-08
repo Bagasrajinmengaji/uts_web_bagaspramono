@@ -60,12 +60,18 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"])) {
                 exit();
             }
 
+            $id_dompet =
+                isset($_POST["id_dompet"]) && $_POST["id_dompet"] !== ""
+                    ? intval($_POST["id_dompet"])
+                    : null;
+
             $stmt = $pdo->prepare(
-                "INSERT INTO transaksi (user_id, id_kategori, jenis, nominal, keterangan, tanggal) VALUES (:user_id, :id_kategori, :jenis, :nominal, :keterangan, :tanggal)",
+                "INSERT INTO transaksi (user_id, id_kategori, id_dompet, jenis, nominal, keterangan, tanggal) VALUES (:user_id, :id_kategori, :id_dompet, :jenis, :nominal, :keterangan, :tanggal)",
             );
             $stmt->execute([
                 "user_id" => $user_id,
                 "id_kategori" => $id_kategori,
+                "id_dompet" => $id_dompet,
                 "jenis" => $jenis,
                 "nominal" => floatval($nominal),
                 "keterangan" => $keterangan,
@@ -86,6 +92,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"])) {
             $id_kategori =
                 isset($_POST["id_kategori"]) && $_POST["id_kategori"] !== ""
                     ? intval($_POST["id_kategori"])
+                    : null;
+            $id_dompet =
+                isset($_POST["id_dompet"]) && $_POST["id_dompet"] !== ""
+                    ? intval($_POST["id_dompet"])
                     : null;
             $nominal = isset($_POST["nominal"]) ? trim($_POST["nominal"]) : "";
             $keterangan = isset($_POST["keterangan"])
@@ -108,10 +118,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"])) {
             }
 
             $stmt = $pdo->prepare(
-                "UPDATE transaksi SET id_kategori = :id_kategori, jenis = :jenis, nominal = :nominal, keterangan = :keterangan, tanggal = :tanggal WHERE id = :id AND user_id = :user_id",
+                "UPDATE transaksi SET id_kategori = :id_kategori, id_dompet = :id_dompet, jenis = :jenis, nominal = :nominal, keterangan = :keterangan, tanggal = :tanggal WHERE id = :id AND user_id = :user_id",
             );
             $stmt->execute([
                 "id_kategori" => $id_kategori,
+                "id_dompet" => $id_dompet,
                 "jenis" => $jenis,
                 "nominal" => floatval($nominal),
                 "keterangan" => $keterangan,
@@ -182,9 +193,21 @@ try {
     $stmt_cat->execute(["user_id" => $user_id]);
     $categories = $stmt_cat->fetchAll();
 
-    // Query Transaksi dengan Left Join Kategori
+    // Ambil daftar dompet milik user beserta kalkulasi saldo aktifnya
+    $stmt_wallets = $pdo->prepare(
+        "SELECT d.id_dompet, d.nama_dompet,
+               (COALESCE((SELECT SUM(t.nominal) FROM transaksi t WHERE t.id_dompet = d.id_dompet AND t.jenis = 'Pemasukan'), 0) -
+                COALESCE((SELECT SUM(t.nominal) FROM transaksi t WHERE t.id_dompet = d.id_dompet AND t.jenis = 'Pengeluaran'), 0)) AS saldo
+         FROM dompet d
+         WHERE d.id_user = :user_id
+         ORDER BY d.nama_dompet ASC"
+    );
+    $stmt_wallets->execute(["user_id" => $user_id]);
+    $wallets = $stmt_wallets->fetchAll();
+
+    // Query Transaksi dengan Left Join Kategori dan Dompet
     $query =
-        "SELECT t.*, k.nama_kategori FROM transaksi t LEFT JOIN kategori k ON t.id_kategori = k.id_kategori WHERE t.user_id = :user_id";
+        "SELECT t.*, k.nama_kategori, d.nama_dompet FROM transaksi t LEFT JOIN kategori k ON t.id_kategori = k.id_kategori LEFT JOIN dompet d ON t.id_dompet = d.id_dompet WHERE t.user_id = :user_id";
     $params = ["user_id" => $user_id];
 
     $jenis_filter = isset($_GET["jenis"]) ? trim($_GET["jenis"]) : "";
@@ -219,6 +242,17 @@ try {
         } else {
             $query .= " AND t.id_kategori = :id_kategori_filter";
             $params["id_kategori_filter"] = intval($id_kategori_filter);
+        }
+    }
+
+    // Filter Lanjutan 2b: Dompet Spesifik
+    $id_dompet_filter = isset($_GET["id_dompet_filter"]) ? trim($_GET["id_dompet_filter"]) : "";
+    if ($id_dompet_filter !== "") {
+        if ($id_dompet_filter === "NULL") {
+            $query .= " AND t.id_dompet IS NULL";
+        } else {
+            $query .= " AND t.id_dompet = :id_dompet_filter";
+            $params["id_dompet_filter"] = intval($id_dompet_filter);
         }
     }
 
@@ -289,6 +323,7 @@ try {
                     <li class="nav-item"><a class="nav-link" href="kategori.php">Kategori</a></li>
                     <li class="nav-item"><a class="nav-link" href="budgeting.php">Anggaran</a></li>
                     <li class="nav-item"><a class="nav-link" href="target_tabungan.php">Target Tabungan</a></li>
+                    <li class="nav-item"><a class="nav-link" href="dompet.php">Dompet</a></li>
                 </ul>
                 <ul class="navbar-nav ms-auto align-items-center">
                     <li class="nav-item text-white me-3">
@@ -379,8 +414,35 @@ try {
                     <h3 class="font-bold mt-2 <?= $saldo_sekarang >= 0
                         ? "text-primary"
                         : "text-danger" ?>"><?= format_rupiah(
-    $saldo_sekarang,
-) ?></h3>
+                        $saldo_sekarang,
+                    ) ?></h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bagian Rincian Saldo per Dompet -->
+        <div class="row mb-5">
+            <div class="col-12">
+                <div class="card p-4 shadow-sm border-0">
+                    <h5 class="font-bold mb-3 text-secondary"><i class="bi bi-wallet2 text-primary me-2"></i> Rincian Saldo per Dompet</h5>
+                    <div class="row g-3">
+                        <?php if (empty($wallets)): ?>
+                            <div class="col-12 text-muted" style="font-size: 0.9rem;">
+                                Belum ada dompet terdaftar. Silakan kelola di menu <a href="dompet.php">Dompet</a>.
+                            </div>
+                        <?php else: ?>
+                            <?php foreach ($wallets as $wallet): ?>
+                                <div class="col-md-3">
+                                    <div class="p-3 border rounded bg-light">
+                                        <span class="text-muted text-uppercase text-xs font-bold"><?= escape($wallet['nama_dompet']) ?></span>
+                                        <h5 class="font-bold mt-1 mb-0 <?= $wallet['saldo'] >= 0 ? 'text-success' : 'text-danger' ?>">
+                                            <?= format_rupiah($wallet['saldo']) ?>
+                                        </h5>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </div>
                 </div>
             </div>
         </div>
@@ -449,11 +511,11 @@ try {
             <!-- Filter Transaksi Lanjutan -->
             <form action="dashboard.php" method="GET" class="mb-4">
                 <div class="row g-3">
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label class="form-label text-xs font-bold text-secondary">Cari Deskripsi</label>
                         <input type="text" class="form-control" name="search" placeholder="Cari keterangan..." value="<?= escape($search) ?>">
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <label class="form-label text-xs font-bold text-secondary">Jenis</label>
                         <select class="form-select select2-init" name="jenis">
                             <option value="">-- Semua Jenis --</option>
@@ -461,7 +523,7 @@ try {
                             <option value="Pengeluaran" <?= $jenis_filter === "Pengeluaran" ? "selected" : "" ?>>Pengeluaran</option>
                         </select>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <label class="form-label text-xs font-bold text-secondary">Kategori</label>
                         <select class="form-select select2-init" name="id_kategori_filter">
                             <option value="">-- Semua Kategori --</option>
@@ -473,12 +535,24 @@ try {
                             <?php endforeach; ?>
                         </select>
                     </div>
+                    <div class="col-md-3">
+                        <label class="form-label text-xs font-bold text-secondary">Dompet</label>
+                        <select class="form-select select2-init" name="id_dompet_filter">
+                            <option value="">-- Semua Dompet --</option>
+                            <option value="NULL" <?= $id_dompet_filter === "NULL" ? "selected" : "" ?>>Tanpa Dompet</option>
+                            <?php foreach ($wallets as $w): ?>
+                                <option value="<?= $w['id_dompet'] ?>" <?= $id_dompet_filter == $w['id_dompet'] ? "selected" : "" ?>>
+                                    <?= escape($w['nama_dompet']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
                     <div class="col-md-2 d-flex align-items-end gap-1">
                         <button type="submit" class="btn btn-primary w-100"><i class="bi bi-funnel-fill"></i> Filter</button>
                         <button class="btn btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#advancedFilterCollapse" aria-expanded="false" aria-controls="advancedFilterCollapse" title="Filter Lanjutan">
                             <i class="bi bi-sliders"></i>
                         </button>
-                        <?php if ($search !== "" || $jenis_filter !== "" || $id_kategori_filter !== "" || $tanggal_mulai !== "" || $tanggal_selesai !== "" || $nominal_min !== "" || $nominal_max !== ""): ?>
+                        <?php if ($search !== "" || $jenis_filter !== "" || $id_kategori_filter !== "" || $id_dompet_filter !== "" || $tanggal_mulai !== "" || $tanggal_selesai !== "" || $nominal_min !== "" || $nominal_max !== ""): ?>
                             <a href="dashboard.php" class="btn btn-light border" title="Reset Filter"><i class="bi bi-arrow-counterclockwise"></i></a>
                         <?php endif; ?>
                     </div>
@@ -517,6 +591,7 @@ try {
                             <th>Tanggal</th>
                             <th>Jenis</th>
                             <th>Kategori</th>
+                            <th>Dompet</th>
                             <th>Keterangan</th>
                             <th>Nominal</th>
                             <th class="text-center">Aksi</th>
@@ -524,7 +599,7 @@ try {
                     </thead>
                     <tbody>
                         <?php if (empty($transactions)): ?>
-                            <tr><td colspan="7" class="text-center py-4 text-muted">Tidak ada data transaksi.</td></tr>
+                            <tr><td colspan="8" class="text-center py-4 text-muted">Tidak ada data transaksi.</td></tr>
                         <?php else: ?>
                             <?php
                             $no = 1;
@@ -539,13 +614,18 @@ try {
                                     "Pemasukan"
                                         ? "badge bg-success"
                                         : "badge bg-danger" ?>"><?= escape(
-    $row["jenis"],
-) ?></span></td>
+                                    $row["jenis"],
+                                ) ?></span></td>
                                     <td><span class="badge bg-secondary"><?= $row[
                                         "nama_kategori"
                                     ]
                                         ? escape($row["nama_kategori"])
                                         : "Tanpa Kategori" ?></span></td>
+                                    <td><span class="badge bg-info text-dark"><?= $row[
+                                        "nama_dompet"
+                                    ]
+                                        ? escape($row["nama_dompet"])
+                                        : "Tanpa Dompet" ?></span></td>
                                     <td><?= escape($row["keterangan"]) ?></td>
                                     <td class="font-bold <?= $row["jenis"] ===
                                     "Pemasukan"
@@ -593,6 +673,9 @@ try {
                                                     ] ?>" 
                                                     data-kategori="<?= $row[
                                                         "id_kategori"
+                                                    ] ?>" 
+                                                    data-dompet="<?= $row[
+                                                        "id_dompet"
                                                     ] ?>" 
                                                     data-nominal="<?= $row[
                                                         "nominal"
@@ -647,6 +730,15 @@ try {
                             <label for="id_kategori" class="form-label">Kategori</label>
                             <select class="form-select modal-select2" id="id_kategori" name="id_kategori" style="width: 100%;">
                                 <option value="">-- Tanpa Kategori --</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="id_dompet" class="form-label">Dompet / Rekening</label>
+                            <select class="form-select modal-select2" id="id_dompet" name="id_dompet" required style="width: 100%;">
+                                <option value="">-- Pilih Dompet --</option>
+                                <?php foreach ($wallets as $w): ?>
+                                    <option value="<?= $w['id_dompet'] ?>"><?= escape($w['nama_dompet']) ?></option>
+                                <?php endforeach; ?>
                             </select>
                         </div>
                         <div class="mb-3">
@@ -749,6 +841,11 @@ try {
                 dropdownParent: $('#modalTransaksi')
             });
 
+            $('#id_dompet').select2({
+                theme: 'bootstrap-5',
+                dropdownParent: $('#modalTransaksi')
+            });
+
             // --- PILIHAN KATEGORI DINAMIS ---
             function updateCategoryOptions(selectedJenis, selectedKategoriId = null) {
                 const $catSelect = $('#id_kategori');
@@ -813,6 +910,7 @@ try {
                 const id = $(this).data('id');
                 const jenis = $(this).data('jenis');
                 const kategoriId = $(this).data('kategori');
+                const dompetId = $(this).data('dompet');
                 const nominal = $(this).data('nominal');
                 const tanggal = $(this).data('tanggal');
                 const keterangan = $(this).data('keterangan');
@@ -825,6 +923,9 @@ try {
                 
                 // Perbarui opsi kategori dan set terpilih
                 updateCategoryOptions(jenis, kategoriId);
+
+                // Set nilai dompet
+                $('#id_dompet').val(dompetId).trigger('change');
 
                 $('#nominal').val(nominal);
                 $('#tanggal').val(tanggal);
@@ -877,6 +978,7 @@ try {
             $('#formTransaksi')[0].reset();
             $('#jenis').val('').trigger('change');
             $('#id_kategori').empty().append('<option value="">-- Tanpa Kategori --</option>').trigger('change');
+            $('#id_dompet').val('').trigger('change');
         }
     </script>
     

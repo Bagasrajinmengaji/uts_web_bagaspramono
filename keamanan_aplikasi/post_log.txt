@@ -116,3 +116,105 @@ POST Data: Array
     [id] => 33
 )
 
+POST Data: Array
+(
+    [action] => create
+    [id] => 
+    [jenis] => Pemasukan
+    [id_kategori] => 
+    [id_dompet] => 10
+    [nominal] => 500000
+    [tanggal] => 2026-07-08
+    [keterangan] => Gaji bulanan
+)
+
+POST Data: Array
+(
+    [action] => create
+    [id] => 
+    [jenis] => Pengeluaran
+    [id_kategori] => 
+    [id_dompet] => 9
+    [nominal] => 50000
+    [tanggal] => 2026-07-08
+    [keterangan] => Makan siang
+)
+
+POST Data: Array
+(
+    [action] => update
+    [id] => 35
+    [jenis] => Pengeluaran
+    [id_kategori] => 
+    [id_dompet] => 10
+    [nominal] => 50000.00
+    [tanggal] => 2026-07-08
+    [keterangan] => Makan siang
+)
+
+POST Data: Array
+(
+    [action] => delete
+    [id] => 30
+)
+
+POST Data: Array
+(
+    [action] => delete
+    [id] => 27
+)
+
+POST Data: Array
+(
+    [action] => delete
+    [id] => 19
+)
+
+POST Data: Array
+(
+    [action] => create
+    [id] => 
+    [jenis] => Pemasukan
+    [id_kategori] => 6
+    [id_dompet] => 11
+    [nominal] => 400000
+    [tanggal] => 2026-07-08
+    [keterangan] => uang mingguan
+)
+
+POST Data: Array
+(
+    [action] => create
+    [id] => 
+    [jenis] => Pemasukan
+    [id_kategori] => 7
+    [id_dompet] => 12
+    [nominal] => 50000
+    [tanggal] => 2026-07-08
+    [keterangan] => tf seabank
+)
+
+POST Data: Array
+(
+    [action] => create
+    [id] => 
+    [jenis] => Pengeluaran
+    [id_kategori] => 2
+    [id_dompet] => 12
+    [nominal] => 20000
+    [tanggal] => 2026-07-08
+    [keterangan] => beli ketoprak
+)
+
+POST Data: Array
+(
+    [action] => delete
+    [id] => 39
+)
+
+POST Data: Array
+(
+    [action] => delete
+    [id] => 40
+)
+
