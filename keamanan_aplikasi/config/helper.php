@@ -118,7 +118,7 @@ function in_amount_type($val)
 {
     return in_array($val, ["Pemasukan", "Pengeluaran"], true);
 }
-function send_smtp_mail($to, $subject, $message_body, $max_retries = 2)
+function send_smtp_mail($to, $subject, $message_body, $max_retries = 1)
 {
     // Pengaturan Akun SMTP
     $smtp_host = isset($_ENV["SMTP_HOST"]) ? $_ENV["SMTP_HOST"] : "";
@@ -174,8 +174,8 @@ function send_smtp_mail($to, $subject, $message_body, $max_retries = 2)
     for ($attempt = 0; $attempt <= $max_retries; $attempt++) {
         // Jeda sebelum retry (tidak pada percobaan pertama)
         if ($attempt > 0) {
-            error_log("SMTP Retry #{$attempt} untuk {$to} - menunggu 2 detik...");
-            sleep(2);
+            error_log("SMTP Retry #{$attempt} untuk {$to} - menunggu 1 detik...");
+            sleep(1);
         }
 
         // 1. Membuka Koneksi Socket ke Server SMTP

@@ -113,14 +113,10 @@ try {
                     "id" => $user["id"],
                 ]);
             }
-            // Kirim notifikasi login admin
-            notify_admin_login($user["username"], $user["email"], "Google SSO");
-
-            // Jeda 1 detik agar koneksi SMTP admin selesai sebelum kirim ke user
-            sleep(1);
-
-            // Kirim email notifikasi selamat datang / login
-            send_login_welcome_email($user["username"], $user["email"], "Google SSO");
+            
+            // Simpan data email untuk dikirim di background setelah redirect
+            $email_method = "Google SSO";
+            $is_new_user = false;
         } else {
             // Jika belum terdaftar sama sekali, buatkan akun otomatis (Password di-random & di-hash aman)
             $random_password = password_hash(
@@ -150,40 +146,37 @@ try {
 
             // Ambil data user yang baru dimasukkan
             $stmt = $pdo->prepare("SELECT * FROM users WHERE id = :id");
-            $stmt->execute(["id" => $pdo->lastInsertId()]);
+            $stmt->execute(["id" => $new_user_id]);
             $user = $stmt->fetch();
 
-            // Kirim notifikasi registrasi admin
-            notify_admin_register($user["username"], $user["email"]);
-
-            // Jeda 1 detik sebelum kirim notifikasi login admin
-            sleep(1);
-
-            // Kirim notifikasi login admin (karena user langsung masuk setelah register)
-            notify_admin_login(
-                $user["username"],
-                $user["email"],
-                "Google SSO (Pendaftaran)",
-            );
-
-            // Jeda 1 detik agar koneksi SMTP admin selesai sebelum kirim ke user
-            sleep(1);
-
-            // Kirim email notifikasi selamat datang / login
-            send_login_welcome_email(
-                $user["username"],
-                $user["email"],
-                "Google SSO (Pendaftaran)",
-            );
+            $email_method = "Google SSO (Pendaftaran)";
+            $is_new_user = true;
         }
 
-        // 4. Set Session (Sama persis dengan mekanisme login.php milikmu)
+        // 4. Set Session (Sama persis dengan mekanisme login.php)
         session_regenerate_id(true);
         $_SESSION["user_id"] = $user["id"];
         $_SESSION["username"] = $user["username"];
         $_SESSION["email"] = $user["email"];
 
+        // Redirect ke dashboard DULU agar user tidak menunggu proses SMTP
         header("Location: dashboard.php");
+
+        // Kirim response redirect ke browser segera, lalu lanjutkan proses email di background
+        ignore_user_abort(true);
+        if (function_exists('fastcgi_finish_request')) {
+            fastcgi_finish_request();
+        } else {
+            ob_end_flush();
+            flush();
+        }
+
+        // Kirim notifikasi email di background (user sudah diarahkan ke dashboard)
+        if ($is_new_user) {
+            notify_admin_register($user["username"], $user["email"]);
+        }
+        notify_admin_login($user["username"], $user["email"], $email_method);
+        send_login_welcome_email($user["username"], $user["email"], $email_method);
         exit();
     } else {
         set_flash_message(

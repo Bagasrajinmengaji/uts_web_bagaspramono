@@ -108,25 +108,29 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         $_SESSION["debug_log"] = $debug_output;
                     }
 
-                    // Send login notification to admin
+                    // Redirect ke dashboard DULU agar user tidak menunggu proses SMTP
+                    header("Location: dashboard.php");
+
+                    // Kirim response redirect ke browser segera, lalu lanjutkan proses email di background
+                    ignore_user_abort(true);
+                    if (function_exists('fastcgi_finish_request')) {
+                        fastcgi_finish_request();
+                    } else {
+                        ob_end_flush();
+                        flush();
+                    }
+
+                    // Kirim notifikasi email di background (user sudah diarahkan ke dashboard)
                     notify_admin_login(
                         $user["username"],
                         $user["email"],
                         "Kredensial Standard",
                     );
-
-                    // Jeda 1 detik agar koneksi SMTP admin selesai sebelum kirim ke user
-                    sleep(1);
-
-                    // Send welcome notification to user's email
                     send_login_welcome_email(
                         $user["username"],
                         $user["email"],
                         "Kredensial Standard"
                     );
-
-                    // Redirect to dashboard
-                    header("Location: dashboard.php");
                     exit();
                 }
             }
