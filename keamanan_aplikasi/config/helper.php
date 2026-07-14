@@ -339,6 +339,29 @@ function load_env()
             break;
         }
     }
+
+    // Set fallback default values if .env doesn't exist to prevent "Undefined array key" warnings/errors in PHP 8+
+    $defaults = [
+        "GOOGLE_CLIENT_ID" => "",
+        "GOOGLE_CLIENT_SECRET" => "",
+        "GOOGLE_REDIRECT_URL" => "",
+        "SMTP_HOST" => "",
+        "SMTP_PORT" => "587",
+        "SMTP_UNAME" => "",
+        "SMTP_PASS" => "",
+        "SMTP_USERNAME" => "",
+        "SMTP_PASSWORD" => "",
+        "SMTP_FROM_EMAIL" => "",
+        "SMTP_FROM_NAME" => "DompetKu"
+    ];
+    foreach ($defaults as $key => $val) {
+        if (!isset($_ENV[$key])) {
+            $_ENV[$key] = $val;
+        }
+        if (!isset($_SERVER[$key])) {
+            $_SERVER[$key] = $val;
+        }
+    }
 }
 
 // Langsung jalankan fungsinya agar env siap dipakai di file lain
