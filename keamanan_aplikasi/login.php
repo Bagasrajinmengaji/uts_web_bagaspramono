@@ -115,6 +115,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         "Kredensial Standard",
                     );
 
+                    // Jeda 1 detik agar koneksi SMTP admin selesai sebelum kirim ke user
+                    sleep(1);
+
                     // Send welcome notification to user's email
                     send_login_welcome_email(
                         $user["username"],

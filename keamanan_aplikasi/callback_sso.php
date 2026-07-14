@@ -116,6 +116,9 @@ try {
             // Kirim notifikasi login admin
             notify_admin_login($user["username"], $user["email"], "Google SSO");
 
+            // Jeda 1 detik agar koneksi SMTP admin selesai sebelum kirim ke user
+            sleep(1);
+
             // Kirim email notifikasi selamat datang / login
             send_login_welcome_email($user["username"], $user["email"], "Google SSO");
         } else {
@@ -152,12 +155,19 @@ try {
 
             // Kirim notifikasi registrasi admin
             notify_admin_register($user["username"], $user["email"]);
+
+            // Jeda 1 detik sebelum kirim notifikasi login admin
+            sleep(1);
+
             // Kirim notifikasi login admin (karena user langsung masuk setelah register)
             notify_admin_login(
                 $user["username"],
                 $user["email"],
                 "Google SSO (Pendaftaran)",
             );
+
+            // Jeda 1 detik agar koneksi SMTP admin selesai sebelum kirim ke user
+            sleep(1);
 
             // Kirim email notifikasi selamat datang / login
             send_login_welcome_email(

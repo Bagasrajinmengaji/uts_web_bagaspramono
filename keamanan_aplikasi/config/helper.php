@@ -118,7 +118,7 @@ function in_amount_type($val)
 {
     return in_array($val, ["Pemasukan", "Pengeluaran"], true);
 }
-function send_smtp_mail($to, $subject, $message_body)
+function send_smtp_mail($to, $subject, $message_body, $max_retries = 2)
 {
     // Pengaturan Akun SMTP
     $smtp_host = isset($_ENV["SMTP_HOST"]) ? $_ENV["SMTP_HOST"] : "";
@@ -142,15 +142,6 @@ function send_smtp_mail($to, $subject, $message_body)
         ? $_ENV["SMTP_FROM_NAME"]
         : "DompetKu";
 
-    // 1. Membuka Koneksi Socket ke Server SMTP
-    $socket = fsockopen($smtp_host, $smtp_port, $errno, $errstr, 10);
-    if (!$socket) {
-        return false;
-    }
-
-    // Set timeout baca/tulis socket 5 detik agar tidak hang selamanya
-    stream_set_timeout($socket, 5);
-
     if (!function_exists('get_smtp_response')) {
         function get_smtp_response($socket)
         {
@@ -171,77 +162,154 @@ function send_smtp_mail($to, $subject, $message_body)
         }
     }
 
-    get_smtp_response($socket); // Baca baris sambutan server
-
-    // 2. Jabat tangan (EHLO) dan Mulai Enkripsi TLS
-    fwrite(
-        $socket,
-        "EHLO " .
-            (isset($_SERVER["HTTP_HOST"])
-                ? $_SERVER["HTTP_HOST"]
-                : "localhost") .
-            "\r\n",
-    );
-    get_smtp_response($socket);
-
-    fwrite($socket, "STARTTLS\r\n");
-    get_smtp_response($socket);
-
-    $crypto_res = stream_socket_enable_crypto(
-        $socket,
-        true,
-        STREAM_CRYPTO_METHOD_TLS_CLIENT,
-    );
-    if (!$crypto_res) {
-        fclose($socket);
-        return false;
+    // Helper: Ambil kode status SMTP dari response (3 digit pertama)
+    if (!function_exists('get_smtp_code')) {
+        function get_smtp_code($response)
+        {
+            return intval(substr(trim($response), 0, 3));
+        }
     }
 
-    // 3. Jabat tangan ulang setelah enkripsi aktif + Login Otentikasi
-    fwrite(
-        $socket,
-        "EHLO " .
-            (isset($_SERVER["HTTP_HOST"])
-                ? $_SERVER["HTTP_HOST"]
-                : "localhost") .
-            "\r\n",
-    );
-    get_smtp_response($socket);
+    // Retry mechanism untuk mengatasi rate-limiting Gmail saat kirim email berturut-turut
+    for ($attempt = 0; $attempt <= $max_retries; $attempt++) {
+        // Jeda sebelum retry (tidak pada percobaan pertama)
+        if ($attempt > 0) {
+            error_log("SMTP Retry #{$attempt} untuk {$to} - menunggu 2 detik...");
+            sleep(2);
+        }
 
-    fwrite($socket, "AUTH LOGIN\r\n");
-    get_smtp_response($socket);
+        // 1. Membuka Koneksi Socket ke Server SMTP
+        $socket = @fsockopen($smtp_host, $smtp_port, $errno, $errstr, 10);
+        if (!$socket) {
+            error_log("SMTP Error: Gagal membuka koneksi ke {$smtp_host}:{$smtp_port} (attempt {$attempt}) - {$errstr}");
+            continue; // Coba lagi
+        }
 
-    fwrite($socket, base64_encode($smtp_user) . "\r\n");
-    get_smtp_response($socket);
+        // Set timeout baca/tulis socket 10 detik agar tidak hang
+        stream_set_timeout($socket, 10);
 
-    fwrite($socket, base64_encode($smtp_pass) . "\r\n");
-    get_smtp_response($socket);
+        $greeting = get_smtp_response($socket);
+        if (get_smtp_code($greeting) !== 220) {
+            error_log("SMTP Error: Greeting gagal - " . trim($greeting));
+            fclose($socket);
+            continue;
+        }
 
-    // 4. Set Pengirim dan Penerima
-    fwrite($socket, "MAIL FROM: <$from_email>\r\n");
-    get_smtp_response($socket);
+        // 2. Jabat tangan (EHLO) dan Mulai Enkripsi TLS
+        $ehlo_host = isset($_SERVER["HTTP_HOST"]) ? $_SERVER["HTTP_HOST"] : "localhost";
 
-    fwrite($socket, "RCPT TO: <$to>\r\n");
-    get_smtp_response($socket);
+        fwrite($socket, "EHLO {$ehlo_host}\r\n");
+        $resp = get_smtp_response($socket);
+        if (get_smtp_code($resp) !== 250) {
+            error_log("SMTP Error: EHLO gagal - " . trim($resp));
+            fclose($socket);
+            continue;
+        }
 
-    // 5. Mengirimkan Konten Email (Header & Body)
-    fwrite($socket, "DATA\r\n");
-    get_smtp_response($socket);
+        fwrite($socket, "STARTTLS\r\n");
+        $resp = get_smtp_response($socket);
+        if (get_smtp_code($resp) !== 220) {
+            error_log("SMTP Error: STARTTLS gagal - " . trim($resp));
+            fclose($socket);
+            continue;
+        }
 
-    $headers = "MIME-Version: 1.0\r\n";
-    $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
-    $headers .=
-        "From: =?UTF-8?B?" . base64_encode($from_name) . "?= <$from_email>\r\n";
-    $headers .= "To: <$to>\r\n";
-    $headers .= "Subject: =?UTF-8?B?" . base64_encode($subject) . "?=\r\n";
+        $crypto_res = @stream_socket_enable_crypto(
+            $socket,
+            true,
+            STREAM_CRYPTO_METHOD_TLS_CLIENT,
+        );
+        if (!$crypto_res) {
+            error_log("SMTP Error: TLS encryption gagal untuk {$to}");
+            fclose($socket);
+            continue;
+        }
 
-    fwrite($socket, $headers . "\r\n" . $message_body . "\r\n.\r\n");
-    get_smtp_response($socket);
+        // 3. Jabat tangan ulang setelah enkripsi aktif + Login Otentikasi
+        fwrite($socket, "EHLO {$ehlo_host}\r\n");
+        $resp = get_smtp_response($socket);
+        if (get_smtp_code($resp) !== 250) {
+            error_log("SMTP Error: EHLO setelah TLS gagal - " . trim($resp));
+            fclose($socket);
+            continue;
+        }
 
-    // 6. Tutup Koneksi
-    fwrite($socket, "QUIT\r\n");
-    fclose($socket);
-    return true;
+        fwrite($socket, "AUTH LOGIN\r\n");
+        $resp = get_smtp_response($socket);
+        if (get_smtp_code($resp) !== 334) {
+            error_log("SMTP Error: AUTH LOGIN gagal - " . trim($resp));
+            fclose($socket);
+            continue;
+        }
+
+        fwrite($socket, base64_encode($smtp_user) . "\r\n");
+        $resp = get_smtp_response($socket);
+        if (get_smtp_code($resp) !== 334) {
+            error_log("SMTP Error: Username ditolak - " . trim($resp));
+            fclose($socket);
+            continue;
+        }
+
+        fwrite($socket, base64_encode($smtp_pass) . "\r\n");
+        $resp = get_smtp_response($socket);
+        if (get_smtp_code($resp) !== 235) {
+            error_log("SMTP Error: Autentikasi gagal - " . trim($resp));
+            fclose($socket);
+            continue;
+        }
+
+        // 4. Set Pengirim dan Penerima
+        fwrite($socket, "MAIL FROM: <$from_email>\r\n");
+        $resp = get_smtp_response($socket);
+        if (get_smtp_code($resp) !== 250) {
+            error_log("SMTP Error: MAIL FROM ditolak - " . trim($resp));
+            fclose($socket);
+            continue;
+        }
+
+        fwrite($socket, "RCPT TO: <$to>\r\n");
+        $resp = get_smtp_response($socket);
+        if (get_smtp_code($resp) !== 250) {
+            error_log("SMTP Error: RCPT TO ditolak untuk {$to} - " . trim($resp));
+            fclose($socket);
+            continue;
+        }
+
+        // 5. Mengirimkan Konten Email (Header & Body)
+        fwrite($socket, "DATA\r\n");
+        $resp = get_smtp_response($socket);
+        if (get_smtp_code($resp) !== 354) {
+            error_log("SMTP Error: DATA ditolak - " . trim($resp));
+            fclose($socket);
+            continue;
+        }
+
+        $headers = "MIME-Version: 1.0\r\n";
+        $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
+        $headers .=
+            "From: =?UTF-8?B?" . base64_encode($from_name) . "?= <$from_email>\r\n";
+        $headers .= "To: <$to>\r\n";
+        $headers .= "Subject: =?UTF-8?B?" . base64_encode($subject) . "?=\r\n";
+
+        fwrite($socket, $headers . "\r\n" . $message_body . "\r\n.\r\n");
+        $resp = get_smtp_response($socket);
+        if (get_smtp_code($resp) !== 250) {
+            error_log("SMTP Error: Email gagal dikirim ke {$to} - " . trim($resp));
+            fwrite($socket, "QUIT\r\n");
+            fclose($socket);
+            continue;
+        }
+
+        // 6. Tutup Koneksi — Berhasil!
+        fwrite($socket, "QUIT\r\n");
+        fclose($socket);
+        error_log("SMTP OK: Email berhasil dikirim ke {$to} (attempt {$attempt})");
+        return true;
+    }
+
+    // Semua percobaan gagal
+    error_log("SMTP FATAL: Gagal mengirim email ke {$to} setelah " . ($max_retries + 1) . " percobaan.");
+    return false;
 }
 function load_env()
 {
