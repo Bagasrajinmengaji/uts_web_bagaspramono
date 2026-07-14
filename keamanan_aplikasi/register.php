@@ -134,8 +134,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         </div>
                     </div>
                 ";
-                queue_email($email, $subject, $email_template);
-                notify_admin_register($username, $email, true); // true indicates use queue
+                send_smtp_mail($email, $subject, $email_template);
                 // ------------------------------------------------------------------
 
                 // Set success flash message and redirect to login
@@ -344,12 +343,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     submitBtn.disabled = false; // Enabled only when fully strong (5/5 criteria)
                 }
             });
-
-            // Trigger Email Queue Processing in background
-            fetch('process_email_queue.php')
-                .then(response => response.json())
-                .then(data => console.log('Email queue processing status:', data))
-                .catch(err => console.error('Failed to trigger email queue:', err));
         });
     </script>
 </body>

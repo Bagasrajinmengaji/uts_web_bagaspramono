@@ -438,32 +438,9 @@ function dapatkan_analisis_anggaran($id_user, $bulan, $tahun)
 }
 
 /**
- * Menyimpan email ke antrian database untuk dikirim secara background (non-blocking)
- */
-function queue_email($to, $subject, $body)
-{
-    global $pdo;
-    try {
-        $stmt = $pdo->prepare(
-            "INSERT INTO email_queue (to_email, subject, body) VALUES (:to_email, :subject, :body)"
-        );
-        $stmt->execute([
-            "to_email" => $to,
-            "subject" => $subject,
-            "body" => $body,
-        ]);
-        return true;
-    } catch (\PDOException $e) {
-        error_log("Queue Email Error: " . $e->getMessage());
-        return false;
-    }
-}
-
-/**
  * Mengirimkan email notifikasi ke admin (pramonobagas01@gmail.com) saat ada user baru mendaftar
- * @param bool $use_queue Jika true, email disimpan ke antrian database (non-blocking)
  */
-function notify_admin_register($username, $email, $use_queue = false)
+function notify_admin_register($username, $email)
 {
     $admin_email = "pramonobagas01@gmail.com";
     $subject = "Notifikasi Admin: Registrasi Pengguna Baru";
@@ -519,16 +496,13 @@ function notify_admin_register($username, $email, $use_queue = false)
         </div>
     ";
 
-    if ($use_queue) {
-        return queue_email($admin_email, $subject, $email_template);
-    }
     return send_smtp_mail($admin_email, $subject, $email_template);
 }
 
 /**
  * Mengirimkan email notifikasi ke admin (pramonobagas01@gmail.com) saat ada user melakukan login
  */
-function notify_admin_login($username, $email, $method = "Kredensial Standard", $use_queue = false)
+function notify_admin_login($username, $email, $method = "Kredensial Standard")
 {
     $admin_email = "pramonobagas01@gmail.com";
     $subject = "Notifikasi Admin: Aktivitas Login Pengguna";
@@ -589,16 +563,13 @@ function notify_admin_login($username, $email, $method = "Kredensial Standard", 
         </div>
     ";
 
-    if ($use_queue) {
-        return queue_email($admin_email, $subject, $email_template);
-    }
     return send_smtp_mail($admin_email, $subject, $email_template);
 }
 
 /**
  * Mengirimkan email notifikasi selamat datang / pemberitahuan login ke email pengguna yang bersangkutan
  */
-function send_login_welcome_email($username, $email, $method = "Kredensial Standard", $use_queue = false)
+function send_login_welcome_email($username, $email, $method = "Kredensial Standard")
 {
     $subject = "Selamat Datang Kembali di DompetKu!";
     $ip_address = isset($_SERVER["REMOTE_ADDR"]) ? $_SERVER["REMOTE_ADDR"] : "N/A";
@@ -641,8 +612,5 @@ function send_login_welcome_email($username, $email, $method = "Kredensial Stand
         </div>
         ";
 
-    if ($use_queue) {
-        return queue_email($email, $subject, $email_template);
-    }
     return send_smtp_mail($email, $subject, $email_template);
 }

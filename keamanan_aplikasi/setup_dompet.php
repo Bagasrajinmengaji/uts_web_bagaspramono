@@ -64,25 +64,7 @@ try {
         echo "<div class='alert alert-info py-2'>Kolom <code>is_transfer</code> sudah ada di tabel <code>transaksi</code>.</div>";
     }
 
-    echo "<p class='text-secondary'>2c. Membuat tabel <code>email_queue</code>...</p>";
-    $createEmailQueueTableSQL = "CREATE TABLE IF NOT EXISTS `email_queue` (
-        `id` INT AUTO_INCREMENT PRIMARY KEY,
-        `to_email` VARCHAR(150) NOT NULL,
-        `subject` VARCHAR(255) NOT NULL,
-        `body` TEXT NOT NULL,
-        `status` ENUM('pending', 'processing', 'sent', 'failed') NOT NULL DEFAULT 'pending',
-        `error_message` TEXT NULL DEFAULT NULL,
-        `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP(),
-        `processed_at` TIMESTAMP NULL DEFAULT NULL
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
-    $pdo->exec($createEmailQueueTableSQL);
-    echo "<div class='alert alert-success py-2'>Tabel <code>email_queue</code> berhasil dibuat/sudah ada.</div>";
 
-    // Cek apakah kolom error_message sudah ada, jika belum tambahkan
-    $checkErrorMsgCol = $pdo->query("SHOW COLUMNS FROM `email_queue` LIKE 'error_message'")->fetch();
-    if (!$checkErrorMsgCol) {
-        $pdo->exec("ALTER TABLE `email_queue` ADD COLUMN `error_message` TEXT NULL DEFAULT NULL AFTER `status`");
-    }
 
     echo "<p class='text-secondary'>3. Memproses migrasi akun user lama & transaksi...</p>";
     

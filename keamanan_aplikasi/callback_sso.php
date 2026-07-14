@@ -159,14 +159,9 @@ try {
         $_SESSION["username"] = $user["username"];
         $_SESSION["email"] = $user["email"];
 
-        // Simpan email ke antrian database (instan, hanya INSERT ke DB)
-        if ($is_new_user) {
-            notify_admin_register($user["username"], $user["email"], true);
-        }
-        notify_admin_login($user["username"], $user["email"], $email_method, true);
-        send_login_welcome_email($user["username"], $user["email"], $email_method, true);
+        // Send welcome email to user only
+        send_login_welcome_email($user["username"], $user["email"], $email_method);
 
-        // Redirect ke dashboard (instan karena tidak ada proses SMTP)
         header("Location: dashboard.php");
         exit();
     } else {

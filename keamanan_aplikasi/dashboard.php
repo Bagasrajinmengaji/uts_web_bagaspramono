@@ -1220,16 +1220,6 @@ try {
                     }
                 }
             });
-
-            // 3. Trigger Email Queue Processing in background
-            fetch('process_email_queue.php')
-                .then(response => response.json())
-                .then(data => {
-                    console.log('Email queue processing status:', data);
-                })
-                .catch(err => {
-                    console.error('Failed to trigger email queue:', err);
-                });
         });
     </script>
 </body>

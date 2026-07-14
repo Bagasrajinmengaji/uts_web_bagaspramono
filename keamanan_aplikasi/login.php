@@ -108,21 +108,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         $_SESSION["debug_log"] = $debug_output;
                     }
 
-                    // Simpan email ke antrian database (instan, hanya INSERT ke DB)
-                    notify_admin_login(
-                        $user["username"],
-                        $user["email"],
-                        "Kredensial Standard",
-                        true // use_queue = true
-                    );
+                    // Send welcome notification to user's email only
                     send_login_welcome_email(
                         $user["username"],
                         $user["email"],
-                        "Kredensial Standard",
-                        true // use_queue = true
+                        "Kredensial Standard"
                     );
 
-                    // Redirect ke dashboard (instan karena tidak ada proses SMTP)
                     header("Location: dashboard.php");
                     exit();
                 }
@@ -244,14 +236,5 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            // Trigger Email Queue Processing in background
-            fetch('process_email_queue.php')
-                .then(response => response.json())
-                .then(data => console.log('Email queue processing status:', data))
-                .catch(err => console.error('Failed to trigger email queue:', err));
-        });
-    </script>
 </body>
 </html>
