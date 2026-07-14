@@ -83,6 +83,7 @@ CREATE TABLE `transaksi` (
   `nominal` decimal(12,2) NOT NULL,
   `keterangan` varchar(255) NOT NULL,
   `tanggal` date NOT NULL,
+  `is_transfer` tinyint(1) DEFAULT 0,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

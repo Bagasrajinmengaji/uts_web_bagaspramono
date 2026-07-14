@@ -204,7 +204,9 @@ if (empty($transactions)) {
         $sheet->setCellValue("D" . $current_row, $dompet_name);
         $sheet->setCellValue("E" . $current_row, $row["keterangan"]);
         $sheet->setCellValue("F" . $current_row, (float) $row["nominal"]);
-        $sheet->setCellValue("G" . $current_row, $row["jenis"]);
+        // Jika transaksi transfer antar dompet, tulis "Transfer" agar tidak dihitung oleh SUMIF
+        $jenis_label = (isset($row["is_transfer"]) && $row["is_transfer"] == 1) ? "Transfer" : $row["jenis"];
+        $sheet->setCellValue("G" . $current_row, $jenis_label);
 
         // Zebra Striping (Baris genap abu-abu sangat tipis #F9F9F9)
         if ($no % 2 === 0) {

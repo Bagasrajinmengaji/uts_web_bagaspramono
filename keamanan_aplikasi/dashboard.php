@@ -71,9 +71,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"])) {
 
                 $pdo->beginTransaction();
 
-                // 1. Catat Pengeluaran dari Dompet Asal
+                // 1. Catat Pengeluaran dari Dompet Asal (ditandai is_transfer = 1)
                 $stmt1 = $pdo->prepare(
-                    "INSERT INTO transaksi (user_id, id_kategori, id_dompet, jenis, nominal, keterangan, tanggal) VALUES (:user_id, :id_kategori, :id_dompet, 'Pengeluaran', :nominal, :keterangan, :tanggal)"
+                    "INSERT INTO transaksi (user_id, id_kategori, id_dompet, jenis, nominal, keterangan, tanggal, is_transfer) VALUES (:user_id, :id_kategori, :id_dompet, 'Pengeluaran', :nominal, :keterangan, :tanggal, 1)"
                 );
                 $stmt1->execute([
                     "user_id" => $user_id,
@@ -84,9 +84,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"])) {
                     "tanggal" => $tanggal,
                 ]);
 
-                // 2. Catat Pemasukan ke Dompet Tujuan
+                // 2. Catat Pemasukan ke Dompet Tujuan (ditandai is_transfer = 1)
                 $stmt2 = $pdo->prepare(
-                    "INSERT INTO transaksi (user_id, id_kategori, id_dompet, jenis, nominal, keterangan, tanggal) VALUES (:user_id, :id_kategori, :id_dompet, 'Pemasukan', :nominal, :keterangan, :tanggal)"
+                    "INSERT INTO transaksi (user_id, id_kategori, id_dompet, jenis, nominal, keterangan, tanggal, is_transfer) VALUES (:user_id, :id_kategori, :id_dompet, 'Pemasukan', :nominal, :keterangan, :tanggal, 1)"
                 );
                 $stmt2->execute([
                     "user_id" => $user_id,
@@ -254,14 +254,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"])) {
 
 // --- LOGIK UTAMA: MENAMPILKAN DATA (Read) ---
 try {
+    // Hitung total pemasukan & pengeluaran TANPA menyertakan transaksi transfer antar dompet
     $stmt_income = $pdo->prepare(
-        "SELECT SUM(nominal) as total FROM transaksi WHERE user_id = :user_id AND jenis = 'Pemasukan'",
+        "SELECT SUM(nominal) as total FROM transaksi WHERE user_id = :user_id AND jenis = 'Pemasukan' AND is_transfer = 0",
     );
     $stmt_income->execute(["user_id" => $user_id]);
     $total_pemasukan = $stmt_income->fetch()["total"] ?? 0;
 
     $stmt_expense = $pdo->prepare(
-        "SELECT SUM(nominal) as total FROM transaksi WHERE user_id = :user_id AND jenis = 'Pengeluaran'",
+        "SELECT SUM(nominal) as total FROM transaksi WHERE user_id = :user_id AND jenis = 'Pengeluaran' AND is_transfer = 0",
     );
     $stmt_expense->execute(["user_id" => $user_id]);
     $total_pengeluaran = $stmt_expense->fetch()["total"] ?? 0;
@@ -360,7 +361,7 @@ try {
         "SELECT COALESCE(k.nama_kategori, 'Tanpa Kategori') as nama_kategori, SUM(t.nominal) as total 
          FROM transaksi t 
          LEFT JOIN kategori k ON t.id_kategori = k.id_kategori 
-         WHERE t.user_id = :user_id AND t.jenis = 'Pengeluaran' 
+         WHERE t.user_id = :user_id AND t.jenis = 'Pengeluaran' AND t.is_transfer = 0 
          GROUP BY t.id_kategori, k.nama_kategori"
     );
     $stmt_cat_chart->execute(["user_id" => $user_id]);
@@ -692,12 +693,13 @@ try {
                                         "d M Y",
                                         strtotime($row["tanggal"]),
                                     ) ?></td>
-                                    <td><span class="<?= $row["jenis"] ===
-                                    "Pemasukan"
-                                        ? "badge bg-success"
-                                        : "badge bg-danger" ?>"><?= escape(
-                                    $row["jenis"],
-                                ) ?></span></td>
+                                    <td>
+                                        <?php if (isset($row["is_transfer"]) && $row["is_transfer"] == 1): ?>
+                                            <span class="badge bg-primary">Transfer</span>
+                                        <?php else: ?>
+                                            <span class="<?= $row["jenis"] === "Pemasukan" ? "badge bg-success" : "badge bg-danger" ?>"><?= escape($row["jenis"]) ?></span>
+                                        <?php endif; ?>
+                                    </td>
                                     <td><span class="badge bg-secondary"><?= $row[
                                         "nama_kategori"
                                     ]
@@ -709,10 +711,7 @@ try {
                                         ? escape($row["nama_dompet"])
                                         : "Tanpa Dompet" ?></span></td>
                                     <td><?= escape($row["keterangan"]) ?></td>
-                                    <td class="font-bold <?= $row["jenis"] ===
-                                    "Pemasukan"
-                                        ? "text-success"
-                                        : "text-danger" ?>">
+                                    <td class="font-bold <?= (isset($row["is_transfer"]) && $row["is_transfer"] == 1) ? "text-primary" : ($row["jenis"] === "Pemasukan" ? "text-success" : "text-danger") ?>">
                                         <?= ($row["jenis"] === "Pemasukan"
                                             ? "+ "
                                             : "- ") .

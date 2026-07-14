@@ -43,10 +43,13 @@ try {
     $stmt->execute($params);
     $transactions = $stmt->fetchAll();
 
-    // Hitung ringkasan
+    // Hitung ringkasan — transfer antar dompet tidak dihitung
     $total_pemasukan = 0;
     $total_pengeluaran = 0;
     foreach ($transactions as $row) {
+        if (isset($row["is_transfer"]) && $row["is_transfer"] == 1) {
+            continue; // Lewati transaksi transfer antar dompet
+        }
         if ($row["jenis"] === "Pemasukan") {
             $total_pemasukan += $row["nominal"];
         } else {

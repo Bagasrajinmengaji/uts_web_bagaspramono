@@ -386,6 +386,7 @@ function dapatkan_analisis_anggaran($id_user, $bulan, $tahun)
                   LEFT JOIN transaksi t ON t.id_kategori = a.id_kategori 
                     AND t.user_id = a.id_user 
                     AND t.jenis = 'Pengeluaran'
+                    AND t.is_transfer = 0
                     AND MONTH(t.tanggal) = :bulan 
                     AND YEAR(t.tanggal) = :tahun
                   WHERE a.id_user = :id_user AND a.bulan = :bulan_anggaran AND a.tahun = :tahun_anggaran
