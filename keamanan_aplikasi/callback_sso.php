@@ -159,8 +159,13 @@ try {
         $_SESSION["username"] = $user["username"];
         $_SESSION["email"] = $user["email"];
 
-        // Send welcome email to user only
-        send_login_welcome_email($user["username"], $user["email"], $email_method);
+        // Panggil pengiriman email di background (asinkron di Windows CLI)
+        $bg_script = __DIR__ . "/send_email_bg.php";
+        $cmd = "start /B C:\\xampp\\php\\php.exe " . escapeshellarg($bg_script) . 
+               " --email=" . escapeshellarg($user["email"]) . 
+               " --username=" . escapeshellarg($user["username"]) . 
+               " --method=" . escapeshellarg($email_method);
+        pclose(popen($cmd, "r"));
 
         header("Location: dashboard.php");
         exit();

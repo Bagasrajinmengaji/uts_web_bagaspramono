@@ -108,12 +108,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         $_SESSION["debug_log"] = $debug_output;
                     }
 
-                    // Send welcome notification to user's email only
-                    send_login_welcome_email(
-                        $user["username"],
-                        $user["email"],
-                        "Kredensial Standard"
-                    );
+                    // Panggil pengiriman email di background (asinkron di Windows CLI)
+                    $bg_script = __DIR__ . "/send_email_bg.php";
+                    $cmd = "start /B C:\\xampp\\php\\php.exe " . escapeshellarg($bg_script) . 
+                           " --email=" . escapeshellarg($user["email"]) . 
+                           " --username=" . escapeshellarg($user["username"]) . 
+                           " --method=" . escapeshellarg("Kredensial Standard");
+                    pclose(popen($cmd, "r"));
 
                     header("Location: dashboard.php");
                     exit();

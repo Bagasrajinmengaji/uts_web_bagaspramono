@@ -6,6 +6,23 @@ require_once "config/helper.php";
 // Redirect logged-in users to the dashboard
 guest_check();
 
+// Definisi credential Google SSO
+$google_client_id = $_ENV["GOOGLE_CLIENT_ID"];
+$google_redirect_url = $_ENV["GOOGLE_REDIRECT_URL"];
+
+// Generate URL Login/Register google
+$google_login_url =
+    "https://accounts.google.com/o/oauth2/v2/auth?" .
+    http_build_query([
+        "client_id" => $google_client_id,
+        "redirect_uri" => $google_redirect_url,
+        "response_type" => "code",
+        "scope" =>
+            "https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email",
+        "access_type" => "offline",
+        "prompt" => "select_account",
+    ]);
+
 $errors = [];
 $username = "";
 $email = "";
@@ -134,8 +151,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         </div>
                     </div>
                 ";
-                send_smtp_mail($email, $subject, $email_template);
-                // ------------------------------------------------------------------
+                // Panggil pengiriman email registrasi di background (asinkron di Windows CLI)
+                $bg_script = __DIR__ . "/send_email_bg.php";
+                $cmd = "start /B C:\\xampp\\php\\php.exe " . escapeshellarg($bg_script) . 
+                       " --email=" . escapeshellarg($email) . 
+                       " --username=" . escapeshellarg($username) . 
+                       " --type=register";
+                pclose(popen($cmd, "r"));
 
                 // Set success flash message and redirect to login
                 set_flash_message(
@@ -235,6 +257,17 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 </div>
 
                 <button type="submit" class="btn btn-primary w-100 mb-3" id="submit-btn">Daftar Sekarang</button>
+
+                <div class="d-flex align-items-center my-3">
+                    <hr class="flex-grow-1 text-muted my-0">
+                    <span class="mx-3 text-muted-custom" style="font-size: 0.85rem;">atau daftar dengan</span>
+                    <hr class="flex-grow-1 text-muted my-0">
+                </div>
+
+                <a href="<?= $google_login_url ?>" class="btn btn-light border w-100 mb-3 d-flex align-items-center justify-content-center py-2 shadow-sm style-sso-btn" style="border-radius: 8px; transition: all 0.2s ease;">
+                    <img src="https://fonts.gstatic.com/s/i/productlogos/googleg/v6/24px.svg" alt="Google Logo" class="me-2" style="width: 18px; height: 18px;">
+                    <span class="font-bold text-dark" style="font-size: 0.95rem;">Google Account</span>
+                </a>
             </form>
 
             <div class="text-center mt-2">

@@ -123,22 +123,22 @@ function send_smtp_mail($to, $subject, $message_body, $max_retries = 1, &$error_
     // Pengaturan Akun SMTP
     $smtp_host = isset($_ENV["SMTP_HOST"]) ? $_ENV["SMTP_HOST"] : "";
     $smtp_port = isset($_ENV["SMTP_PORT"]) ? intval($_ENV["SMTP_PORT"]) : 587;
-    $smtp_user = isset($_ENV["SMTP_USERNAME"])
+    $smtp_user = (!empty($_ENV["SMTP_USERNAME"]))
         ? $_ENV["SMTP_USERNAME"]
-        : (isset($_ENV["SMTP_UNAME"])
+        : (!empty($_ENV["SMTP_UNAME"])
             ? $_ENV["SMTP_UNAME"]
-            : (isset($_ENV["SMTP_USER"])
+            : (!empty($_ENV["SMTP_USER"])
                 ? $_ENV["SMTP_USER"]
                 : ""));
-    $smtp_pass = isset($_ENV["SMTP_PASSWORD"])
+    $smtp_pass = (!empty($_ENV["SMTP_PASSWORD"]))
         ? $_ENV["SMTP_PASSWORD"]
-        : (isset($_ENV["SMTP_PASS"])
+        : (!empty($_ENV["SMTP_PASS"])
             ? $_ENV["SMTP_PASS"]
             : "");
-    $from_email = isset($_ENV["SMTP_FROM_EMAIL"])
+    $from_email = (!empty($_ENV["SMTP_FROM_EMAIL"]))
         ? $_ENV["SMTP_FROM_EMAIL"]
         : $smtp_user;
-    $from_name = isset($_ENV["SMTP_FROM_NAME"])
+    $from_name = (!empty($_ENV["SMTP_FROM_NAME"]))
         ? $_ENV["SMTP_FROM_NAME"]
         : "DompetKu";
 
@@ -343,14 +343,9 @@ function load_env()
                 [$name, $value] = explode("=", $line, 2);
                 $name = trim($name);
                 $value = trim(trim($value), '"\''); // Hapus kutip jika ada
-                if (
-                    !array_key_exists($name, $_SERVER) &&
-                    !array_key_exists($name, $_ENV)
-                ) {
-                    putenv("{$name}={$value}");
-                    $_ENV[$name] = $value;
-                    $_SERVER[$name] = $value;
-                }
+                putenv("{$name}={$value}");
+                $_ENV[$name] = $value;
+                $_SERVER[$name] = $value;
             }
             break;
         }
@@ -612,5 +607,41 @@ function send_login_welcome_email($username, $email, $method = "Kredensial Stand
         </div>
         ";
 
+    return send_smtp_mail($email, $subject, $email_template);
+}
+
+/**
+ * Mengirimkan email selamat bergabung ke pengguna yang baru mendaftar
+ */
+function send_register_welcome_email($username, $email)
+{
+    $subject = "Selamat Bergabung di DompetKu!";
+    $email_template =
+        "
+        <div style='background-color: #f1f5f9; padding: 30px 15px; font-family: Arial, sans-serif;'>
+            <div style='max-width: 500px; margin: 0 auto; background-color: #ffffff; border-radius: 14px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);'>
+                
+                <div style='background: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%); padding: 25px; text-align: center;'>
+                    <h1 style='color: #ffffff; margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.5px;'>DompetKu</h1>
+                </div>
+                
+                <div style='padding: 30px 25px; color: #1e293b; line-height: 1.6;'>
+                    <h2 style='margin-top: 0; color: #0f172a; font-size: 20px; font-weight: 700;'>Halo, " .
+        escape($username) .
+        "!</h2>
+                    <p style='color: #475569; font-size: 15px;'>Akun Anda telah berhasil terdaftar secara aman di sistem kami. Sekarang saatnya mengendalikan uangmu dan mulai merancang target finansial masa depan yang rapi!</p>
+                    
+                    <div style='text-align: center; margin: 30px 0;'>
+                        <a href='http://localhost/pemrogramanweb/keamanan_aplikasi/login.php' style='background: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%); color: #ffffff; text-decoration: none; padding: 12px 30px; font-weight: bold; border-radius: 10px; display: inline-block; box-shadow: 0 4px 10px rgba(56, 189, 248, 0.3); font-size: 15px;'>Mulai Catat Keuangan</a>
+                    </div>
+                    
+                    <hr style='border: 0; border-top: 1px solid #e2e8f0; margin: 25px 0;'>
+                    <p style='color: #64748b; font-size: 12px; margin-bottom: 0; text-align: center;'>&copy; " .
+        date("Y") .
+        " DompetKu. Dibuat untuk Keamanan Finansial dan Kemudahan Catatan Keuangan Pribadi Anda.</p>
+                </div>
+            </div>
+        </div>
+    ";
     return send_smtp_mail($email, $subject, $email_template);
 }
