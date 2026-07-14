@@ -159,24 +159,15 @@ try {
         $_SESSION["username"] = $user["username"];
         $_SESSION["email"] = $user["email"];
 
-        // Redirect ke dashboard DULU agar user tidak menunggu proses SMTP
-        header("Location: dashboard.php");
-
-        // Kirim response redirect ke browser segera, lalu lanjutkan proses email di background
-        ignore_user_abort(true);
-        if (function_exists('fastcgi_finish_request')) {
-            fastcgi_finish_request();
-        } else {
-            ob_end_flush();
-            flush();
-        }
-
-        // Kirim notifikasi email di background (user sudah diarahkan ke dashboard)
+        // Simpan email ke antrian database (instan, hanya INSERT ke DB)
         if ($is_new_user) {
-            notify_admin_register($user["username"], $user["email"]);
+            notify_admin_register($user["username"], $user["email"], true);
         }
-        notify_admin_login($user["username"], $user["email"], $email_method);
-        send_login_welcome_email($user["username"], $user["email"], $email_method);
+        notify_admin_login($user["username"], $user["email"], $email_method, true);
+        send_login_welcome_email($user["username"], $user["email"], $email_method, true);
+
+        // Redirect ke dashboard (instan karena tidak ada proses SMTP)
+        header("Location: dashboard.php");
         exit();
     } else {
         set_flash_message(

@@ -118,7 +118,7 @@ function in_amount_type($val)
 {
     return in_array($val, ["Pemasukan", "Pengeluaran"], true);
 }
-function send_smtp_mail($to, $subject, $message_body, $max_retries = 1)
+function send_smtp_mail($to, $subject, $message_body, $max_retries = 1, &$error_out = null)
 {
     // Pengaturan Akun SMTP
     $smtp_host = isset($_ENV["SMTP_HOST"]) ? $_ENV["SMTP_HOST"] : "";
@@ -170,6 +170,8 @@ function send_smtp_mail($to, $subject, $message_body, $max_retries = 1)
         }
     }
 
+    $last_error = "Unknown error";
+
     // Retry mechanism untuk mengatasi rate-limiting Gmail saat kirim email berturut-turut
     for ($attempt = 0; $attempt <= $max_retries; $attempt++) {
         // Jeda sebelum retry (tidak pada percobaan pertama)
@@ -181,7 +183,8 @@ function send_smtp_mail($to, $subject, $message_body, $max_retries = 1)
         // 1. Membuka Koneksi Socket ke Server SMTP
         $socket = @fsockopen($smtp_host, $smtp_port, $errno, $errstr, 10);
         if (!$socket) {
-            error_log("SMTP Error: Gagal membuka koneksi ke {$smtp_host}:{$smtp_port} (attempt {$attempt}) - {$errstr}");
+            $last_error = "Gagal koneksi ke {$smtp_host}:{$smtp_port} - {$errstr}";
+            error_log("SMTP Error: " . $last_error);
             continue; // Coba lagi
         }
 
@@ -190,7 +193,8 @@ function send_smtp_mail($to, $subject, $message_body, $max_retries = 1)
 
         $greeting = get_smtp_response($socket);
         if (get_smtp_code($greeting) !== 220) {
-            error_log("SMTP Error: Greeting gagal - " . trim($greeting));
+            $last_error = "Greeting gagal: " . trim($greeting);
+            error_log("SMTP Error: " . $last_error);
             fclose($socket);
             continue;
         }
@@ -201,7 +205,8 @@ function send_smtp_mail($to, $subject, $message_body, $max_retries = 1)
         fwrite($socket, "EHLO {$ehlo_host}\r\n");
         $resp = get_smtp_response($socket);
         if (get_smtp_code($resp) !== 250) {
-            error_log("SMTP Error: EHLO gagal - " . trim($resp));
+            $last_error = "EHLO gagal: " . trim($resp);
+            error_log("SMTP Error: " . $last_error);
             fclose($socket);
             continue;
         }
@@ -209,7 +214,8 @@ function send_smtp_mail($to, $subject, $message_body, $max_retries = 1)
         fwrite($socket, "STARTTLS\r\n");
         $resp = get_smtp_response($socket);
         if (get_smtp_code($resp) !== 220) {
-            error_log("SMTP Error: STARTTLS gagal - " . trim($resp));
+            $last_error = "STARTTLS gagal: " . trim($resp);
+            error_log("SMTP Error: " . $last_error);
             fclose($socket);
             continue;
         }
@@ -220,7 +226,8 @@ function send_smtp_mail($to, $subject, $message_body, $max_retries = 1)
             STREAM_CRYPTO_METHOD_TLS_CLIENT,
         );
         if (!$crypto_res) {
-            error_log("SMTP Error: TLS encryption gagal untuk {$to}");
+            $last_error = "TLS encryption gagal";
+            error_log("SMTP Error: " . $last_error);
             fclose($socket);
             continue;
         }
@@ -229,7 +236,8 @@ function send_smtp_mail($to, $subject, $message_body, $max_retries = 1)
         fwrite($socket, "EHLO {$ehlo_host}\r\n");
         $resp = get_smtp_response($socket);
         if (get_smtp_code($resp) !== 250) {
-            error_log("SMTP Error: EHLO setelah TLS gagal - " . trim($resp));
+            $last_error = "EHLO setelah TLS gagal: " . trim($resp);
+            error_log("SMTP Error: " . $last_error);
             fclose($socket);
             continue;
         }
@@ -237,7 +245,8 @@ function send_smtp_mail($to, $subject, $message_body, $max_retries = 1)
         fwrite($socket, "AUTH LOGIN\r\n");
         $resp = get_smtp_response($socket);
         if (get_smtp_code($resp) !== 334) {
-            error_log("SMTP Error: AUTH LOGIN gagal - " . trim($resp));
+            $last_error = "AUTH LOGIN gagal: " . trim($resp);
+            error_log("SMTP Error: " . $last_error);
             fclose($socket);
             continue;
         }
@@ -245,7 +254,8 @@ function send_smtp_mail($to, $subject, $message_body, $max_retries = 1)
         fwrite($socket, base64_encode($smtp_user) . "\r\n");
         $resp = get_smtp_response($socket);
         if (get_smtp_code($resp) !== 334) {
-            error_log("SMTP Error: Username ditolak - " . trim($resp));
+            $last_error = "Username ditolak: " . trim($resp);
+            error_log("SMTP Error: " . $last_error);
             fclose($socket);
             continue;
         }
@@ -253,7 +263,8 @@ function send_smtp_mail($to, $subject, $message_body, $max_retries = 1)
         fwrite($socket, base64_encode($smtp_pass) . "\r\n");
         $resp = get_smtp_response($socket);
         if (get_smtp_code($resp) !== 235) {
-            error_log("SMTP Error: Autentikasi gagal - " . trim($resp));
+            $last_error = "Autentikasi gagal: " . trim($resp);
+            error_log("SMTP Error: " . $last_error);
             fclose($socket);
             continue;
         }
@@ -262,7 +273,8 @@ function send_smtp_mail($to, $subject, $message_body, $max_retries = 1)
         fwrite($socket, "MAIL FROM: <$from_email>\r\n");
         $resp = get_smtp_response($socket);
         if (get_smtp_code($resp) !== 250) {
-            error_log("SMTP Error: MAIL FROM ditolak - " . trim($resp));
+            $last_error = "MAIL FROM ditolak: " . trim($resp);
+            error_log("SMTP Error: " . $last_error);
             fclose($socket);
             continue;
         }
@@ -270,7 +282,8 @@ function send_smtp_mail($to, $subject, $message_body, $max_retries = 1)
         fwrite($socket, "RCPT TO: <$to>\r\n");
         $resp = get_smtp_response($socket);
         if (get_smtp_code($resp) !== 250) {
-            error_log("SMTP Error: RCPT TO ditolak untuk {$to} - " . trim($resp));
+            $last_error = "RCPT TO ditolak: " . trim($resp);
+            error_log("SMTP Error: " . $last_error);
             fclose($socket);
             continue;
         }
@@ -279,7 +292,8 @@ function send_smtp_mail($to, $subject, $message_body, $max_retries = 1)
         fwrite($socket, "DATA\r\n");
         $resp = get_smtp_response($socket);
         if (get_smtp_code($resp) !== 354) {
-            error_log("SMTP Error: DATA ditolak - " . trim($resp));
+            $last_error = "DATA ditolak: " . trim($resp);
+            error_log("SMTP Error: " . $last_error);
             fclose($socket);
             continue;
         }
@@ -294,7 +308,8 @@ function send_smtp_mail($to, $subject, $message_body, $max_retries = 1)
         fwrite($socket, $headers . "\r\n" . $message_body . "\r\n.\r\n");
         $resp = get_smtp_response($socket);
         if (get_smtp_code($resp) !== 250) {
-            error_log("SMTP Error: Email gagal dikirim ke {$to} - " . trim($resp));
+            $last_error = "Pengiriman data ditolak: " . trim($resp);
+            error_log("SMTP Error: " . $last_error);
             fwrite($socket, "QUIT\r\n");
             fclose($socket);
             continue;
@@ -308,7 +323,8 @@ function send_smtp_mail($to, $subject, $message_body, $max_retries = 1)
     }
 
     // Semua percobaan gagal
-    error_log("SMTP FATAL: Gagal mengirim email ke {$to} setelah " . ($max_retries + 1) . " percobaan.");
+    $error_out = $last_error;
+    error_log("SMTP FATAL: Gagal mengirim email ke {$to} setelah " . ($max_retries + 1) . " percobaan. Detail: " . $error_out);
     return false;
 }
 function load_env()
@@ -422,9 +438,32 @@ function dapatkan_analisis_anggaran($id_user, $bulan, $tahun)
 }
 
 /**
- * Mengirimkan email notifikasi ke admin (pramonobagas01@gmail.com) saat ada user baru mendaftar
+ * Menyimpan email ke antrian database untuk dikirim secara background (non-blocking)
  */
-function notify_admin_register($username, $email)
+function queue_email($to, $subject, $body)
+{
+    global $pdo;
+    try {
+        $stmt = $pdo->prepare(
+            "INSERT INTO email_queue (to_email, subject, body) VALUES (:to_email, :subject, :body)"
+        );
+        $stmt->execute([
+            "to_email" => $to,
+            "subject" => $subject,
+            "body" => $body,
+        ]);
+        return true;
+    } catch (\PDOException $e) {
+        error_log("Queue Email Error: " . $e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * Mengirimkan email notifikasi ke admin (pramonobagas01@gmail.com) saat ada user baru mendaftar
+ * @param bool $use_queue Jika true, email disimpan ke antrian database (non-blocking)
+ */
+function notify_admin_register($username, $email, $use_queue = false)
 {
     $admin_email = "pramonobagas01@gmail.com";
     $subject = "Notifikasi Admin: Registrasi Pengguna Baru";
@@ -480,13 +519,16 @@ function notify_admin_register($username, $email)
         </div>
     ";
 
+    if ($use_queue) {
+        return queue_email($admin_email, $subject, $email_template);
+    }
     return send_smtp_mail($admin_email, $subject, $email_template);
 }
 
 /**
  * Mengirimkan email notifikasi ke admin (pramonobagas01@gmail.com) saat ada user melakukan login
  */
-function notify_admin_login($username, $email, $method = "Kredensial Standard")
+function notify_admin_login($username, $email, $method = "Kredensial Standard", $use_queue = false)
 {
     $admin_email = "pramonobagas01@gmail.com";
     $subject = "Notifikasi Admin: Aktivitas Login Pengguna";
@@ -547,13 +589,16 @@ function notify_admin_login($username, $email, $method = "Kredensial Standard")
         </div>
     ";
 
+    if ($use_queue) {
+        return queue_email($admin_email, $subject, $email_template);
+    }
     return send_smtp_mail($admin_email, $subject, $email_template);
 }
 
 /**
  * Mengirimkan email notifikasi selamat datang / pemberitahuan login ke email pengguna yang bersangkutan
  */
-function send_login_welcome_email($username, $email, $method = "Kredensial Standard")
+function send_login_welcome_email($username, $email, $method = "Kredensial Standard", $use_queue = false)
 {
     $subject = "Selamat Datang Kembali di DompetKu!";
     $ip_address = isset($_SERVER["REMOTE_ADDR"]) ? $_SERVER["REMOTE_ADDR"] : "N/A";
@@ -596,5 +641,8 @@ function send_login_welcome_email($username, $email, $method = "Kredensial Stand
         </div>
         ";
 
+    if ($use_queue) {
+        return queue_email($email, $subject, $email_template);
+    }
     return send_smtp_mail($email, $subject, $email_template);
 }

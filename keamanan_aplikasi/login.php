@@ -108,29 +108,22 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         $_SESSION["debug_log"] = $debug_output;
                     }
 
-                    // Redirect ke dashboard DULU agar user tidak menunggu proses SMTP
-                    header("Location: dashboard.php");
-
-                    // Kirim response redirect ke browser segera, lalu lanjutkan proses email di background
-                    ignore_user_abort(true);
-                    if (function_exists('fastcgi_finish_request')) {
-                        fastcgi_finish_request();
-                    } else {
-                        ob_end_flush();
-                        flush();
-                    }
-
-                    // Kirim notifikasi email di background (user sudah diarahkan ke dashboard)
+                    // Simpan email ke antrian database (instan, hanya INSERT ke DB)
                     notify_admin_login(
                         $user["username"],
                         $user["email"],
                         "Kredensial Standard",
+                        true // use_queue = true
                     );
                     send_login_welcome_email(
                         $user["username"],
                         $user["email"],
-                        "Kredensial Standard"
+                        "Kredensial Standard",
+                        true // use_queue = true
                     );
+
+                    // Redirect ke dashboard (instan karena tidak ada proses SMTP)
+                    header("Location: dashboard.php");
                     exit();
                 }
             }
@@ -251,5 +244,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // Trigger Email Queue Processing in background
+            fetch('process_email_queue.php')
+                .then(response => response.json())
+                .then(data => console.log('Email queue processing status:', data))
+                .catch(err => console.error('Failed to trigger email queue:', err));
+        });
+    </script>
 </body>
 </html>
