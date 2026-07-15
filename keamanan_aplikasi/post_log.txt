@@ -432,3 +432,63 @@ POST Data: Array
     [keterangan] => bayar ukt
 )
 
+POST Data: Array
+(
+    [action] => create
+    [id] => 
+    [jenis] => Pemasukan
+    [id_kategori] => 6
+    [id_dompet] => 9
+    [id_dompet_asal] => 
+    [id_dompet_tujuan] => 
+    [nominal] => 300000
+    [tanggal] => 2026-07-11
+    [keterangan] => di tf
+)
+
+POST Data: Array
+(
+    [action] => delete
+    [id] => 19
+)
+
+POST Data: Array
+(
+    [action] => delete
+    [id] => 27
+)
+
+POST Data: Array
+(
+    [action] => delete
+    [id] => 30
+)
+
+POST Data: Array
+(
+    [action] => create
+    [id] => 
+    [jenis] => Transfer
+    [id_kategori] => 
+    [id_dompet] => 
+    [id_dompet_asal] => 9
+    [id_dompet_tujuan] => 10
+    [nominal] => 50000
+    [tanggal] => 2026-07-15
+    [keterangan] => buat beli maem
+)
+
+POST Data: Array
+(
+    [action] => create
+    [id] => 
+    [jenis] => Pengeluaran
+    [id_kategori] => 2
+    [id_dompet] => 10
+    [id_dompet_asal] => 
+    [id_dompet_tujuan] => 
+    [nominal] => 10000
+    [tanggal] => 2026-07-15
+    [keterangan] => check out murah
+)
+

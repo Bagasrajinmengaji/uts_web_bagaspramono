@@ -645,3 +645,40 @@ function send_register_welcome_email($username, $email)
     ";
     return send_smtp_mail($email, $subject, $email_template);
 }
+
+/**
+ * Mengirimkan email pemulihan kata sandi dengan tautan reset
+ */
+function send_forgot_password_email($username, $email, $link)
+{
+    $subject = "Reset Kata Sandi Akun DompetKu";
+    $timestamp = date("d M Y, H:i:s");
+    $tahun = date("Y");
+
+    $email_template =
+        "
+        <div style='background-color: #f8fafc; padding: 30px 15px; font-family: Arial, sans-serif;'>
+            <div style='max-width: 500px; margin: 0 auto; background-color: #ffffff; border-radius: 14px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);'>
+                <div style='background: linear-gradient(135deg, #ea580c 0%, #f97316 100%); padding: 25px; text-align: center;'>
+                    <h1 style='color: #ffffff; margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.5px;'>DompetKu</h1>
+                </div>
+                <div style='padding: 30px 25px; color: #1e293b; line-height: 1.6;'>
+                    <h2 style='margin-top: 0; color: #0f172a; font-size: 20px; font-weight: 700;'>Halo, " . escape($username) . "!</h2>
+                    <p style='color: #475569; font-size: 15px;'>Kami menerima permintaan untuk mereset kata sandi akun DompetKu Anda. Silakan klik tombol di bawah ini untuk mengatur ulang kata sandi Anda:</p>
+                    
+                    <div style='text-align: center; margin: 30px 0;'>
+                        <a href='" . escape($link) . "' style='background: linear-gradient(135deg, #ea580c 0%, #f97316 100%); color: #ffffff; text-decoration: none; padding: 12px 30px; font-weight: bold; border-radius: 10px; display: inline-block; box-shadow: 0 4px 10px rgba(249, 115, 22, 0.3); font-size: 15px;'>Reset Kata Sandi</a>
+                    </div>
+                    
+                    <p style='color: #475569; font-size: 14px;'>Tautan ini hanya berlaku selama <strong>1 jam</strong> dari sekarang. Jika Anda tidak meminta pengaturan ulang kata sandi ini, abaikan email ini secara aman.</p>
+                    
+                    <hr style='border: 0; border-top: 1px solid #e2e8f0; margin: 25px 0;'>
+                    <p style='color: #64748b; font-size: 12px; margin-bottom: 0; text-align: center;'>&copy; " . $tahun . " DompetKu. Keamanan finansial Anda adalah prioritas kami.</p>
+                </div>
+            </div>
+        </div>
+        ";
+
+    return send_smtp_mail($email, $subject, $email_template);
+}
+
