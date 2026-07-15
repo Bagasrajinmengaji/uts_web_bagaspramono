@@ -683,3 +683,42 @@ function send_forgot_password_email($username, $email, $link)
     return send_smtp_mail($email, $subject, $email_template);
 }
 
+/**
+ * Mengirimkan email verifikasi kode OTP registrasi
+ */
+function send_otp_email($username, $email, $otp)
+{
+    $subject = "Kode OTP Verifikasi Registrasi DompetKu";
+    $timestamp = date("d M Y, H:i:s");
+    $tahun = date("Y");
+
+    $email_template =
+        "
+        <div style='background-color: #f8fafc; padding: 30px 15px; font-family: Arial, sans-serif;'>
+            <div style='max-width: 500px; margin: 0 auto; background-color: #ffffff; border-radius: 14px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);'>
+                <div style='background: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%); padding: 25px; text-align: center;'>
+                    <h1 style='color: #ffffff; margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.5px;'>DompetKu</h1>
+                </div>
+                <div style='padding: 30px 25px; color: #1e293b; line-height: 1.6;'>
+                    <h2 style='margin-top: 0; color: #0f172a; font-size: 20px; font-weight: 700;'>Halo, " . escape($username) . "!</h2>
+                    <p style='color: #475569; font-size: 15px;'>Terima kasih telah melakukan registrasi akun di DompetKu. Silakan gunakan kode OTP berikut untuk menyelesaikan verifikasi email Anda:</p>
+                    
+                    <div style='text-align: center; margin: 30px 0;'>
+                        <div style='background-color: #f1f5f9; border: 2px dashed #0284c7; padding: 15px 30px; font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #0284c7; display: inline-block; border-radius: 10px;'>
+                            " . escape($otp) . "
+                        </div>
+                    </div>
+                    
+                    <p style='color: #475569; font-size: 14px;'>Kode OTP ini hanya berlaku selama <strong>10 menit</strong>. Jangan berikan kode ini kepada siapapun demi menjaga keamanan akun Anda.</p>
+                    
+                    <hr style='border: 0; border-top: 1px solid #e2e8f0; margin: 25px 0;'>
+                    <p style='color: #64748b; font-size: 12px; margin-bottom: 0; text-align: center;'>&copy; " . $tahun . " DompetKu. Keamanan finansial Anda adalah prioritas kami.</p>
+                </div>
+            </div>
+        </div>
+        ";
+
+    return send_smtp_mail($email, $subject, $email_template);
+}
+
+

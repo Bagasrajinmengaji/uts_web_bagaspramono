@@ -98,73 +98,36 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             if ($existing_user) {
                 $errors[] = "Username atau email sudah terdaftar.";
             } else {
+                // Generate a 6-digit numeric OTP code
+                $otp = sprintf("%06d", rand(100000, 999999));
+
                 // Securely hash the password using bcrypt via PASSWORD_DEFAULT
                 $hashed_password = password_hash($password, PASSWORD_DEFAULT);
 
-                // Insert new user into database
-                $insert_stmt = $pdo->prepare(
-                    "INSERT INTO users (username, email, password) VALUES (:username, :email, :password)",
-                );
-                $insert_stmt->execute([
+                // Store temporary registration details and OTP in session
+                $_SESSION["temp_register_user"] = [
                     "username" => $username,
                     "email" => $email,
                     "password" => $hashed_password,
-                ]);
+                    "otp" => $otp,
+                    "otp_expires" => time() + 600 // 10 minutes from now
+                ];
 
-                $new_user_id = $pdo->lastInsertId();
-
-                // Buatkan Dompet Utama secara otomatis untuk user baru
-                $dompet_stmt = $pdo->prepare(
-                    "INSERT INTO dompet (id_user, nama_dompet) VALUES (:id_user, :nama_dompet)",
-                );
-                $dompet_stmt->execute([
-                    "id_user" => $new_user_id,
-                    "nama_dompet" => "Dompet Utama",
-                ]);
-
-                // --- INTEGRASI LAYOUT SMTP EMAIL (DISESUAIKAN DENGAN CSS BAWAAN) ---
-                $subject = "Selamat Bergabung di DompetKu!";
-                $email_template =
-                    "
-                    <div style='background-color: #f1f5f9; padding: 30px 15px; font-family: Arial, sans-serif;'>
-                        <div style='max-width: 500px; margin: 0 auto; background-color: #ffffff; border-radius: 14px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);'>
-                            
-                            <div style='background: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%); padding: 25px; text-align: center;'>
-                                <h1 style='color: #ffffff; margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.5px;'>DompetKu</h1>
-                            </div>
-                            
-                            <div style='padding: 30px 25px; color: #1e293b; line-height: 1.6;'>
-                                <h2 style='margin-top: 0; color: #0f172a; font-size: 20px; font-weight: 700;'>Halo, " .
-                    escape($username) .
-                    "!</h2>
-                                <p style='color: #475569; font-size: 15px;'>Akun Anda telah berhasil terdaftar secara aman di sistem kami. Sekarang saatnya mengendalikan uangmu dan mulai merancang target finansial masa depan yang rapi!</p>
-                                
-                                <div style='text-align: center; margin: 30px 0;'>
-                                    <a href='http://localhost/pemrogramanweb/keamanan_aplikasi/login.php' style='background: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%); color: #ffffff; text-decoration: none; padding: 12px 30px; font-weight: bold; border-radius: 10px; display: inline-block; box-shadow: 0 4px 10px rgba(56, 189, 248, 0.3); font-size: 15px;'>Mulai Catat Keuangan</a>
-                                </div>
-                                
-                                <hr style='border: 0; border-top: 1px solid #e2e8f0; margin: 25px 0;'>
-                                <p style='color: #64748b; font-size: 12px; margin-bottom: 0; text-align: center;'>&copy; " .
-                    date("Y") .
-                    " DompetKu. Dibuat untuk Keamanan Finansial dan Kemudahan Catatan Keuangan Pribadi Anda.</p>
-                            </div>
-                        </div>
-                    </div>
-                ";
-                // Panggil pengiriman email registrasi di background (asinkron di Windows CLI)
+                // Panggil pengiriman email OTP registrasi di background (asinkron di Windows CLI)
                 $bg_script = __DIR__ . "/send_email_bg.php";
                 $cmd = "start /B C:\\xampp\\php\\php.exe " . escapeshellarg($bg_script) . 
                        " --email=" . escapeshellarg($email) . 
                        " --username=" . escapeshellarg($username) . 
-                       " --type=register";
+                       " --otp=" . escapeshellarg($otp) .
+                       " --type=register_otp";
                 pclose(popen($cmd, "r"));
 
-                // Set success flash message and redirect to login
+                // Set success flash message and redirect to OTP verification page
                 set_flash_message(
                     "success",
-                    "Registrasi berhasil! Silakan login menggunakan akun Anda.",
+                    "Pendaftaran berhasil dikirim! Silakan masukkan kode OTP yang telah dikirim ke email Anda.",
                 );
-                header("Location: login.php");
+                header("Location: verify_otp.php");
                 exit();
             }
         } catch (\PDOException $e) {
