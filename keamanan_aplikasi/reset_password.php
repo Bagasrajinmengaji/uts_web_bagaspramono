@@ -24,13 +24,15 @@ if (empty($email) || empty($token)) {
 }
 
 $token_hash = hash("sha256", $token);
+
+
 $errors = [];
 $is_token_valid = false;
 $user_id = null;
 
 try {
     // Check if there is a matching user with active token
-    $stmt = $pdo->prepare("SELECT id, reset_token_expires_at FROM users WHERE email = :email AND reset_token_hash = :hash");
+    $stmt = $pdo->prepare("SELECT id FROM users WHERE email = :email AND reset_token_hash = :hash");
     $stmt->execute([
         "email" => $email,
         "hash" => $token_hash
@@ -38,12 +40,8 @@ try {
     $user = $stmt->fetch();
 
     if ($user) {
-        // Check token expiration (PHP server-side time check is timezone-safe)
-        $expires = strtotime($user["reset_token_expires_at"]);
-        if ($expires > time()) {
-            $is_token_valid = true;
-            $user_id = $user["id"];
-        }
+        $is_token_valid = true;
+        $user_id = $user["id"];
     }
 } catch (\PDOException $e) {
     error_log($e->getMessage());
@@ -135,6 +133,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 <h3 class="auth-title">Atur Ulang Password</h3>
                 <p class="text-muted-custom">Masukkan kata sandi baru yang kuat untuk akun Anda</p>
             </div>
+
+            <?php display_flash_message(); ?>
 
             <?php if (!empty($errors)): ?>
                 <div class="alert alert-danger d-flex align-items-center" role="alert">

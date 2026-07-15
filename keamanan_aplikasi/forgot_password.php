@@ -52,7 +52,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 $protocol = (isset($_SERVER["HTTPS"]) && $_SERVER["HTTPS"] === "on") ? "https://" : "http://";
                 // dirname() handles subdirectory automatically
                 $current_dir = rtrim(dirname($_SERVER["PHP_SELF"]), '/\\');
-                $key = base64_encode($email . ":" . $token);
+                $key = rtrim(base64_encode($email . ":" . $token), '=');
                 $link = $protocol . $_SERVER["HTTP_HOST"] . $current_dir . "/reset_password.php?key=" . urlencode($key);
 
                 // Run email sending in background CLI (non-blocking)
@@ -95,6 +95,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 <h3 class="auth-title">Lupa Password</h3>
                 <p class="text-muted-custom">Masukkan email terdaftar untuk menerima link reset kata sandi</p>
             </div>
+
+            <?php display_flash_message(); ?>
 
             <?php if (!empty($success_message)): ?>
                 <div class="alert alert-success d-flex align-items-center" role="alert">

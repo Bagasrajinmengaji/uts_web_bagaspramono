@@ -300,6 +300,7 @@ function send_smtp_mail($to, $subject, $message_body, $max_retries = 1, &$error_
 
         $headers = "MIME-Version: 1.0\r\n";
         $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
+        $headers .= "Content-Transfer-Encoding: 8bit\r\n";
         $headers .=
             "From: =?UTF-8?B?" . base64_encode($from_name) . "?= <$from_email>\r\n";
         $headers .= "To: <$to>\r\n";
