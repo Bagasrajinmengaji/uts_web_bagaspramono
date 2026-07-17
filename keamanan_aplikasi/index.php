@@ -17,6 +17,8 @@ $username = $is_logged_in ? $_SESSION["username"] : "";
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
     <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Custom Style Sheet -->
+    <link href="assets/css/style.css" rel="stylesheet">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
 
@@ -26,11 +28,24 @@ $username = $is_logged_in ? $_SESSION["username"] : "";
             --m-card-bg: #ffffff;         /* White cards */
             --m-text-primary: #1e293b;    /* Dark slate/navy text */
             --m-text-secondary: #64748b;  /* Muted text */
+            --m-border: #e2e8f0;
             
             /* DompetKu Colors */
             --m-light-blue: #3b82f6;
             --m-dark-blue: #1d4ed8;
-            --m-red: #1d4ed8;             /* Accent (changed from red to primary blue) */
+            --m-red: #1d4ed8;             /* Accent */
+        }
+
+        [data-theme="dark"] {
+            --m-black: #0f172a;           /* Deep Slate 900 */
+            --m-dark-grey: #1e293b;       /* Slate 800 */
+            --m-card-bg: #1e293b;         /* Slate 800 card */
+            --m-text-primary: #f8fafc;    /* Slate 50 text */
+            --m-text-secondary: #94a3b8;  /* Slate 400 text */
+            --m-border: #334155;          /* Slate 700 border */
+            
+            --m-light-blue: #38bdf8;       /* Lighter blue accent */
+            --m-dark-blue: #3b82f6;
         }
 
         body {
@@ -176,7 +191,7 @@ $username = $is_logged_in ? $_SESSION["username"] : "";
         /* Minimalist High-Fidelity Dashboard Graphic (Right side of Hero) */
         .m-dashboard-graphic {
             background-color: var(--m-card-bg);
-            border: 1px solid #e2e8f0;
+            border: 1px solid var(--m-border);
             padding: 30px;
             border-radius: 16px;
             box-shadow: 0 20px 40px rgba(0,0,0,0.06);
@@ -195,7 +210,7 @@ $username = $is_logged_in ? $_SESSION["username"] : "";
             background: linear-gradient(90deg, var(--m-light-blue), var(--m-dark-blue));
         }
         .graphic-header {
-            border-bottom: 1px solid #e2e8f0;
+            border-bottom: 1px solid var(--m-border);
             padding-bottom: 15px;
             margin-bottom: 20px;
         }
@@ -213,7 +228,7 @@ $username = $is_logged_in ? $_SESSION["username"] : "";
         }
         .graphic-budget-bar {
             height: 6px;
-            background-color: #e2e8f0;
+            background-color: var(--m-border);
             width: 100%;
             margin-top: 8px;
             position: relative;
@@ -231,7 +246,7 @@ $username = $is_logged_in ? $_SESSION["username"] : "";
             justify-content: space-between;
             align-items: center;
             padding: 12px 0;
-            border-bottom: 1px solid #e2e8f0;
+            border-bottom: 1px solid var(--m-border);
             font-size: 0.85rem;
             color: var(--m-text-secondary);
         }
@@ -242,7 +257,7 @@ $username = $is_logged_in ? $_SESSION["username"] : "";
         /* Feature Cards */
         .feature-card-m {
             background-color: var(--m-card-bg);
-            border: 1px solid #e2e8f0;
+            border: 1px solid var(--m-border);
             padding: 40px 30px;
             border-radius: 16px;
             height: 100%;
@@ -272,6 +287,55 @@ $username = $is_logged_in ? $_SESSION["username"] : "";
             padding: 50px 0;
             margin-top: 80px;
             color: #ffffff;
+        }
+
+        [data-theme="dark"] .navbar-m {
+            background-color: rgba(15, 23, 42, 0.9) !important;
+            border-bottom-color: var(--m-border) !important;
+        }
+        [data-theme="dark"] .graphic-pill {
+            background-color: rgba(59, 130, 246, 0.15) !important;
+            border-color: rgba(59, 130, 246, 0.3) !important;
+            color: var(--m-light-blue) !important;
+        }
+        [data-theme="dark"] footer {
+            background-color: #0f172a !important;
+            border-top-color: var(--m-border) !important;
+        }
+        [data-theme="dark"] .text-dark {
+            color: var(--m-text-primary) !important;
+        }
+        [data-theme="dark"] .m-dashboard-graphic {
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3) !important;
+        }
+
+        /* Resets Light Mode untuk landing page */
+        [data-theme="light"] .navbar-m {
+            background-color: rgba(255, 255, 255, 0.9) !important;
+            border-bottom-color: #e2e8f0 !important;
+        }
+        [data-theme="light"] .graphic-pill {
+            background-color: #eff6ff !important;
+            border-color: #bfdbfe !important;
+            color: #1d4ed8 !important;
+        }
+        [data-theme="light"] footer {
+            background-color: #1e293b !important;
+            border-top-color: #0f172a !important;
+            color: #ffffff !important;
+        }
+        [data-theme="light"] .text-dark {
+            color: #1e293b !important;
+        }
+        [data-theme="light"] .m-dashboard-graphic {
+            box-shadow: 0 20px 40px rgba(0,0,0,0.06) !important;
+        }
+        [data-theme="light"] .feature-card-m {
+            background-color: #ffffff !important;
+            border-color: #e2e8f0 !important;
+        }
+        [data-theme="light"] .feature-card-m:hover {
+            border-color: #bfdbfe !important;
         }
     </style>
 </head>

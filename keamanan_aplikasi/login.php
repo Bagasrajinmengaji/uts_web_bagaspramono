@@ -172,7 +172,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             <?php endif; ?>
 
             <?php if (isset($_SESSION["debug_log"])): ?>
-                <div class="alert alert-info border-2 font-monospace mb-3" style="font-size: 0.82rem; border-color: #3b82f6; background-color: #eff6ff;">
+                <div class="alert alert-info border-2 font-monospace mb-3 debug-panel" style="font-size: 0.82rem; border-color: #3b82f6;">
                     <strong class="text-primary"><i class="bi bi-bug-fill me-1"></i> DEBUG AUTENTIKASI:</strong>
                     <hr class="my-2 text-muted">
                     <ul class="mb-0 ps-3">

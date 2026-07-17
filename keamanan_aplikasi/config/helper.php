@@ -20,6 +20,141 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+// Aktifkan Output Buffering untuk menyisipkan skrip & elemen Dark Mode secara otomatis di halaman HTML
+if (
+    php_sapi_name() !== 'cli' &&
+    (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) !== 'xmlhttprequest') &&
+    (!isset($_SERVER['HTTP_ACCEPT']) || strpos($_SERVER['HTTP_ACCEPT'], 'text/html') !== false)
+) {
+    ob_start(function($buffer) {
+        // Abaikan halaman ekspor/unduhan binary agar file tidak rusak
+        $script_name = basename($_SERVER['SCRIPT_NAME']);
+        $is_export = strpos($script_name, 'export_') === 0 || strpos($script_name, 'download_') === 0;
+        if ($is_export) {
+            return $buffer;
+        }
+
+        // Periksa apakah output berupa dokumen HTML lengkap (mengandung tag </body>)
+        if (stripos($buffer, '</body>') === false) {
+            return $buffer;
+        }
+
+        // 1. Injeksi skrip inisialisasi tema instan ke dalam <head> guna mencegah kedipan latar belakang putih
+        $head_script = '
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem("theme") || "light";
+            document.documentElement.setAttribute("data-theme", savedTheme);
+        })();
+    </script>';
+        
+        if (stripos($buffer, '<head>') !== false) {
+            $buffer = str_ireplace('<head>', '<head>' . $head_script, $buffer);
+        } else {
+            $buffer = $head_script . $buffer;
+        }
+
+        // Cache-busting: tambahkan timestamp file CSS sebagai query string agar
+        // browser tidak menggunakan versi lama yang ada di cache
+        $css_path = __DIR__ . '/../assets/css/style.css';
+        $css_ver = file_exists($css_path) ? filemtime($css_path) : time();
+        $buffer = preg_replace(
+            '/(href=["\'])([^"\']*assets\/css\/style\.css)(["\'])/',
+            '$1$2?v=' . $css_ver . '$3',
+            $buffer
+        );
+
+        // 2. Injeksi penyesuaian otomatis untuk default warna teks & kisi-kisi pustaka Chart.js
+        $chartjs_tag = 'https://cdn.jsdelivr.net/npm/chart.js';
+        if (stripos($buffer, $chartjs_tag) !== false) {
+            $chart_defaults_script = '
+    <script>
+        if (typeof Chart !== "undefined") {
+            const isDark = (document.documentElement.getAttribute("data-theme") || "light") === "dark";
+            Chart.defaults.color = isDark ? "#94a3b8" : "#64748b";
+            Chart.defaults.borderColor = isDark ? "#334155" : "#e2e8f0";
+        }
+    </script>';
+            // Sisipkan sesaat setelah elemen script Chart.js dimuat
+            $buffer = str_ireplace('<script src="' . $chartjs_tag . '"></script>', '<script src="' . $chartjs_tag . '"></script>' . $chart_defaults_script, $buffer);
+            $buffer = str_ireplace("<script src='" . $chartjs_tag . "'></script>", "<script src='" . $chartjs_tag . "'></script>" . $chart_defaults_script, $buffer);
+        }
+
+        // 3. Injeksi Tombol Toggle Melayang dan Logika Interaktif ke akhir tag </body>
+        $toggle_html = '
+    <!-- Tombol Saklar Tema Melayang -->
+    <button id="theme-toggle-btn" class="theme-toggle-btn" title="Ganti Tema">
+        <i class="bi bi-moon-stars-fill"></i>
+    </button>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const toggleBtn = document.getElementById("theme-toggle-btn");
+            if (!toggleBtn) return;
+            
+            const icon = toggleBtn.querySelector("i");
+            
+            function perbaruiIkon(theme) {
+                if (theme === "dark") {
+                    icon.className = "bi bi-sun-fill";
+                } else {
+                    icon.className = "bi bi-moon-stars-fill";
+                }
+            }
+            
+            // Atur ikon saat pertama kali halaman selesai dimuat
+            const temaSekarang = document.documentElement.getAttribute("data-theme") || "light";
+            perbaruiIkon(temaSekarang);
+            
+            // Klik listener untuk pergantian tema
+            toggleBtn.addEventListener("click", function() {
+                // Tambahkan kelas transisi agar pemudaran warna berlangsung mulus
+                document.documentElement.classList.add("theme-transitioning");
+                
+                const temaLama = document.documentElement.getAttribute("data-theme") || "light";
+                const temaBaru = temaLama === "dark" ? "light" : "dark";
+                
+                document.documentElement.setAttribute("data-theme", temaBaru);
+                localStorage.setItem("theme", temaBaru);
+                perbaruiIkon(temaBaru);
+                
+                // Perbarui Chart.js secara dinamis jika ada grafik aktif di halaman
+                if (typeof Chart !== "undefined" && Chart.instances) {
+                    const isDark = temaBaru === "dark";
+                    Object.keys(Chart.instances).forEach(function(key) {
+                        const chart = Chart.instances[key];
+                        
+                        if (chart.options.scales) {
+                            Object.keys(chart.options.scales).forEach(function(scaleKey) {
+                                const scale = chart.options.scales[scaleKey];
+                                if (scale.ticks) {
+                                    scale.ticks.color = isDark ? "#94a3b8" : "#64748b";
+                                }
+                                if (scale.grid) {
+                                    scale.grid.color = isDark ? "#334155" : "#e2e8f0";
+                                }
+                            });
+                        }
+                        
+                        if (chart.options.plugins && chart.options.plugins.legend && chart.options.plugins.legend.labels) {
+                            chart.options.plugins.legend.labels.color = isDark ? "#94a3b8" : "#64748b";
+                        }
+                        
+                        chart.update();
+                    });
+                }
+                
+                // Lepaskan kelas transisi setelah animasi selesai
+                setTimeout(function() {
+                    document.documentElement.classList.remove("theme-transitioning");
+                }, 400);
+            });
+        });
+    </script>';
+
+        return str_ireplace('</body>', $toggle_html . '</body>', $buffer);
+    });
+}
+
 // Bagian 2: Sanitasi Output & Pencegahan XSS
 // Melakukan sanitasi data sebelum ditampilkan ke halaman HTML guna mencegah XSS
 function escape($string)
@@ -562,7 +697,7 @@ function send_register_welcome_email($username, $email)
                 <h2 style='margin-top: 0; color: #0f172a; font-size: 20px; font-weight: 700;'>Halo, " . escape($username) . "!</h2>
                 <p style='color: #475569; font-size: 15px;'>Akun Anda telah berhasil terdaftar secara aman di sistem kami. Sekarang saatnya mengendalikan uangmu dan mulai merancang target finansial masa depan yang rapi!</p>
                 <div style='text-align: center; margin: 30px 0;'>
-                    <a href='http://localhost/pemrogramanweb/keamanan_aplikasi/login.php' style='background: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%); color: #ffffff; text-decoration: none; padding: 12px 30px; font-weight: bold; border-radius: 10px; display: inline-block; box-shadow: 0 4px 10px rgba(56, 189, 248, 0.3); font-size: 15px;'>Mulai Catat Keuangan</a>
+                    <a href='http://localhost/uts_web_bagaspramono/keamanan_aplikasi/login.php' style='background: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%); color: #ffffff; text-decoration: none; padding: 12px 30px; font-weight: bold; border-radius: 10px; display: inline-block; box-shadow: 0 4px 10px rgba(56, 189, 248, 0.3); font-size: 15px;'>Mulai Catat Keuangan</a>
                 </div>
                 <hr style='border: 0; border-top: 1px solid #e2e8f0; margin: 25px 0;'>
                 <p style='color: #64748b; font-size: 12px; margin-bottom: 0; text-align: center;'>&copy; " . date("Y") . " DompetKu. Dibuat untuk Keamanan Finansial dan Kemudahan Catatan Keuangan Pribadi Anda.</p>
