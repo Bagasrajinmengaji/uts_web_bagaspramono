@@ -315,6 +315,22 @@ $num
             $('#id_kategori').val('').trigger('change');
             $('#jumlah_budget').val('');
         }
+
+        // --- Scroll Restoration untuk Form Filter Anggaran ---
+        window.addEventListener('beforeunload', function() {
+            localStorage.setItem('budgeting_scroll_pos', window.scrollY);
+        });
+
+        const savedBudgetScrollPos = localStorage.getItem('budgeting_scroll_pos');
+        if (savedBudgetScrollPos !== null) {
+            setTimeout(function() {
+                window.scrollTo({
+                    top: parseInt(savedBudgetScrollPos),
+                    behavior: 'instant'
+                });
+                localStorage.removeItem('budgeting_scroll_pos');
+            }, 100);
+        }
     </script>
 </body>
 </html>

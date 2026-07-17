@@ -640,14 +640,17 @@ try {
                             <?php endforeach; ?>
                         </select>
                     </div>
-                    <div class="col-md-2 d-flex align-items-end gap-1">
-                        <button type="submit" class="btn btn-primary w-100"><i class="bi bi-funnel-fill"></i> Filter</button>
-                        <button class="btn btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#advancedFilterCollapse" aria-expanded="false" aria-controls="advancedFilterCollapse" title="Filter Lanjutan">
-                            <i class="bi bi-sliders"></i>
-                        </button>
-                        <?php if ($search !== "" || $jenis_filter !== "" || $id_kategori_filter !== "" || $id_dompet_filter !== "" || $tanggal_mulai !== "" || $tanggal_selesai !== "" || $nominal_min !== "" || $nominal_max !== ""): ?>
-                            <a href="dashboard.php" class="btn btn-light border" title="Reset Filter"><i class="bi bi-arrow-counterclockwise"></i></a>
-                        <?php endif; ?>
+                    <div class="col-md-2">
+                        <label class="form-label d-none d-md-block text-xs" style="visibility: hidden;">Aksi</label>
+                        <div class="d-flex gap-1">
+                            <button type="submit" class="btn btn-primary w-100" style="height: 38px; display: flex; align-items: center; justify-content: center; gap: 6px;"><i class="bi bi-funnel-fill"></i> Filter</button>
+                            <button class="btn btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#advancedFilterCollapse" aria-expanded="false" aria-controls="advancedFilterCollapse" title="Filter Lanjutan" style="height: 38px; width: 42px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                <i class="bi bi-sliders"></i>
+                            </button>
+                            <?php if ($search !== "" || $jenis_filter !== "" || $id_kategori_filter !== "" || $id_dompet_filter !== "" || $tanggal_mulai !== "" || $tanggal_selesai !== "" || $nominal_min !== "" || $nominal_max !== ""): ?>
+                                <a href="dashboard.php" class="btn btn-light border" title="Reset Filter" style="height: 38px; width: 42px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><i class="bi bi-arrow-counterclockwise"></i></a>
+                            <?php endif; ?>
+                        </div>
                     </div>
                 </div>
 
@@ -914,16 +917,22 @@ try {
                         <!-- Area Unduh Template -->
                         <div class="card bg-light border-0 p-3 mb-2">
                             <h6 class="font-bold mb-3 text-secondary" style="font-size: 0.85rem; text-transform: uppercase;">Unduh Template Pengisian:</h6>
-                            <div class="d-grid gap-2 d-md-flex justify-content-md-between">
-                                <a href="download_template.php" class="btn btn-sm btn-outline-success w-100 text-nowrap">
-                                    <i class="bi bi-file-earmark-excel me-1"></i> Template Excel
-                                </a>
-                                <a href="download_template_docx.php" class="btn btn-sm btn-outline-primary w-100 text-nowrap">
-                                    <i class="bi bi-file-earmark-word me-1"></i> Template Word
-                                </a>
-                                <a href="download_template_pdf.php" class="btn btn-sm btn-outline-danger w-100 text-nowrap">
-                                    <i class="bi bi-file-earmark-pdf me-1"></i> Template PDF
-                                </a>
+                            <div class="row g-2">
+                                <div class="col-4">
+                                    <a href="download_template.php" class="btn btn-sm btn-outline-success w-100 text-nowrap" style="display: flex; align-items: center; justify-content: center; font-size: 0.72rem; padding: 8px 4px;">
+                                        <i class="bi bi-file-earmark-excel me-1"></i> Excel
+                                    </a>
+                                </div>
+                                <div class="col-4">
+                                    <a href="download_template_docx.php" class="btn btn-sm btn-outline-primary w-100 text-nowrap" style="display: flex; align-items: center; justify-content: center; font-size: 0.72rem; padding: 8px 4px;">
+                                        <i class="bi bi-file-earmark-word me-1"></i> Word
+                                    </a>
+                                </div>
+                                <div class="col-4">
+                                    <a href="download_template_pdf.php" class="btn btn-sm btn-outline-danger w-100 text-nowrap" style="display: flex; align-items: center; justify-content: center; font-size: 0.72rem; padding: 8px 4px;">
+                                        <i class="bi bi-file-earmark-pdf me-1"></i> PDF
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </div>
