@@ -184,6 +184,24 @@ function guest_check()
     }
 }
 
+// Memastikan pengguna memiliki role admin.
+// Jika bukan admin, set flash message "Akses ditolak" lalu arahkan ke dashboard biasa.
+function admin_check()
+{
+    // Pastikan sudah login dulu
+    if (!isset($_SESSION["user_id"])) {
+        header("Location: login.php");
+        exit();
+    }
+
+    // Cek role di session
+    if (!isset($_SESSION["role"]) || $_SESSION["role"] !== "admin") {
+        set_flash_message("danger", "Akses ditolak. Halaman ini khusus untuk Administrator.");
+        header("Location: dashboard.php");
+        exit();
+    }
+}
+
 // Bagian 4: Utilitas Data & Validasi
 // Memformat angka nominal uang menjadi format Rupiah standar (contoh: Rp 50.000)
 function format_rupiah($number)

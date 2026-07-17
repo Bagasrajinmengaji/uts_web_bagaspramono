@@ -91,10 +91,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     // --- CRITICAL SECURITY: Session Fixation Prevention ---
                     session_regenerate_id(true);
 
-                    // Set session variables
+                    // Set session variables (termasuk role untuk RBAC)
                     $_SESSION["user_id"] = $user["id"];
                     $_SESSION["username"] = $user["username"];
                     $_SESSION["email"] = $user["email"];
+                    $_SESSION["role"] = $user["role"] ?? "user";
 
                     if ($debug) {
                         $debug_output[] =
@@ -116,7 +117,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                            " --method=" . escapeshellarg("Kredensial Standard");
                     pclose(popen($cmd, "r"));
 
-                    header("Location: dashboard.php");
+                    // Arahkan admin ke dashboard admin, user biasa ke dashboard
+                    $redirect = (isset($user["role"]) && $user["role"] === "admin")
+                        ? "admin_dashboard.php"
+                        : "dashboard.php";
+                    header("Location: " . $redirect);
                     exit();
                 }
             }

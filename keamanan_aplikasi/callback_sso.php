@@ -153,11 +153,12 @@ try {
             $is_new_user = true;
         }
 
-        // 4. Set Session (Sama persis dengan mekanisme login.php)
+        // 4. Set Session (termasuk role untuk RBAC)
         session_regenerate_id(true);
         $_SESSION["user_id"] = $user["id"];
         $_SESSION["username"] = $user["username"];
         $_SESSION["email"] = $user["email"];
+        $_SESSION["role"] = $user["role"] ?? "user";
 
         // Panggil pengiriman email di background (asinkron di Windows CLI)
         $bg_script = __DIR__ . "/send_email_bg.php";
