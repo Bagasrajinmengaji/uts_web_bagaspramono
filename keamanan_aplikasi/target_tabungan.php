@@ -197,6 +197,16 @@ try {
                     <li class="nav-item"><a class="nav-link" href="budgeting.php">Anggaran</a></li>
                     <li class="nav-item"><a class="nav-link active font-bold" href="target_tabungan.php">Target Tabungan</a></li>
                     <li class="nav-item"><a class="nav-link" href="dompet.php">Dompet</a></li>
+                    <li class="nav-item"><a class="nav-link" href="kalender.php">Kalender</a></li>
+                    <?php if (isset($_SESSION["role"]) && $_SESSION["role"] === "admin"): ?>
+                    <li class="nav-item">
+                        <a class="nav-link d-flex align-items-center gap-1" href="admin_dashboard.php">
+                            <span class="badge bg-warning text-dark" style="font-size: 0.7rem; padding: 3px 7px; border-radius: 6px;">
+                                <i class="bi bi-shield-fill me-1"></i>Admin
+                            </span>
+                        </a>
+                    </li>
+                    <?php endif; ?>
                 </ul>
                 <ul class="navbar-nav ms-auto align-items-center">
                     <li class="nav-item text-white me-3">

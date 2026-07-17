@@ -407,6 +407,7 @@ try {
                     <li class="nav-item"><a class="nav-link" href="budgeting.php">Anggaran</a></li>
                     <li class="nav-item"><a class="nav-link" href="target_tabungan.php">Target Tabungan</a></li>
                     <li class="nav-item"><a class="nav-link" href="dompet.php">Dompet</a></li>
+                    <li class="nav-item"><a class="nav-link" href="kalender.php">Kalender</a></li>
                     <?php if (isset($_SESSION["role"]) && $_SESSION["role"] === "admin"): ?>
                     <li class="nav-item">
                         <a class="nav-link d-flex align-items-center gap-1" href="admin_dashboard.php">
@@ -1229,6 +1230,25 @@ try {
                     }
                 }
             });
+
+            // --- Scroll Restoration untuk Form Filter ---
+            // Menyimpan koordinat scroll halaman sesaat sebelum melakukan submit filter/reload
+            window.addEventListener('beforeunload', function() {
+                localStorage.setItem('dashboard_scroll_pos', window.scrollY);
+            });
+
+            // Mengembalikan koordinat scroll jika sebelumnya tersimpan
+            const savedScrollPos = localStorage.getItem('dashboard_scroll_pos');
+            if (savedScrollPos !== null) {
+                // Gunakan setTimeout agar browser menyelesaikan render layout Bootstrap & Select2 terlebih dahulu
+                setTimeout(function() {
+                    window.scrollTo({
+                        top: parseInt(savedScrollPos),
+                        behavior: 'instant' // Langsung ke koordinat tanpa animasi transisi lambat
+                    });
+                    localStorage.removeItem('dashboard_scroll_pos'); // Bersihkan setelah digunakan
+                }, 100);
+            }
         });
     </script>
 </body>
