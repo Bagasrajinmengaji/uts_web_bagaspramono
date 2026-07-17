@@ -1,12 +1,14 @@
 <?php
-// Include configuration and security helper files
+// Berkas verify_otp.php: Halaman verifikasi kode OTP registrasi
+
+// Muat berkas koneksi dan helper keamanan
 require_once "config/koneksi.php";
 require_once "config/helper.php";
 
-// Guard: Only guest users can access
+// Proteksi Halaman: Hanya tamu (belum login) yang dapat mengakses
 guest_check();
 
-// Check if there is temporary registration data in session
+// Pastikan data pendaftaran sementara ada di session
 if (!isset($_SESSION["temp_register_user"])) {
     set_flash_message("danger", "Sesi pendaftaran Anda telah berakhir atau tidak valid. Silakan daftar kembali.");
     header("Location: register.php");
@@ -16,16 +18,16 @@ if (!isset($_SESSION["temp_register_user"])) {
 $temp_user = $_SESSION["temp_register_user"];
 $errors = [];
 
-// Handle OTP Resend request
+// Alur 1: Kirim Ulang Kode OTP (Resend OTP)
 if (isset($_GET["resend"]) && $_GET["resend"] == "1") {
-    // Generate new 6-digit numeric OTP
+    // Generate kode OTP baru berupa 6 digit angka acak
     $new_otp = sprintf("%06d", rand(100000, 999999));
     
-    // Update temporary registration session
+    // Perbarui data OTP & waktu kedaluwarsa di session (berlaku 10 menit)
     $_SESSION["temp_register_user"]["otp"] = $new_otp;
-    $_SESSION["temp_register_user"]["otp_expires"] = time() + 600; // 10 mins
+    $_SESSION["temp_register_user"]["otp_expires"] = time() + 600;
 
-    // Send new OTP in background
+    // Kirim OTP baru ke email pengguna via background process
     $bg_script = __DIR__ . "/send_email_bg.php";
     $cmd = "start /B C:\\xampp\\php\\php.exe " . escapeshellarg($bg_script) . 
            " --email=" . escapeshellarg($temp_user["email"]) . 
@@ -39,25 +41,25 @@ if (isset($_GET["resend"]) && $_GET["resend"] == "1") {
     exit();
 }
 
-// Process OTP Verification Submission
+// Alur 2: Proses Submit Verifikasi Kode OTP
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $otp_input = isset($_POST["otp"]) ? trim($_POST["otp"]) : "";
 
-    // 1. Validation: check empty input
+    // Validasi 1: Pastikan input OTP tidak kosong
     if (empty($otp_input)) {
         $errors[] = "Kode OTP wajib diisi.";
     }
 
     if (empty($errors)) {
-        // 2. Validation: check OTP matching and expiration
+        // Validasi 2: Pencocokan kecocokan kode OTP dan masa kedaluwarsa
         if ($otp_input !== $temp_user["otp"]) {
             $errors[] = "Kode OTP yang Anda masukkan salah.";
         } else if ($temp_user["otp_expires"] <= time()) {
             $errors[] = "Kode OTP telah kedaluwarsa. Silakan kirim ulang kode baru.";
         } else {
-            // OTP is correct! Complete the registration
+            // OTP Valid! Selesaikan proses registrasi user
             try {
-                // Check once more to prevent race conditions (duplicate username/email check)
+                // Periksa duplikasi data sekali lagi untuk mencegah race conditions
                 $stmt = $pdo->prepare("SELECT id FROM users WHERE username = :username OR email = :email");
                 $stmt->execute([
                     "username" => $temp_user["username"],
@@ -66,10 +68,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 if ($stmt->fetch()) {
                     $errors[] = "Username atau email tersebut sudah terdaftar saat verifikasi.";
                 } else {
-                    // Start transaction for DML operations
+                    // Mulai transaksi database
                     $pdo->beginTransaction();
 
-                    // Insert user details to users table
+                    // Simpan data pengguna baru ke tabel users
                     $insert_stmt = $pdo->prepare(
                         "INSERT INTO users (username, email, password) VALUES (:username, :email, :password)"
                     );
@@ -80,7 +82,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     ]);
                     $new_user_id = $pdo->lastInsertId();
 
-                    // Automatically initialize main wallet (Dompet Utama)
+                    // Inisialisasi otomatis Dompet Utama untuk user baru
                     $dompet_stmt = $pdo->prepare(
                         "INSERT INTO dompet (id_user, nama_dompet) VALUES (:id_user, :nama_dompet)"
                     );
@@ -89,18 +91,19 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         "nama_dompet" => "Dompet Utama"
                     ]);
 
+                    // Commit transaksi database
                     $pdo->commit();
 
-                    // Clear temporary registration session
+                    // Bersihkan session data registrasi sementara
                     unset($_SESSION["temp_register_user"]);
 
-                    // Prevent Session Fixation: Regenerate ID and set logged-in state
+                    // Regenerasi ID Sesi untuk mencegah Session Fixation & set status login
                     session_regenerate_id(true);
                     $_SESSION["user_id"] = $new_user_id;
                     $_SESSION["username"] = $temp_user["username"];
                     $_SESSION["email"] = $temp_user["email"];
 
-                    // Trigger welcome email to user in background
+                    // Kirim email sambutan (Welcome Email) ke user baru via background process
                     $bg_script = __DIR__ . "/send_email_bg.php";
                     $cmd_welcome = "start /B C:\\xampp\\php\\php.exe " . escapeshellarg($bg_script) . 
                                    " --email=" . escapeshellarg($temp_user["email"]) . 
@@ -108,7 +111,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                                    " --type=register";
                     pclose(popen($cmd_welcome, "r"));
 
-                    // Trigger admin register notification in background
+                    // Kirim email notifikasi pendaftaran pengguna baru ke admin via background process
                     $cmd_admin = "start /B C:\\xampp\\php\\php.exe -r " . escapeshellarg(
                         "require_once 'config/helper.php'; notify_admin_register(" . 
                         var_export($temp_user["username"], true) . ", " . 
