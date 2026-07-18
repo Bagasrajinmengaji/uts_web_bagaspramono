@@ -590,3 +590,27 @@ POST Data: Array
     [keterangan] => top up cash pb
 )
 
+POST Data: Array
+(
+    [action] => delete
+    [id] => 55
+)
+
+POST Data: Array
+(
+    [action] => delete
+    [id] => 54
+)
+
+POST Data: Array
+(
+    [action] => delete
+    [id] => 53
+)
+
+POST Data: Array
+(
+    [action] => delete
+    [id] => 52
+)
+
