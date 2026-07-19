@@ -815,6 +815,35 @@ function send_email_async($params)
         return false;
     }
 
+    // 1. Coba kirim menggunakan HTTP loopback request secara asinkron (untuk server hosting web)
+    if (isset($_SERVER["HTTP_HOST"])) {
+        $host = $_SERVER["HTTP_HOST"];
+        $protocol = (isset($_SERVER["HTTPS"]) && $_SERVER["HTTPS"] === "on") ? "ssl://" : "";
+        $port = (isset($_SERVER["HTTPS"]) && $_SERVER["HTTPS"] === "on") ? 443 : 80;
+        
+        $path = rtrim(dirname($_SERVER["PHP_SELF"]), '/\\') . "/send_email_bg_http.php";
+        
+        $params["token"] = md5(($_ENV["DB_PASS"] ?? "dompetku_secret") . "dompetku_async");
+        $query = http_build_query($params);
+        
+        $fp = @fsockopen($protocol . $host, $port, $errno, $errstr, 2);
+        if ($fp) {
+            $out = "POST {$path} HTTP/1.1\r\n";
+            $out .= "Host: {$host}\r\n";
+            $out .= "Content-Type: application/x-www-form-urlencoded\r\n";
+            $out .= "Content-Length: " . strlen($query) . "\r\n";
+            $out .= "Connection: Close\r\n\r\n";
+            $out .= $query;
+            
+            fwrite($fp, $out);
+            fclose($fp);
+            return true;
+        } else {
+            error_log("send_email_async fsockopen failed: {$errstr} ({$errno})");
+        }
+    }
+
+    // 2. Fallback CLI (jika dipanggil dari CLI atau fsockopen gagal)
     $popen_allowed = true;
     $disabled_functions = explode(',', ini_get('disable_functions'));
     $disabled_functions = array_map('trim', $disabled_functions);
@@ -831,7 +860,6 @@ function send_email_async($params)
         $bg_script = __DIR__ . "/../send_email_bg.php";
         
         if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
-            // Windows
             $cmd = "start /B C:\\xampp\\php\\php.exe " . escapeshellarg($bg_script) . 
                    " --email=" . escapeshellarg($email) . 
                    " --username=" . escapeshellarg($username) . 
@@ -840,7 +868,6 @@ function send_email_async($params)
                    " --link=" . escapeshellarg($link) . 
                    " --otp=" . escapeshellarg($otp);
         } else {
-            // Linux / Unix / macOS
             $php_bin = defined('PHP_BINARY') && !empty(PHP_BINARY) ? PHP_BINARY : 'php';
             if (basename($php_bin) !== 'php' && basename($php_bin) !== 'php-cli') {
                 $php_bin = 'php';
@@ -865,7 +892,7 @@ function send_email_async($params)
         }
     }
 
-    // Fallback Sinkron jika popen dinonaktifkan atau gagal berjalan
+    // 3. Fallback Sinkron terakhir jika semua asinkron gagal
     error_log("send_email_async: Menjalankan secara sinkron (fallback) untuk type = {$type}");
     if ($type === "register") {
         return send_register_welcome_email($username, $email);
