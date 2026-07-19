@@ -11,14 +11,13 @@ header('Content-Type: application/json');
 file_put_contents("telegram_log.txt", "Incoming: " . file_get_contents("php://input") . "\n", FILE_APPEND);
 
 
-// 1. Ambil token bot dan ID Telegram Anda dari environment variable (.env)
+// 1. Ambil token bot dari environment variable (.env)
 $bot_token  = isset($_ENV["TELEGRAM_BOT_TOKEN"]) ? $_ENV["TELEGRAM_BOT_TOKEN"] : "";
-$my_chat_id = isset($_ENV["TELEGRAM_MY_CHAT_ID"]) ? intval($_ENV["TELEGRAM_MY_CHAT_ID"]) : 0;
 
-file_put_contents("telegram_log.txt", "Loaded Token: '$bot_token', My Chat ID: '$my_chat_id'\n", FILE_APPEND);
+file_put_contents("telegram_log.txt", "Loaded Token: '$bot_token'\n", FILE_APPEND);
 
-if (empty($bot_token) || $my_chat_id <= 0) {
-    file_put_contents("telegram_log.txt", "ERROR: Token or Chat ID empty!\n", FILE_APPEND);
+if (empty($bot_token)) {
+    file_put_contents("telegram_log.txt", "ERROR: Token empty!\n", FILE_APPEND);
     exit();
 }
 
@@ -35,11 +34,42 @@ $message = $update["message"];
 $chat_id = $message["chat"]["id"]; // ID Chat Telegram pengirim
 $text    = isset($message["text"]) ? trim($message["text"]) : "";
 
-// 3. KEAMANAN: Validasi bahwa pengirim pesan adalah Anda sendiri (menggunakan ID di .env)
-if ($chat_id !== $my_chat_id) {
-    send_reply($chat_id, "⚠️ Akses ditolak! Bot ini dikonfigurasi khusus secara privat untuk pemilik DompetKu.", $bot_token);
+// 3. KEAMANAN: Cari user di database berdasarkan telegram_chat_id
+$stmtUser = $pdo->prepare("SELECT * FROM users WHERE telegram_chat_id = :chat_id LIMIT 1");
+$stmtUser->execute(['chat_id' => $chat_id]);
+$user = $stmtUser->fetch();
+
+// 4. Jika user belum terhubung, cek apakah ini perintah registrasi/linking (/start [code])
+if (!$user) {
+    if (strpos($text, "/start") === 0) {
+        $parts = explode(" ", $text);
+        $code = isset($parts[1]) ? trim($parts[1]) : "";
+        
+        if (!empty($code)) {
+            // Cari user dengan kode tersebut
+            $stmtLink = $pdo->prepare("SELECT id, username FROM users WHERE telegram_link_code = :code LIMIT 1");
+            $stmtLink->execute(['code' => $code]);
+            $target_user = $stmtLink->fetch();
+            
+            if ($target_user) {
+                // Hubungkan Telegram ke akun ini
+                $stmtUpdate = $pdo->prepare("UPDATE users SET telegram_chat_id = :chat_id, telegram_link_code = NULL WHERE id = :id");
+                $stmtUpdate->execute(['chat_id' => $chat_id, 'id' => $target_user['id']]);
+                
+                $reply = "🎉 *Akun Berhasil Terhubung!*\n\nHalo *" . escape($target_user['username']) . "*, akun DompetKu Anda telah sukses dihubungkan dengan Telegram ini.\n\nSekarang Anda bisa mulai mencatat transaksi keuangan secara instan langsung dari chat ini!";
+                send_reply($chat_id, $reply, $bot_token);
+                exit();
+            }
+        }
+    }
+    
+    // Tampilkan bantuan linking jika belum terhubung
+    $reply = "⚠️ *Telegram Belum Terhubung!*\n\nAnda belum menghubungkan akun Telegram ini ke akun DompetKu Anda.\n\nSilakan login ke web DompetKu Anda di **dompetku-m.site**, masuk ke Dashboard, lalu klik tombol **Bot Telegram** untuk mendapatkan kode penghubung Anda.";
+    send_reply($chat_id, $reply, $bot_token);
     exit();
 }
+
+$user_id = intval($user['id']);
 
 // 4. PARSER FORMAT PESAN: 
 // Format baru: "out [nominal] # [keterangan] # [nama_dompet] # [nama_kategori]"
@@ -71,13 +101,7 @@ if (strpos($text, "#") !== false) {
 if (($command === 'out' || $command === 'in') && $nominal > 0) {
     $jenis = ($command === 'out') ? 'Pengeluaran' : 'Pemasukan';
 
-    // Temukan ID Pengguna berdasarkan email SMTP di .env (sebagai pemilik aplikasi)
-    $owner_email = isset($_ENV["SMTP_UNAME"]) ? $_ENV["SMTP_UNAME"] : "";
-    $stmtUser = $pdo->prepare("SELECT id FROM users WHERE email = :email LIMIT 1");
-    $stmtUser->execute(['email' => $owner_email]);
-    $owner = $stmtUser->fetch();
-    
-    $user_id = $owner ? intval($owner['id']) : 4; // Fallback ke ID 4 jika tidak ditemukan
+    // $user_id sudah ditentukan di atas dari pencarian telegram_chat_id berdasarkan chat_id pengirim.
 
     try {
         $pdo->beginTransaction();

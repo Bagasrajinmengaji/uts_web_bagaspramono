@@ -9,6 +9,30 @@ auth_check();
 $user_id = $_SESSION["user_id"];
 $username = $_SESSION["username"];
 
+// Ambil info detail user dari database untuk telegram linking
+$stmtTelegram = $pdo->prepare("SELECT telegram_chat_id, telegram_link_code FROM users WHERE id = :id LIMIT 1");
+$stmtTelegram->execute(["id" => $user_id]);
+$userData = $stmtTelegram->fetch();
+
+$telegram_chat_id = $userData ? $userData["telegram_chat_id"] : null;
+$telegram_link_code = $userData ? $userData["telegram_link_code"] : null;
+
+// Jika user belum terhubung dan belum punya kode link, buatkan kode baru
+if (empty($telegram_chat_id) && empty($telegram_link_code)) {
+    $telegram_link_code = bin2hex(random_bytes(4)); // 8-char hex code
+    $stmtUpdateCode = $pdo->prepare("UPDATE users SET telegram_link_code = :code WHERE id = :id");
+    $stmtUpdateCode->execute(["code" => $telegram_link_code, "id" => $user_id]);
+}
+
+// Proses Unlink Telegram jika diklik
+if (isset($_GET["action"]) && $_GET["action"] === "unlink_telegram") {
+    $stmtUnlink = $pdo->prepare("UPDATE users SET telegram_chat_id = NULL, telegram_link_code = NULL WHERE id = :id");
+    $stmtUnlink->execute(["id" => $user_id]);
+    set_flash_message("success", "Akun Telegram berhasil diputuskan!");
+    header("Location: dashboard.php");
+    exit();
+}
+
 // backend crud pake post
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"])) {
     file_put_contents(
@@ -489,6 +513,52 @@ try {
                 ?>
             </div>
         </div>
+
+        <!-- Bagian Integrasi Telegram Bot -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <?php if (empty($telegram_chat_id)): ?>
+                    <div class="card border-0 shadow-sm p-4 text-white bg-gradient" style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); border-radius: 12px;">
+                        <div class="d-flex align-items-center flex-column flex-md-row">
+                            <div class="me-md-4 mb-3 mb-md-0 fs-1">
+                                <i class="bi bi-telegram"></i>
+                            </div>
+                            <div class="flex-grow-1 text-center text-md-start mb-3 mb-md-0">
+                                <h5 class="font-bold mb-1 text-white">Mulai Catat Keuangan Lebih Praktis via Telegram Chat!</h5>
+                                <p class="mb-0 text-white-50" style="font-size: 0.9rem;">
+                                    Hubungkan Telegram Anda agar bisa mencatat transaksi keuangan secara instan hanya dengan berkirim chat ke bot **@Bagas_Dompetku_bot**.
+                                </p>
+                            </div>
+                            <div class="text-nowrap">
+                                <a href="https://t.me/Bagas_Dompetku_bot?start=<?= $telegram_link_code ?>" target="_blank" class="btn btn-light font-bold text-primary px-4 py-2" style="border-radius: 8px;">
+                                    <i class="bi bi-link me-1"></i> Hubungkan Telegram
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                <?php else: ?>
+                    <div class="card border-0 shadow-sm p-4" style="border-radius: 12px; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3) !important;">
+                        <div class="d-flex align-items-center flex-column flex-md-row">
+                            <div class="me-md-4 mb-3 mb-md-0 fs-1 text-primary">
+                                <i class="bi bi-telegram"></i>
+                            </div>
+                            <div class="flex-grow-1 text-center text-md-start mb-3 mb-md-0">
+                                <h5 class="font-bold mb-1 text-dark">Telegram Anda Berhasil Terhubung!</h5>
+                                <p class="mb-0 text-muted" style="font-size: 0.9rem;">
+                                    Akun Anda sudah terhubung dengan bot Telegram. Anda dapat mencatat pengeluaran langsung dengan format chat: `out [nominal] [keterangan]` ke **@Bagas_Dompetku_bot**.
+                                </p>
+                            </div>
+                            <div class="text-nowrap">
+                                <a href="dashboard.php?action=unlink_telegram" class="btn btn-outline-danger font-bold px-4 py-2" style="border-radius: 8px;">
+                                    <i class="bi bi-x-circle me-1"></i> Putuskan Hubungan
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
+
         <div class="row g-4 mb-5">
             <div class="col-md-4">
                 <div class="card p-4">
@@ -566,9 +636,9 @@ try {
         </div>
 
         <div class="card p-4">
-            <div class="d-flex justify-content-between align-items-center mb-4">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
                 <h4 class="font-bold mb-0">Daftar Transaksi</h4>
-                <div class="d-flex gap-2">
+                <div class="d-flex flex-wrap gap-2">
                     <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#modalImport">
                         <i class="bi bi-file-earmark-arrow-up me-1"></i> Import Transaksi
                     </button>
@@ -1194,7 +1264,7 @@ try {
                         maintainAspectRatio: false,
                         plugins: {
                             legend: {
-                                position: 'right',
+                                position: window.innerWidth < 768 ? 'bottom' : 'right',
                                 labels: {
                                     boxWidth: 10,
                                     font: { size: 10 }

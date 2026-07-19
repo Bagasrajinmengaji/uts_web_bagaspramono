@@ -195,7 +195,7 @@ try {
         <?php endif; ?>
 
         <div class="card p-4 shadow-sm border-0">
-            <div class="d-flex justify-content-between align-items-center mb-4">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
                 <div>
                     <h4 class="font-bold mb-1">Kelola Dompet Keuangan</h4>
                     <p class="text-muted mb-0" style="font-size: 0.9rem;">Kelompokkan dana Anda ke berbagai rekening atau e-wallet terpisah.</p>

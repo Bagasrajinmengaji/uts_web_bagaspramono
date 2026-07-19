@@ -1402,4 +1402,49 @@ html.theme-transitioning * {
     color: #ffffff !important;
 }
 
+/* =====================================================
+   MOBILE VIEW OPTIMIZATIONS (RESPONSIVE VIEW FIX)
+   ===================================================== */
+@media (max-width: 576px) {
+    .container {
+        padding-left: 12px !important;
+        padding-right: 12px !important;
+    }
+    
+    .card {
+        padding: 1.15rem !important;
+        border-radius: 12px !important;
+    }
+
+    h3, .h3 {
+        font-size: 1.4rem !important;
+    }
+
+    h4, .h4 {
+        font-size: 1.2rem !important;
+    }
+
+    h5, .h5 {
+        font-size: 1.05rem !important;
+    }
+
+    .table-responsive {
+        border: 0 !important;
+    }
+    
+    .table td, .table th {
+        padding: 10px 8px !important;
+        font-size: 0.82rem !important;
+    }
+
+    #theme-toggle-btn {
+        width: 45px !important;
+        height: 45px !important;
+        bottom: 15px !important;
+        right: 15px !important;
+        font-size: 1.1rem !important;
+    }
+}
+
+
 

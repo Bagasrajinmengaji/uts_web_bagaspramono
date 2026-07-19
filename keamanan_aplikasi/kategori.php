@@ -184,7 +184,7 @@ try {
         <?php display_flash_message(); ?>
 
         <div class="card p-4 shadow-sm border-0">
-            <div class="d-flex justify-content-between align-items-center mb-4">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
                 <div>
                     <h4 class="font-bold mb-1">Kelola Kategori Kustom</h4>
                     <p class="text-muted mb-0" style="font-size: 0.9rem;">Buat kategori tersendiri untuk pemasukan dan pengeluaran Anda.</p>

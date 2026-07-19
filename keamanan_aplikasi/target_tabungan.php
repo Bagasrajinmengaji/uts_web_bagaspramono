@@ -261,7 +261,7 @@ try {
 
         <!-- Bagian Pengelolaan Impian Tabungan -->
         <div class="card p-4 border-0 shadow-sm">
-            <div class="d-flex justify-content-between align-items-center mb-4">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
                 <div>
                     <h4 class="font-bold mb-1">Daftar Impian & Target Tabungan</h4>
                     <p class="text-muted mb-0" style="font-size: 0.9rem;">Tetapkan target masa depan dan pantau progres tabungan Anda secara berkala.</p>
