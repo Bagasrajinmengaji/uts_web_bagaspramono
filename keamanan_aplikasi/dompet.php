@@ -176,6 +176,11 @@ try {
                     <li class="nav-item text-white me-3">
                         <i class="bi bi-person-circle me-1"></i> Halo, <strong><?= escape($username) ?></strong>
                     </li>
+                    <li class="nav-item">
+                        <a class="btn btn-outline-light btn-sm me-2 d-flex align-items-center gap-1" href="https://t.me/Bagas_Dompetku_bot" target="_blank">
+                            <i class="bi bi-telegram"></i> Bot Telegram
+                        </a>
+                    </li>
                     <li class="nav-item"><a class="btn btn-light btn-sm text-primary" href="logout.php">Logout</a></li>
                 </ul>
             </div>

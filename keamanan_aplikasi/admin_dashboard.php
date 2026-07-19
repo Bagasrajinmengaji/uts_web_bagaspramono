@@ -151,6 +151,9 @@ $chart_data   = json_encode(array_column($chart_raw, "total"));
                 <span class="text-white-50 d-none d-md-inline" style="font-size:0.88rem;">
                     <i class="bi bi-person-fill me-1"></i><?= escape($admin_username) ?>
                 </span>
+                <a class="btn btn-outline-light btn-sm d-flex align-items-center gap-1" href="https://t.me/Bagas_Dompetku_bot" target="_blank">
+                    <i class="bi bi-telegram"></i> Bot Telegram
+                </a>
                 <a class="btn btn-outline-light btn-sm" href="dashboard.php">
                     <i class="bi bi-grid me-1"></i>Dashboard User
                 </a>
