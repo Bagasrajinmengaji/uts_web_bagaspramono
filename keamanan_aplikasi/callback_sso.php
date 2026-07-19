@@ -103,6 +103,14 @@ try {
         $user = $stmt->fetch();
 
         if ($user) {
+            // Cek apakah akun aktif
+            $user_active = isset($user["is_active"]) ? intval($user["is_active"]) : 1;
+            if ($user_active === 0) {
+                set_flash_message("danger", "Akun Anda telah dinonaktifkan oleh administrator. Silakan hubungi dukungan.");
+                header("Location: login.php");
+                exit();
+            }
+
             // Jika akun ada tapi google_id belum terikat (pendaftaran manual via email sebelumnya)
             if (empty($user["google_id"])) {
                 $update = $pdo->prepare(

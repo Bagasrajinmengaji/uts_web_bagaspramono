@@ -104,6 +104,7 @@ $chart_data   = json_encode(array_column($chart_raw, "total"));
     <title>Admin Dashboard - DompetKu</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
     <link href="assets/css/style.css" rel="stylesheet">
     <style>
         .stat-card {
@@ -175,11 +176,16 @@ $chart_data   = json_encode(array_column($chart_raw, "total"));
         </div>
 
         <?php if ($flash_admin): ?>
-        <div class="alert alert-<?= $flash_admin["type"] ?> alert-dismissible fade show d-flex align-items-center mb-4" role="alert">
-            <i class="bi <?= $flash_admin["type"] === "success" ? "bi-check-circle-fill" : "bi-exclamation-triangle-fill" ?> me-2"></i>
-            <div><?= escape($flash_admin["msg"]) ?></div>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                Swal.fire({
+                    icon: '<?= $flash_admin["type"] === "danger" ? "error" : $flash_admin["type"] ?>',
+                    title: '<?= $flash_admin["type"] === "success" ? "Berhasil!" : "Pemberitahuan" ?>',
+                    text: '<?= escape($flash_admin["msg"]) ?>',
+                    confirmButtonColor: '#1d4ed8'
+                });
+            });
+        </script>
         <?php endif; ?>
 
         <!-- Kartu Statistik -->
@@ -324,7 +330,7 @@ $chart_data   = json_encode(array_column($chart_raw, "total"));
                                             <input type="hidden" name="target_user_id" value="<?= $u["id"] ?>">
                                             <button type="submit" class="btn btn-sm table-action-btn <?= ($u["is_active"] ?? 1) ? "btn-outline-warning" : "btn-outline-success" ?>"
                                                     title="<?= ($u["is_active"] ?? 1) ? "Nonaktifkan" : "Aktifkan" ?> akun"
-                                                    onclick="return confirm('<?= ($u["is_active"] ?? 1) ? "Nonaktifkan" : "Aktifkan" ?> akun pengguna ini?')">
+                                                    onclick="confirmAction(event, '<?= ($u["is_active"] ?? 1) ? "Nonaktifkan Akun" : "Aktifkan Akun" ?>', 'Apakah Anda yakin ingin <?= ($u["is_active"] ?? 1) ? "menonaktifkan" : "mengaktifkan" ?> akun pengguna ini?')">
                                                 <i class="bi <?= ($u["is_active"] ?? 1) ? "bi-pause-circle" : "bi-play-circle" ?>"></i>
                                             </button>
                                         </form>
@@ -334,7 +340,7 @@ $chart_data   = json_encode(array_column($chart_raw, "total"));
                                             <input type="hidden" name="target_user_id" value="<?= $u["id"] ?>">
                                             <button type="submit" class="btn btn-sm table-action-btn btn-outline-info"
                                                     title="<?= $u["role"] === "admin" ? "Jadikan User biasa" : "Jadikan Admin" ?>"
-                                                    onclick="return confirm('Ubah peran pengguna ini?')">
+                                                    onclick="confirmAction(event, 'Ubah Peran Pengguna', 'Apakah Anda yakin ingin mengubah peran pengguna ini menjadi <?= $u["role"] === "admin" ? "User biasa" : "Admin" ?>?')">
                                                 <i class="bi bi-arrow-left-right"></i>
                                             </button>
                                         </form>
@@ -345,7 +351,7 @@ $chart_data   = json_encode(array_column($chart_raw, "total"));
                                             <input type="hidden" name="target_user_id" value="<?= $u["id"] ?>">
                                             <button type="submit" class="btn btn-sm table-action-btn btn-outline-danger"
                                                     title="Hapus permanen"
-                                                    onclick="return confirm('PERINGATAN: Hapus permanen akun ini beserta seluruh datanya? Tindakan ini tidak dapat dibatalkan!')">
+                                                    onclick="confirmAction(event, 'Hapus Pengguna', 'PERINGATAN: Apakah Anda yakin ingin menghapus permanen akun ini beserta seluruh datanya? Tindakan ini tidak dapat dibatalkan!')">
                                                 <i class="bi bi-trash3-fill"></i>
                                             </button>
                                         </form>
@@ -363,8 +369,30 @@ $chart_data   = json_encode(array_column($chart_raw, "total"));
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
+        // SweetAlert2 Form Confirmation Helper
+        function confirmAction(event, title, message) {
+            event.preventDefault();
+            const form = event.currentTarget.closest('form');
+            Swal.fire({
+                title: title,
+                text: message,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#1d4ed8',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Ya, Lanjutkan!',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
+            return false;
+        }
+
         document.addEventListener("DOMContentLoaded", function() {
             const ctx = document.getElementById("activityChart").getContext("2d");
             new Chart(ctx, {

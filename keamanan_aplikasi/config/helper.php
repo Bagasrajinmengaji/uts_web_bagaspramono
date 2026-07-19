@@ -174,22 +174,40 @@ function auth_check()
         exit();
     }
 
-    // Pemuatan data profil dinamis ke dalam session jika belum diset/diperbarui
-    if (!isset($_SESSION["foto_profile_loaded"]) || $_SESSION["foto_profile_loaded"] !== $_SESSION["user_id"]) {
-        global $pdo;
-        if (isset($pdo)) {
-            try {
-                $stmt = $pdo->prepare("SELECT username, foto_profile FROM users WHERE id = :id LIMIT 1");
-                $stmt->execute(["id" => $_SESSION["user_id"]]);
-                $u = $stmt->fetch();
-                if ($u) {
-                    $_SESSION["username"] = $u["username"];
-                    $_SESSION["foto_profile"] = $u["foto_profile"];
-                    $_SESSION["foto_profile_loaded"] = $_SESSION["user_id"];
+    // Cek status aktif user dari database pada setiap page load
+    global $pdo;
+    if (isset($pdo)) {
+        try {
+            $stmt = $pdo->prepare("SELECT username, foto_profile, is_active FROM users WHERE id = :id LIMIT 1");
+            $stmt->execute(["id" => $_SESSION["user_id"]]);
+            $u = $stmt->fetch();
+            if ($u) {
+                $user_active = isset($u["is_active"]) ? intval($u["is_active"]) : 1;
+                if ($user_active === 0) {
+                    // Bersihkan session
+                    $_SESSION = [];
+                    if (ini_get("session.use_cookies")) {
+                        $params = session_get_cookie_params();
+                        setcookie(session_name(), '', time() - 42000,
+                            $params["path"], $params["domain"],
+                            $params["secure"], $params["httponly"]
+                        );
+                    }
+                    session_destroy();
+                    
+                    // Set flash message menggunakan session baru
+                    session_start();
+                    set_flash_message("danger", "Akun Anda telah dinonaktifkan oleh administrator. Silakan hubungi dukungan.");
+                    header("Location: login.php");
+                    exit();
                 }
-            } catch (\Exception $e) {
-                error_log("Gagal memuat detail profil user: " . $e->getMessage());
+                
+                $_SESSION["username"] = $u["username"];
+                $_SESSION["foto_profile"] = $u["foto_profile"];
+                $_SESSION["foto_profile_loaded"] = $_SESSION["user_id"];
             }
+        } catch (\Exception $e) {
+            error_log("Gagal memuat detail profil user: " . $e->getMessage());
         }
     }
 }

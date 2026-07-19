@@ -88,41 +88,46 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 }
 
                 if ($password_matches) {
-                    // --- CRITICAL SECURITY: Session Fixation Prevention ---
-                    session_regenerate_id(true);
+                    $user_active = isset($user["is_active"]) ? intval($user["is_active"]) : 1;
+                    if ($user_active === 0) {
+                        $errors[] = "Akun Anda telah dinonaktifkan oleh administrator. Silakan hubungi dukungan.";
+                    } else {
+                        // --- CRITICAL SECURITY: Session Fixation Prevention ---
+                        session_regenerate_id(true);
 
-                    // Set session variables (termasuk role untuk RBAC)
-                    $_SESSION["user_id"] = $user["id"];
-                    $_SESSION["username"] = $user["username"];
-                    $_SESSION["email"] = $user["email"];
-                    $_SESSION["role"] = $user["role"] ?? "user";
+                        // Set session variables (termasuk role untuk RBAC)
+                        $_SESSION["user_id"] = $user["id"];
+                        $_SESSION["username"] = $user["username"];
+                        $_SESSION["email"] = $user["email"];
+                        $_SESSION["role"] = $user["role"] ?? "user";
 
-                    if ($debug) {
-                        $debug_output[] =
-                            "DEBUG: Session berhasil disimpan! (\$_SESSION['user_id'] = " .
-                            $_SESSION["user_id"] .
-                            ", \$_SESSION['username'] = '" .
-                            $_SESSION["username"] .
-                            "', \$_SESSION['email'] = '" .
-                            $_SESSION["email"] .
-                            "')";
-                        $_SESSION["debug_log"] = $debug_output;
+                        if ($debug) {
+                            $debug_output[] =
+                                "DEBUG: Session berhasil disimpan! (\$_SESSION['user_id'] = " .
+                                $_SESSION["user_id"] .
+                                ", \$_SESSION['username'] = '" .
+                                $_SESSION["username"] .
+                                "', \$_SESSION['email'] = '" .
+                                $_SESSION["email"] .
+                                "')";
+                            $_SESSION["debug_log"] = $debug_output;
+                        }
+
+                        // Panggil pengiriman email (asinkron jika didukung, sinkron sebagai fallback)
+                        send_email_async([
+                            "email" => $user["email"],
+                            "username" => $user["username"],
+                            "method" => "Kredensial Standard",
+                            "type" => "login"
+                        ]);
+
+                        // Arahkan admin ke dashboard admin, user biasa ke dashboard
+                        $redirect = (isset($user["role"]) && $user["role"] === "admin")
+                            ? "admin_dashboard.php"
+                            : "dashboard.php";
+                        header("Location: " . $redirect);
+                        exit();
                     }
-
-                    // Panggil pengiriman email (asinkron jika didukung, sinkron sebagai fallback)
-                    send_email_async([
-                        "email" => $user["email"],
-                        "username" => $user["username"],
-                        "method" => "Kredensial Standard",
-                        "type" => "login"
-                    ]);
-
-                    // Arahkan admin ke dashboard admin, user biasa ke dashboard
-                    $redirect = (isset($user["role"]) && $user["role"] === "admin")
-                        ? "admin_dashboard.php"
-                        : "dashboard.php";
-                    header("Location: " . $redirect);
-                    exit();
                 }
             }
 
