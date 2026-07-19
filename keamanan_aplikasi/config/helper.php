@@ -799,3 +799,84 @@ function send_otp_email($username, $email, $otp)
 
     return send_smtp_mail($email, $subject, $email_template);
 }
+
+// Bagian 10: Helper Pengiriman Email Background Asinkron dengan Fallback Sinkron
+function send_email_async($params)
+{
+    $email = isset($params["email"]) ? trim($params["email"]) : "";
+    $username = isset($params["username"]) ? trim($params["username"]) : "";
+    $type = isset($params["type"]) ? trim($params["type"]) : "login";
+    $method = isset($params["method"]) ? trim($params["method"]) : "Kredensial Standard";
+    $link = isset($params["link"]) ? trim($params["link"]) : "";
+    $otp = isset($params["otp"]) ? trim($params["otp"]) : "";
+
+    if (empty($email) || empty($username)) {
+        error_log("send_email_async: Parameter kurang (email atau username kosong).");
+        return false;
+    }
+
+    $popen_allowed = true;
+    $disabled_functions = explode(',', ini_get('disable_functions'));
+    $disabled_functions = array_map('trim', $disabled_functions);
+    if (
+        in_array('popen', $disabled_functions) || 
+        !function_exists('popen') || 
+        in_array('pclose', $disabled_functions) || 
+        !function_exists('pclose')
+    ) {
+        $popen_allowed = false;
+    }
+
+    if ($popen_allowed) {
+        $bg_script = __DIR__ . "/../send_email_bg.php";
+        
+        if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+            // Windows
+            $cmd = "start /B C:\\xampp\\php\\php.exe " . escapeshellarg($bg_script) . 
+                   " --email=" . escapeshellarg($email) . 
+                   " --username=" . escapeshellarg($username) . 
+                   " --method=" . escapeshellarg($method) . 
+                   " --type=" . escapeshellarg($type) . 
+                   " --link=" . escapeshellarg($link) . 
+                   " --otp=" . escapeshellarg($otp);
+        } else {
+            // Linux / Unix / macOS
+            $php_bin = defined('PHP_BINARY') && !empty(PHP_BINARY) ? PHP_BINARY : 'php';
+            if (basename($php_bin) !== 'php' && basename($php_bin) !== 'php-cli') {
+                $php_bin = 'php';
+            }
+            $cmd = escapeshellcmd($php_bin) . " " . escapeshellarg($bg_script) . 
+                   " --email=" . escapeshellarg($email) . 
+                   " --username=" . escapeshellarg($username) . 
+                   " --method=" . escapeshellarg($method) . 
+                   " --type=" . escapeshellarg($type) . 
+                   " --link=" . escapeshellarg($link) . 
+                   " --otp=" . escapeshellarg($otp) . " > /dev/null 2>&1 &";
+        }
+
+        try {
+            $handle = @popen($cmd, "r");
+            if ($handle !== false) {
+                pclose($handle);
+                return true;
+            }
+        } catch (\Throwable $t) {
+            error_log("popen failed inside send_email_async: " . $t->getMessage());
+        }
+    }
+
+    // Fallback Sinkron jika popen dinonaktifkan atau gagal berjalan
+    error_log("send_email_async: Menjalankan secara sinkron (fallback) untuk type = {$type}");
+    if ($type === "register") {
+        return send_register_welcome_email($username, $email);
+    } else if ($type === "register_otp") {
+        return send_otp_email($username, $email, $otp);
+    } else if ($type === "forgot_password") {
+        return send_forgot_password_email($username, $email, $link);
+    } else if ($type === "admin_register") {
+        return notify_admin_register($username, $email);
+    } else {
+        return send_login_welcome_email($username, $email, $method);
+    }
+}
+

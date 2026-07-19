@@ -29,6 +29,8 @@ if ($type === "register") {
     send_otp_email($username, $email, $otp);
 } else if ($type === "forgot_password") {
     send_forgot_password_email($username, $email, $link);
+} else if ($type === "admin_register") {
+    notify_admin_register($username, $email);
 } else {
     send_login_welcome_email($username, $email, $method);
 }

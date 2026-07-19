@@ -27,14 +27,13 @@ if (isset($_GET["resend"]) && $_GET["resend"] == "1") {
     $_SESSION["temp_register_user"]["otp"] = $new_otp;
     $_SESSION["temp_register_user"]["otp_expires"] = time() + 600;
 
-    // Kirim OTP baru ke email pengguna via background process
-    $bg_script = __DIR__ . "/send_email_bg.php";
-    $cmd = "start /B C:\\xampp\\php\\php.exe " . escapeshellarg($bg_script) . 
-           " --email=" . escapeshellarg($temp_user["email"]) . 
-           " --username=" . escapeshellarg($temp_user["username"]) . 
-           " --otp=" . escapeshellarg($new_otp) .
-           " --type=register_otp";
-    pclose(popen($cmd, "r"));
+    // Kirim OTP baru ke email pengguna (asinkron jika didukung, sinkron sebagai fallback)
+    send_email_async([
+        "email" => $temp_user["email"],
+        "username" => $temp_user["username"],
+        "otp" => $new_otp,
+        "type" => "register_otp"
+    ]);
 
     set_flash_message("success", "Kode OTP baru telah dikirimkan ke email Anda.");
     header("Location: verify_otp.php");
@@ -103,21 +102,19 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     $_SESSION["username"] = $temp_user["username"];
                     $_SESSION["email"] = $temp_user["email"];
 
-                    // Kirim email sambutan (Welcome Email) ke user baru via background process
-                    $bg_script = __DIR__ . "/send_email_bg.php";
-                    $cmd_welcome = "start /B C:\\xampp\\php\\php.exe " . escapeshellarg($bg_script) . 
-                                   " --email=" . escapeshellarg($temp_user["email"]) . 
-                                   " --username=" . escapeshellarg($temp_user["username"]) . 
-                                   " --type=register";
-                    pclose(popen($cmd_welcome, "r"));
+                    // Kirim email sambutan (Welcome Email) ke user baru (asinkron jika didukung, sinkron sebagai fallback)
+                    send_email_async([
+                        "email" => $temp_user["email"],
+                        "username" => $temp_user["username"],
+                        "type" => "register"
+                    ]);
 
-                    // Kirim email notifikasi pendaftaran pengguna baru ke admin via background process
-                    $cmd_admin = "start /B C:\\xampp\\php\\php.exe -r " . escapeshellarg(
-                        "require_once 'config/helper.php'; notify_admin_register(" . 
-                        var_export($temp_user["username"], true) . ", " . 
-                        var_export($temp_user["email"], true) . ");"
-                    );
-                    pclose(popen($cmd_admin, "r"));
+                    // Kirim email notifikasi pendaftaran pengguna baru ke admin (asinkron jika didukung, sinkron sebagai fallback)
+                    send_email_async([
+                        "email" => $temp_user["email"],
+                        "username" => $temp_user["username"],
+                        "type" => "admin_register"
+                    ]);
 
                     set_flash_message("success", "Email Anda berhasil diverifikasi! Selamat datang di DompetKu.");
                     header("Location: dashboard.php");

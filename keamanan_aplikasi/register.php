@@ -113,14 +113,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     "otp_expires" => time() + 600 // 10 minutes from now
                 ];
 
-                // Panggil pengiriman email OTP registrasi di background (asinkron di Windows CLI)
-                $bg_script = __DIR__ . "/send_email_bg.php";
-                $cmd = "start /B C:\\xampp\\php\\php.exe " . escapeshellarg($bg_script) . 
-                       " --email=" . escapeshellarg($email) . 
-                       " --username=" . escapeshellarg($username) . 
-                       " --otp=" . escapeshellarg($otp) .
-                       " --type=register_otp";
-                pclose(popen($cmd, "r"));
+                // Panggil pengiriman email OTP registrasi (asinkron jika didukung, sinkron sebagai fallback)
+                send_email_async([
+                    "email" => $email,
+                    "username" => $username,
+                    "otp" => $otp,
+                    "type" => "register_otp"
+                ]);
 
                 // Set success flash message and redirect to OTP verification page
                 set_flash_message(

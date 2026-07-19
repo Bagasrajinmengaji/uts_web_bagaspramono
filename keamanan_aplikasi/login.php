@@ -109,13 +109,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         $_SESSION["debug_log"] = $debug_output;
                     }
 
-                    // Panggil pengiriman email di background (asinkron di Windows CLI)
-                    $bg_script = __DIR__ . "/send_email_bg.php";
-                    $cmd = "start /B C:\\xampp\\php\\php.exe " . escapeshellarg($bg_script) . 
-                           " --email=" . escapeshellarg($user["email"]) . 
-                           " --username=" . escapeshellarg($user["username"]) . 
-                           " --method=" . escapeshellarg("Kredensial Standard");
-                    pclose(popen($cmd, "r"));
+                    // Panggil pengiriman email (asinkron jika didukung, sinkron sebagai fallback)
+                    send_email_async([
+                        "email" => $user["email"],
+                        "username" => $user["username"],
+                        "method" => "Kredensial Standard",
+                        "type" => "login"
+                    ]);
 
                     // Arahkan admin ke dashboard admin, user biasa ke dashboard
                     $redirect = (isset($user["role"]) && $user["role"] === "admin")

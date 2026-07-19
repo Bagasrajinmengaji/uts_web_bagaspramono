@@ -55,14 +55,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 $key = rtrim(base64_encode($email . ":" . $token), '=');
                 $link = $protocol . $_SERVER["HTTP_HOST"] . $current_dir . "/reset_password.php?key=" . urlencode($key);
 
-                // Run email sending in background CLI (non-blocking)
-                $bg_script = __DIR__ . "/send_email_bg.php";
-                $cmd = "start /B C:\\xampp\\php\\php.exe " . escapeshellarg($bg_script) . 
-                       " --email=" . escapeshellarg($email) . 
-                       " --username=" . escapeshellarg($user["username"]) . 
-                       " --link=" . escapeshellarg($link) . 
-                       " --type=forgot_password";
-                pclose(popen($cmd, "r"));
+                // Run email sending (asynchronous if supported, synchronous fallback)
+                send_email_async([
+                    "email" => $email,
+                    "username" => $user["username"],
+                    "link" => $link,
+                    "type" => "forgot_password"
+                ]);
             }
 
             // Mitigation of User Enumeration: Output same success message regardless of email existence

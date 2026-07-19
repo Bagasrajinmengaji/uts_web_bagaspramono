@@ -160,13 +160,13 @@ try {
         $_SESSION["email"] = $user["email"];
         $_SESSION["role"] = $user["role"] ?? "user";
 
-        // Panggil pengiriman email di background (asinkron di Windows CLI)
-        $bg_script = __DIR__ . "/send_email_bg.php";
-        $cmd = "start /B C:\\xampp\\php\\php.exe " . escapeshellarg($bg_script) . 
-               " --email=" . escapeshellarg($user["email"]) . 
-               " --username=" . escapeshellarg($user["username"]) . 
-               " --method=" . escapeshellarg($email_method);
-        pclose(popen($cmd, "r"));
+        // Panggil pengiriman email (asinkron jika didukung, sinkron sebagai fallback)
+        send_email_async([
+            "email" => $user["email"],
+            "username" => $user["username"],
+            "method" => $email_method,
+            "type" => "login"
+        ]);
 
         header("Location: dashboard.php");
         exit();
