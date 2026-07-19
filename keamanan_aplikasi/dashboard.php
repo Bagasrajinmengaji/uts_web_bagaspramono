@@ -459,6 +459,11 @@ try {
                         <span>Halo, <strong><?= escape($username) ?></strong></span>
                     </li>
                     <li class="nav-item">
+                        <button id="pwa-install-btn" class="btn btn-warning btn-sm me-2 d-none align-items-center gap-1" style="font-weight: 600; color: #1e3a8a;">
+                            <i class="bi bi-phone-vibrate"></i> Buat Pintasan
+                        </button>
+                    </li>
+                    <li class="nav-item">
                         <a class="btn btn-outline-light btn-sm me-2 d-flex align-items-center gap-1" href="https://t.me/Bagas_Dompetku_bot" target="_blank">
                             <i class="bi bi-telegram"></i> Bot Telegram
                         </a>
@@ -1358,6 +1363,39 @@ try {
                     .catch(err => console.error('Service Worker registration failed', err));
             });
         }
+
+        let deferredPrompt;
+        const installBtn = document.getElementById('pwa-install-btn');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // Mencegah prompt otomatis browser
+            e.preventDefault();
+            deferredPrompt = e;
+            // Tampilkan tombol kustom agar user bisa mengunduh secara sadar
+            if (installBtn) {
+                installBtn.classList.remove('d-none');
+                installBtn.style.display = 'inline-flex'; // Pastikan layout bootstrap flex
+            }
+        });
+
+        if (installBtn) {
+            installBtn.addEventListener('click', async () => {
+                if (!deferredPrompt) return;
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                console.log(`PWA install response: ${outcome}`);
+                deferredPrompt = null;
+                installBtn.classList.add('d-none');
+                installBtn.style.display = 'none';
+            });
+        }
+
+        window.addEventListener('appinstalled', () => {
+            if (installBtn) {
+                installBtn.classList.add('d-none');
+                installBtn.style.display = 'none';
+            }
+        });
     </script>
 </body>
 </html>

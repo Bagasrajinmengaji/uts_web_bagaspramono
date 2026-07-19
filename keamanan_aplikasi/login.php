@@ -252,6 +252,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             <div class="text-center mt-2">
                 <p class="mb-0 text-muted-custom">Belum punya akun? <a href="register.php" class="text-primary font-bold text-decoration-none">Daftar</a></p>
             </div>
+            
+            <div class="text-center mt-3">
+                <button id="pwa-install-btn" class="btn btn-outline-primary btn-sm d-none w-100" style="border-radius: 8px; font-weight: 600;">
+                    <i class="bi bi-phone-vibrate me-1"></i> Buat Pintasan Aplikasi
+                </button>
+            </div>
         </div>
     </div>
 
@@ -264,6 +270,36 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     .catch(err => console.error('Service Worker registration failed', err));
             });
         }
+
+        let deferredPrompt;
+        const installBtn = document.getElementById('pwa-install-btn');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // Mencegah prompt otomatis browser
+            e.preventDefault();
+            deferredPrompt = e;
+            // Tampilkan tombol kustom agar user bisa mengunduh secara sadar
+            if (installBtn) {
+                installBtn.classList.remove('d-none');
+            }
+        });
+
+        if (installBtn) {
+            installBtn.addEventListener('click', async () => {
+                if (!deferredPrompt) return;
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                console.log(`PWA install response: ${outcome}`);
+                deferredPrompt = null;
+                installBtn.classList.add('d-none');
+            });
+        }
+
+        window.addEventListener('appinstalled', () => {
+            if (installBtn) {
+                installBtn.classList.add('d-none');
+            }
+        });
     </script>
 </body>
 </html>
