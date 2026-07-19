@@ -302,7 +302,7 @@ try {
 
     // Ambil daftar dompet milik user beserta kalkulasi saldo aktifnya
     $stmt_wallets = $pdo->prepare(
-        "SELECT d.id_dompet, d.nama_dompet,
+        "SELECT d.id_dompet, d.nama_dompet, d.nomor_rekening,
                (COALESCE((SELECT SUM(t.nominal) FROM transaksi t WHERE t.id_dompet = d.id_dompet AND t.jenis = 'Pemasukan'), 0) -
                 COALESCE((SELECT SUM(t.nominal) FROM transaksi t WHERE t.id_dompet = d.id_dompet AND t.jenis = 'Pengeluaran'), 0)) AS saldo
          FROM dompet d
@@ -605,9 +605,14 @@ try {
                         <?php else: ?>
                             <?php foreach ($wallets as $wallet): ?>
                                 <div class="col-md-3">
-                                    <div class="p-3 border rounded bg-light">
-                                        <span class="text-muted text-uppercase text-xs font-bold"><?= escape($wallet['nama_dompet']) ?></span>
-                                        <h5 class="font-bold mt-1 mb-0 <?= $wallet['saldo'] >= 0 ? 'text-success' : 'text-danger' ?>">
+                                    <div class="p-3 border rounded bg-light h-100 d-flex flex-column justify-content-between">
+                                        <div>
+                                            <span class="text-muted text-uppercase text-xs font-bold"><?= escape($wallet['nama_dompet']) ?></span>
+                                            <?php if (!empty($wallet['nomor_rekening'])): ?>
+                                                <div class="text-muted" style="font-size: 0.76rem; margin-top: 1px;"><i class="bi bi-card-text me-1"></i>No. Rek: <?= escape($wallet['nomor_rekening']) ?></div>
+                                            <?php endif; ?>
+                                        </div>
+                                        <h5 class="font-bold mt-2 mb-0 <?= $wallet['saldo'] >= 0 ? 'text-success' : 'text-danger' ?>">
                                             <?= format_rupiah($wallet['saldo']) ?>
                                         </h5>
                                     </div>
@@ -714,7 +719,7 @@ try {
                             <option value="NULL" <?= $id_dompet_filter === "NULL" ? "selected" : "" ?>>Tanpa Dompet</option>
                             <?php foreach ($wallets as $w): ?>
                                 <option value="<?= $w['id_dompet'] ?>" <?= $id_dompet_filter == $w['id_dompet'] ? "selected" : "" ?>>
-                                    <?= escape($w['nama_dompet']) ?>
+                                    <?= escape($w['nama_dompet']) ?><?= !empty($w['nomor_rekening']) ? " (" . escape($w['nomor_rekening']) . ")" : "" ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
@@ -916,7 +921,7 @@ try {
                                 <select class="form-select modal-select2" id="id_dompet" name="id_dompet" required style="width: 100%;">
                                     <option value="">-- Pilih Dompet --</option>
                                     <?php foreach ($wallets as $w): ?>
-                                        <option value="<?= $w['id_dompet'] ?>"><?= escape($w['nama_dompet']) ?></option>
+                                        <option value="<?= $w['id_dompet'] ?>"><?= escape($w['nama_dompet']) ?><?= !empty($w['nomor_rekening']) ? " (" . escape($w['nomor_rekening']) . ")" : "" ?></option>
                                     <?php endforeach; ?>
                                 </select>
                             </div>
@@ -929,7 +934,7 @@ try {
                                 <select class="form-select modal-select2" id="id_dompet_asal" name="id_dompet_asal" style="width: 100%;">
                                     <option value="">-- Pilih Dompet Asal --</option>
                                     <?php foreach ($wallets as $w): ?>
-                                        <option value="<?= $w['id_dompet'] ?>"><?= escape($w['nama_dompet']) ?></option>
+                                        <option value="<?= $w['id_dompet'] ?>"><?= escape($w['nama_dompet']) ?><?= !empty($w['nomor_rekening']) ? " (" . escape($w['nomor_rekening']) . ")" : "" ?></option>
                                     <?php endforeach; ?>
                                 </select>
                             </div>
@@ -938,7 +943,7 @@ try {
                                 <select class="form-select modal-select2" id="id_dompet_tujuan" name="id_dompet_tujuan" style="width: 100%;">
                                     <option value="">-- Pilih Dompet Tujuan --</option>
                                     <?php foreach ($wallets as $w): ?>
-                                        <option value="<?= $w['id_dompet'] ?>"><?= escape($w['nama_dompet']) ?></option>
+                                        <option value="<?= $w['id_dompet'] ?>"><?= escape($w['nama_dompet']) ?><?= !empty($w['nomor_rekening']) ? " (" . escape($w['nomor_rekening']) . ")" : "" ?></option>
                                     <?php endforeach; ?>
                                 </select>
                             </div>
