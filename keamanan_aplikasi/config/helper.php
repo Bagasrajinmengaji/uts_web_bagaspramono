@@ -173,6 +173,25 @@ function auth_check()
         header("Location: login.php");
         exit();
     }
+
+    // Pemuatan data profil dinamis ke dalam session jika belum diset/diperbarui
+    if (!isset($_SESSION["foto_profile_loaded"]) || $_SESSION["foto_profile_loaded"] !== $_SESSION["user_id"]) {
+        global $pdo;
+        if (isset($pdo)) {
+            try {
+                $stmt = $pdo->prepare("SELECT username, foto_profile FROM users WHERE id = :id LIMIT 1");
+                $stmt->execute(["id" => $_SESSION["user_id"]]);
+                $u = $stmt->fetch();
+                if ($u) {
+                    $_SESSION["username"] = $u["username"];
+                    $_SESSION["foto_profile"] = $u["foto_profile"];
+                    $_SESSION["foto_profile_loaded"] = $_SESSION["user_id"];
+                }
+            } catch (\Exception $e) {
+                error_log("Gagal memuat detail profil user: " . $e->getMessage());
+            }
+        }
+    }
 }
 
 // Memastikan pengguna berstatus tamu (belum login). Jika sudah login, dialihkan ke dashboard.

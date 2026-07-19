@@ -198,6 +198,7 @@ try {
                     <li class="nav-item"><a class="nav-link active font-bold" href="target_tabungan.php">Target Tabungan</a></li>
                     <li class="nav-item"><a class="nav-link" href="dompet.php">Dompet</a></li>
                     <li class="nav-item"><a class="nav-link" href="kalender.php">Kalender</a></li>
+                    <li class="nav-item"><a class="nav-link" href="profile.php">Profil</a></li>
                     <?php if (isset($_SESSION["role"]) && $_SESSION["role"] === "admin"): ?>
                     <li class="nav-item">
                         <a class="nav-link d-flex align-items-center gap-1" href="admin_dashboard.php">
@@ -209,8 +210,13 @@ try {
                     <?php endif; ?>
                 </ul>
                 <ul class="navbar-nav ms-auto align-items-center">
-                    <li class="nav-item text-white me-3">
-                        <i class="bi bi-person-circle me-1"></i> Halo, <strong><?= escape($username) ?></strong>
+                    <li class="nav-item text-white me-3 d-flex align-items-center gap-2">
+                        <?php if (!empty($_SESSION["foto_profile"]) && file_exists(__DIR__ . "/uploads/profile/" . $_SESSION["foto_profile"])): ?>
+                            <img src="uploads/profile/<?= escape($_SESSION["foto_profile"]) ?>" alt="Avatar" class="rounded-circle" style="width: 24px; height: 24px; object-fit: cover;">
+                        <?php else: ?>
+                            <i class="bi bi-person-circle fs-5"></i>
+                        <?php endif; ?>
+                        <span>Halo, <strong><?= escape($username) ?></strong></span>
                     </li>
                     <li class="nav-item">
                         <a class="btn btn-outline-light btn-sm me-2 d-flex align-items-center gap-1" href="https://t.me/Bagas_Dompetku_bot" target="_blank">
