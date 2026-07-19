@@ -143,7 +143,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_FILES["file_transaksi"])) {
 
     try {
         $stmt = $pdo->prepare(
-            "INSERT INTO transaksi (user_id, jenis, nominal, keterangan, tanggal) VALUES (:user_id, :jenis, :nominal, :keterangan, :tanggal)",
+            "INSERT INTO transaksi (user_id, id_kategori, jenis, nominal, keterangan, tanggal) VALUES (:user_id, :id_kategori, :jenis, :nominal, :keterangan, :tanggal)",
         );
 
         while (($row = fgetcsv($handle, 1000, $delimiter)) !== false) {
@@ -156,13 +156,22 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_FILES["file_transaksi"])) {
 
             // Pastikan baris memiliki minimal 4 kolom
             if (count($row) < 4) {
-                throw new Exception("Baris ke-$row_num kekurangan kolom data.");
+                throw new Exception("Baris ke-$row_num kekurangan kolom data. Minimal harus berisi 4 kolom.");
             }
 
             $raw_tanggal = $row[0];
             $raw_jenis = $row[1];
-            $raw_nominal = $row[2];
-            $raw_keterangan = $row[3];
+
+            // Tentukan pemetaan kolom berdasarkan jumlah kolom yang tersedia di baris CSV
+            $raw_kategori = "";
+            if (count($row) >= 5) {
+                $raw_kategori = $row[2];
+                $raw_nominal = $row[3];
+                $raw_keterangan = $row[4];
+            } else {
+                $raw_nominal = $row[2];
+                $raw_keterangan = $row[3];
+            }
 
             // 1. Validasi & Format Tanggal
             $tanggal = parse_import_date($raw_tanggal);
@@ -201,9 +210,39 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_FILES["file_transaksi"])) {
                 $keterangan = substr($keterangan, 0, 255);
             }
 
+            // 5. Proses Kategori (Cari atau Buat baru seperti di import_document.php)
+            $id_kategori = null;
+            $nama_kategori = trim($raw_kategori);
+            if (!empty($nama_kategori)) {
+                $stmt_find_cat = $pdo->prepare(
+                    "SELECT id_kategori FROM kategori WHERE id_user = :id_user AND nama_kategori = :nama_kategori AND tipe = :tipe",
+                );
+                $stmt_find_cat->execute([
+                    "id_user" => $user_id,
+                    "nama_kategori" => $nama_kategori,
+                    "tipe" => $jenis,
+                ]);
+                $cat_found = $stmt_find_cat->fetch();
+
+                if ($cat_found) {
+                    $id_kategori = $cat_found["id_kategori"];
+                } else {
+                    $stmt_create_cat = $pdo->prepare(
+                        "INSERT INTO kategori (id_user, nama_kategori, tipe) VALUES (:id_user, :nama_kategori, :tipe)",
+                    );
+                    $stmt_create_cat->execute([
+                        "id_user" => $user_id,
+                        "nama_kategori" => $nama_kategori,
+                        "tipe" => $jenis,
+                    ]);
+                    $id_kategori = $pdo->lastInsertId();
+                }
+            }
+
             // Eksekusi insert data ke database
             $stmt->execute([
                 "user_id" => $user_id,
+                "id_kategori" => $id_kategori,
                 "jenis" => $jenis,
                 "nominal" => $nominal,
                 "keterangan" => $keterangan,
@@ -214,6 +253,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_FILES["file_transaksi"])) {
         }
 
         fclose($handle);
+
 
         if ($imported_count === 0) {
             $pdo->rollBack();

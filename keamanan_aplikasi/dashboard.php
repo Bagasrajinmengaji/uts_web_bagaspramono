@@ -9,6 +9,30 @@ auth_check();
 $user_id = $_SESSION["user_id"];
 $username = $_SESSION["username"];
 
+// Ambil info detail user dari database untuk telegram linking
+$stmtTelegram = $pdo->prepare("SELECT telegram_chat_id, telegram_link_code FROM users WHERE id = :id LIMIT 1");
+$stmtTelegram->execute(["id" => $user_id]);
+$userData = $stmtTelegram->fetch();
+
+$telegram_chat_id = $userData ? $userData["telegram_chat_id"] : null;
+$telegram_link_code = $userData ? $userData["telegram_link_code"] : null;
+
+// Jika user belum terhubung dan belum punya kode link, buatkan kode baru
+if (empty($telegram_chat_id) && empty($telegram_link_code)) {
+    $telegram_link_code = bin2hex(random_bytes(4)); // 8-char hex code
+    $stmtUpdateCode = $pdo->prepare("UPDATE users SET telegram_link_code = :code WHERE id = :id");
+    $stmtUpdateCode->execute(["code" => $telegram_link_code, "id" => $user_id]);
+}
+
+// Proses Unlink Telegram jika diklik
+if (isset($_GET["action"]) && $_GET["action"] === "unlink_telegram") {
+    $stmtUnlink = $pdo->prepare("UPDATE users SET telegram_chat_id = NULL, telegram_link_code = NULL WHERE id = :id");
+    $stmtUnlink->execute(["id" => $user_id]);
+    set_flash_message("success", "Akun Telegram berhasil diputuskan!");
+    header("Location: dashboard.php");
+    exit();
+}
+
 // backend crud pake post
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"])) {
     file_put_contents(
@@ -278,7 +302,7 @@ try {
 
     // Ambil daftar dompet milik user beserta kalkulasi saldo aktifnya
     $stmt_wallets = $pdo->prepare(
-        "SELECT d.id_dompet, d.nama_dompet,
+        "SELECT d.id_dompet, d.nama_dompet, d.nomor_rekening,
                (COALESCE((SELECT SUM(t.nominal) FROM transaksi t WHERE t.id_dompet = d.id_dompet AND t.jenis = 'Pemasukan'), 0) -
                 COALESCE((SELECT SUM(t.nominal) FROM transaksi t WHERE t.id_dompet = d.id_dompet AND t.jenis = 'Pengeluaran'), 0)) AS saldo
          FROM dompet d
@@ -407,12 +431,31 @@ try {
                     <li class="nav-item"><a class="nav-link" href="budgeting.php">Anggaran</a></li>
                     <li class="nav-item"><a class="nav-link" href="target_tabungan.php">Target Tabungan</a></li>
                     <li class="nav-item"><a class="nav-link" href="dompet.php">Dompet</a></li>
+                    <li class="nav-item"><a class="nav-link" href="kalender.php">Kalender</a></li>
+                    <li class="nav-item"><a class="nav-link" href="profile.php">Profil</a></li>
+                    <?php if (isset($_SESSION["role"]) && $_SESSION["role"] === "admin"): ?>
+                    <li class="nav-item">
+                        <a class="nav-link d-flex align-items-center gap-1" href="admin_dashboard.php">
+                            <span class="badge bg-warning text-dark" style="font-size: 0.7rem; padding: 3px 7px; border-radius: 6px;">
+                                <i class="bi bi-shield-fill me-1"></i>Admin
+                            </span>
+                        </a>
+                    </li>
+                    <?php endif; ?>
                 </ul>
                 <ul class="navbar-nav ms-auto align-items-center">
-                    <li class="nav-item text-white me-3">
-                        <i class="bi bi-person-circle me-1"></i> Halo, <strong><?= escape(
-                            $username,
-                        ) ?></strong>
+                    <li class="nav-item text-white me-3 d-flex align-items-center gap-2">
+                        <?php if (!empty($_SESSION["foto_profile"]) && file_exists(__DIR__ . "/uploads/profile/" . $_SESSION["foto_profile"])): ?>
+                            <img src="uploads/profile/<?= escape($_SESSION["foto_profile"]) ?>" alt="Avatar" class="rounded-circle" style="width: 24px; height: 24px; object-fit: cover;">
+                        <?php else: ?>
+                            <i class="bi bi-person-circle fs-5"></i>
+                        <?php endif; ?>
+                        <span>Halo, <strong><?= escape($username) ?></strong></span>
+                    </li>
+                    <li class="nav-item">
+                        <a class="btn btn-outline-light btn-sm me-2 d-flex align-items-center gap-1" href="https://t.me/Bagas_Dompetku_bot" target="_blank">
+                            <i class="bi bi-telegram"></i> Bot Telegram
+                        </a>
                     </li>
                     <li class="nav-item"><a class="btn btn-light btn-sm text-primary" href="logout.php">Logout</a></li>
                 </ul>
@@ -474,6 +517,52 @@ try {
                 ?>
             </div>
         </div>
+
+        <!-- Bagian Integrasi Telegram Bot -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <?php if (empty($telegram_chat_id)): ?>
+                    <div class="card border-0 shadow-sm p-4 text-white bg-gradient" style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); border-radius: 12px;">
+                        <div class="d-flex align-items-center flex-column flex-md-row">
+                            <div class="me-md-4 mb-3 mb-md-0 fs-1">
+                                <i class="bi bi-telegram"></i>
+                            </div>
+                            <div class="flex-grow-1 text-center text-md-start mb-3 mb-md-0">
+                                <h5 class="font-bold mb-1 text-white">Mulai Catat Keuangan Lebih Praktis via Telegram Chat!</h5>
+                                <p class="mb-0 text-white-50" style="font-size: 0.9rem;">
+                                    Hubungkan Telegram Anda agar bisa mencatat transaksi keuangan secara instan hanya dengan berkirim chat ke bot **@Bagas_Dompetku_bot**.
+                                </p>
+                            </div>
+                            <div class="text-nowrap">
+                                <a href="https://t.me/Bagas_Dompetku_bot?start=<?= $telegram_link_code ?>" target="_blank" class="btn btn-light font-bold text-primary px-4 py-2" style="border-radius: 8px;">
+                                    <i class="bi bi-link me-1"></i> Hubungkan Telegram
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                <?php else: ?>
+                    <div class="card border-0 shadow-sm p-4" style="border-radius: 12px; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3) !important;">
+                        <div class="d-flex align-items-center flex-column flex-md-row">
+                            <div class="me-md-4 mb-3 mb-md-0 fs-1 text-primary">
+                                <i class="bi bi-telegram"></i>
+                            </div>
+                            <div class="flex-grow-1 text-center text-md-start mb-3 mb-md-0">
+                                <h5 class="font-bold mb-1 text-dark">Telegram Anda Berhasil Terhubung!</h5>
+                                <p class="mb-0 text-muted" style="font-size: 0.9rem;">
+                                    Akun Anda sudah terhubung dengan bot Telegram. Anda dapat mencatat pengeluaran langsung dengan format chat: `out [nominal] [keterangan]` ke **@Bagas_Dompetku_bot**.
+                                </p>
+                            </div>
+                            <div class="text-nowrap">
+                                <a href="dashboard.php?action=unlink_telegram" class="btn btn-outline-danger font-bold px-4 py-2" style="border-radius: 8px;">
+                                    <i class="bi bi-x-circle me-1"></i> Putuskan Hubungan
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
+
         <div class="row g-4 mb-5">
             <div class="col-md-4">
                 <div class="card p-4">
@@ -516,9 +605,14 @@ try {
                         <?php else: ?>
                             <?php foreach ($wallets as $wallet): ?>
                                 <div class="col-md-3">
-                                    <div class="p-3 border rounded bg-light">
-                                        <span class="text-muted text-uppercase text-xs font-bold"><?= escape($wallet['nama_dompet']) ?></span>
-                                        <h5 class="font-bold mt-1 mb-0 <?= $wallet['saldo'] >= 0 ? 'text-success' : 'text-danger' ?>">
+                                    <div class="p-3 border rounded bg-light h-100 d-flex flex-column justify-content-between">
+                                        <div>
+                                            <span class="text-muted text-uppercase text-xs font-bold"><?= escape($wallet['nama_dompet']) ?></span>
+                                            <?php if (!empty($wallet['nomor_rekening'])): ?>
+                                                <div class="text-muted" style="font-size: 0.76rem; margin-top: 1px;"><i class="bi bi-card-text me-1"></i>No. Rek: <?= escape($wallet['nomor_rekening']) ?></div>
+                                            <?php endif; ?>
+                                        </div>
+                                        <h5 class="font-bold mt-2 mb-0 <?= $wallet['saldo'] >= 0 ? 'text-success' : 'text-danger' ?>">
                                             <?= format_rupiah($wallet['saldo']) ?>
                                         </h5>
                                     </div>
@@ -551,9 +645,9 @@ try {
         </div>
 
         <div class="card p-4">
-            <div class="d-flex justify-content-between align-items-center mb-4">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
                 <h4 class="font-bold mb-0">Daftar Transaksi</h4>
-                <div class="d-flex gap-2">
+                <div class="d-flex flex-wrap gap-2">
                     <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#modalImport">
                         <i class="bi bi-file-earmark-arrow-up me-1"></i> Import Transaksi
                     </button>
@@ -625,19 +719,22 @@ try {
                             <option value="NULL" <?= $id_dompet_filter === "NULL" ? "selected" : "" ?>>Tanpa Dompet</option>
                             <?php foreach ($wallets as $w): ?>
                                 <option value="<?= $w['id_dompet'] ?>" <?= $id_dompet_filter == $w['id_dompet'] ? "selected" : "" ?>>
-                                    <?= escape($w['nama_dompet']) ?>
+                                    <?= escape($w['nama_dompet']) ?><?= !empty($w['nomor_rekening']) ? " (" . escape($w['nomor_rekening']) . ")" : "" ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
                     </div>
-                    <div class="col-md-2 d-flex align-items-end gap-1">
-                        <button type="submit" class="btn btn-primary w-100"><i class="bi bi-funnel-fill"></i> Filter</button>
-                        <button class="btn btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#advancedFilterCollapse" aria-expanded="false" aria-controls="advancedFilterCollapse" title="Filter Lanjutan">
-                            <i class="bi bi-sliders"></i>
-                        </button>
-                        <?php if ($search !== "" || $jenis_filter !== "" || $id_kategori_filter !== "" || $id_dompet_filter !== "" || $tanggal_mulai !== "" || $tanggal_selesai !== "" || $nominal_min !== "" || $nominal_max !== ""): ?>
-                            <a href="dashboard.php" class="btn btn-light border" title="Reset Filter"><i class="bi bi-arrow-counterclockwise"></i></a>
-                        <?php endif; ?>
+                    <div class="col-md-2">
+                        <label class="form-label d-none d-md-block text-xs" style="visibility: hidden;">Aksi</label>
+                        <div class="d-flex gap-1">
+                            <button type="submit" class="btn btn-primary w-100" style="height: 38px; display: flex; align-items: center; justify-content: center; gap: 6px;"><i class="bi bi-funnel-fill"></i> Filter</button>
+                            <button class="btn btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#advancedFilterCollapse" aria-expanded="false" aria-controls="advancedFilterCollapse" title="Filter Lanjutan" style="height: 38px; width: 42px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                <i class="bi bi-sliders"></i>
+                            </button>
+                            <?php if ($search !== "" || $jenis_filter !== "" || $id_kategori_filter !== "" || $id_dompet_filter !== "" || $tanggal_mulai !== "" || $tanggal_selesai !== "" || $nominal_min !== "" || $nominal_max !== ""): ?>
+                                <a href="dashboard.php" class="btn btn-light border" title="Reset Filter" style="height: 38px; width: 42px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><i class="bi bi-arrow-counterclockwise"></i></a>
+                            <?php endif; ?>
+                        </div>
                     </div>
                 </div>
 
@@ -824,7 +921,7 @@ try {
                                 <select class="form-select modal-select2" id="id_dompet" name="id_dompet" required style="width: 100%;">
                                     <option value="">-- Pilih Dompet --</option>
                                     <?php foreach ($wallets as $w): ?>
-                                        <option value="<?= $w['id_dompet'] ?>"><?= escape($w['nama_dompet']) ?></option>
+                                        <option value="<?= $w['id_dompet'] ?>"><?= escape($w['nama_dompet']) ?><?= !empty($w['nomor_rekening']) ? " (" . escape($w['nomor_rekening']) . ")" : "" ?></option>
                                     <?php endforeach; ?>
                                 </select>
                             </div>
@@ -837,7 +934,7 @@ try {
                                 <select class="form-select modal-select2" id="id_dompet_asal" name="id_dompet_asal" style="width: 100%;">
                                     <option value="">-- Pilih Dompet Asal --</option>
                                     <?php foreach ($wallets as $w): ?>
-                                        <option value="<?= $w['id_dompet'] ?>"><?= escape($w['nama_dompet']) ?></option>
+                                        <option value="<?= $w['id_dompet'] ?>"><?= escape($w['nama_dompet']) ?><?= !empty($w['nomor_rekening']) ? " (" . escape($w['nomor_rekening']) . ")" : "" ?></option>
                                     <?php endforeach; ?>
                                 </select>
                             </div>
@@ -846,7 +943,7 @@ try {
                                 <select class="form-select modal-select2" id="id_dompet_tujuan" name="id_dompet_tujuan" style="width: 100%;">
                                     <option value="">-- Pilih Dompet Tujuan --</option>
                                     <?php foreach ($wallets as $w): ?>
-                                        <option value="<?= $w['id_dompet'] ?>"><?= escape($w['nama_dompet']) ?></option>
+                                        <option value="<?= $w['id_dompet'] ?>"><?= escape($w['nama_dompet']) ?><?= !empty($w['nomor_rekening']) ? " (" . escape($w['nomor_rekening']) . ")" : "" ?></option>
                                     <?php endforeach; ?>
                                 </select>
                             </div>
@@ -904,16 +1001,22 @@ try {
                         <!-- Area Unduh Template -->
                         <div class="card bg-light border-0 p-3 mb-2">
                             <h6 class="font-bold mb-3 text-secondary" style="font-size: 0.85rem; text-transform: uppercase;">Unduh Template Pengisian:</h6>
-                            <div class="d-grid gap-2 d-md-flex justify-content-md-between">
-                                <a href="download_template.php" class="btn btn-sm btn-outline-success w-100 text-nowrap">
-                                    <i class="bi bi-file-earmark-excel me-1"></i> Template Excel
-                                </a>
-                                <a href="download_template_docx.php" class="btn btn-sm btn-outline-primary w-100 text-nowrap">
-                                    <i class="bi bi-file-earmark-word me-1"></i> Template Word
-                                </a>
-                                <a href="download_template_pdf.php" class="btn btn-sm btn-outline-danger w-100 text-nowrap">
-                                    <i class="bi bi-file-earmark-pdf me-1"></i> Template PDF
-                                </a>
+                            <div class="row g-2">
+                                <div class="col-4">
+                                    <a href="download_template.php" class="btn btn-sm btn-outline-success w-100 text-nowrap" style="display: flex; align-items: center; justify-content: center; font-size: 0.72rem; padding: 8px 4px;">
+                                        <i class="bi bi-file-earmark-excel me-1"></i> Excel
+                                    </a>
+                                </div>
+                                <div class="col-4">
+                                    <a href="download_template_docx.php" class="btn btn-sm btn-outline-primary w-100 text-nowrap" style="display: flex; align-items: center; justify-content: center; font-size: 0.72rem; padding: 8px 4px;">
+                                        <i class="bi bi-file-earmark-word me-1"></i> Word
+                                    </a>
+                                </div>
+                                <div class="col-4">
+                                    <a href="download_template_pdf.php" class="btn btn-sm btn-outline-danger w-100 text-nowrap" style="display: flex; align-items: center; justify-content: center; font-size: 0.72rem; padding: 8px 4px;">
+                                        <i class="bi bi-file-earmark-pdf me-1"></i> PDF
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1170,7 +1273,7 @@ try {
                         maintainAspectRatio: false,
                         plugins: {
                             legend: {
-                                position: 'right',
+                                position: window.innerWidth < 768 ? 'bottom' : 'right',
                                 labels: {
                                     boxWidth: 10,
                                     font: { size: 10 }
@@ -1220,6 +1323,25 @@ try {
                     }
                 }
             });
+
+            // --- Scroll Restoration untuk Form Filter ---
+            // Menyimpan koordinat scroll halaman sesaat sebelum melakukan submit filter/reload
+            window.addEventListener('beforeunload', function() {
+                localStorage.setItem('dashboard_scroll_pos', window.scrollY);
+            });
+
+            // Mengembalikan koordinat scroll jika sebelumnya tersimpan
+            const savedScrollPos = localStorage.getItem('dashboard_scroll_pos');
+            if (savedScrollPos !== null) {
+                // Gunakan setTimeout agar browser menyelesaikan render layout Bootstrap & Select2 terlebih dahulu
+                setTimeout(function() {
+                    window.scrollTo({
+                        top: parseInt(savedScrollPos),
+                        behavior: 'instant' // Langsung ke koordinat tanpa animasi transisi lambat
+                    });
+                    localStorage.removeItem('dashboard_scroll_pos'); // Bersihkan setelah digunakan
+                }, 100);
+            }
         });
     </script>
 </body>

@@ -197,10 +197,31 @@ try {
                     <li class="nav-item"><a class="nav-link" href="budgeting.php">Anggaran</a></li>
                     <li class="nav-item"><a class="nav-link active font-bold" href="target_tabungan.php">Target Tabungan</a></li>
                     <li class="nav-item"><a class="nav-link" href="dompet.php">Dompet</a></li>
+                    <li class="nav-item"><a class="nav-link" href="kalender.php">Kalender</a></li>
+                    <li class="nav-item"><a class="nav-link" href="profile.php">Profil</a></li>
+                    <?php if (isset($_SESSION["role"]) && $_SESSION["role"] === "admin"): ?>
+                    <li class="nav-item">
+                        <a class="nav-link d-flex align-items-center gap-1" href="admin_dashboard.php">
+                            <span class="badge bg-warning text-dark" style="font-size: 0.7rem; padding: 3px 7px; border-radius: 6px;">
+                                <i class="bi bi-shield-fill me-1"></i>Admin
+                            </span>
+                        </a>
+                    </li>
+                    <?php endif; ?>
                 </ul>
                 <ul class="navbar-nav ms-auto align-items-center">
-                    <li class="nav-item text-white me-3">
-                        <i class="bi bi-person-circle me-1"></i> Halo, <strong><?= escape($username) ?></strong>
+                    <li class="nav-item text-white me-3 d-flex align-items-center gap-2">
+                        <?php if (!empty($_SESSION["foto_profile"]) && file_exists(__DIR__ . "/uploads/profile/" . $_SESSION["foto_profile"])): ?>
+                            <img src="uploads/profile/<?= escape($_SESSION["foto_profile"]) ?>" alt="Avatar" class="rounded-circle" style="width: 24px; height: 24px; object-fit: cover;">
+                        <?php else: ?>
+                            <i class="bi bi-person-circle fs-5"></i>
+                        <?php endif; ?>
+                        <span>Halo, <strong><?= escape($username) ?></strong></span>
+                    </li>
+                    <li class="nav-item">
+                        <a class="btn btn-outline-light btn-sm me-2 d-flex align-items-center gap-1" href="https://t.me/Bagas_Dompetku_bot" target="_blank">
+                            <i class="bi bi-telegram"></i> Bot Telegram
+                        </a>
                     </li>
                     <li class="nav-item"><a class="btn btn-light btn-sm text-primary" href="logout.php">Logout</a></li>
                 </ul>
@@ -246,7 +267,7 @@ try {
 
         <!-- Bagian Pengelolaan Impian Tabungan -->
         <div class="card p-4 border-0 shadow-sm">
-            <div class="d-flex justify-content-between align-items-center mb-4">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
                 <div>
                     <h4 class="font-bold mb-1">Daftar Impian & Target Tabungan</h4>
                     <p class="text-muted mb-0" style="font-size: 0.9rem;">Tetapkan target masa depan dan pantau progres tabungan Anda secara berkala.</p>

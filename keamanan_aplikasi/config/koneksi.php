@@ -1,11 +1,17 @@
 <?php
 // Secure Database Connection File (PDO)
-// Suitable for default XAMPP configuration
+// Suitable for default XAMPP configuration & Render.com deployment
 //
-$host = "localhost";
-$db = "dompetku";
-$user = "root";
-$pass = ""; // default XAMPP
+
+// Inisialisasi environment variable jika belum di-load
+if (!function_exists('load_env')) {
+    require_once __DIR__ . "/helper.php";
+}
+
+$host = $_ENV["DB_HOST"];
+$db   = $_ENV["DB_NAME"];
+$user = $_ENV["DB_USER"];
+$pass = $_ENV["DB_PASS"];
 $charset = "utf8mb4";
 
 $dsn = "mysql:host=$host;dbname=$db;charset=$charset";

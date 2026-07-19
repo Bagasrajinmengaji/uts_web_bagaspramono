@@ -20,6 +20,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"])) {
         // Aksi 1: Tambah Dompet (Create)
         if ($action === "create") {
             $nama_dompet = isset($_POST["nama_dompet"]) ? trim($_POST["nama_dompet"]) : "";
+            $nomor_rekening = isset($_POST["nomor_rekening"]) ? trim($_POST["nomor_rekening"]) : "";
 
             if (empty($nama_dompet)) {
                 echo json_encode([
@@ -30,11 +31,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"])) {
             }
 
             $stmt = $pdo->prepare(
-                "INSERT INTO dompet (id_user, nama_dompet) VALUES (:id_user, :nama_dompet)",
+                "INSERT INTO dompet (id_user, nama_dompet, nomor_rekening) VALUES (:id_user, :nama_dompet, :nomor_rekening)",
             );
             $stmt->execute([
                 "id_user" => $user_id,
                 "nama_dompet" => $nama_dompet,
+                "nomor_rekening" => empty($nomor_rekening) ? null : $nomor_rekening,
             ]);
 
             echo json_encode([
@@ -48,6 +50,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"])) {
         if ($action === "update") {
             $id = isset($_POST["id"]) ? intval($_POST["id"]) : 0;
             $nama_dompet = isset($_POST["nama_dompet"]) ? trim($_POST["nama_dompet"]) : "";
+            $nomor_rekening = isset($_POST["nomor_rekening"]) ? trim($_POST["nomor_rekening"]) : "";
 
             if ($id <= 0 || empty($nama_dompet)) {
                 echo json_encode([
@@ -58,10 +61,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"])) {
             }
 
             $stmt = $pdo->prepare(
-                "UPDATE dompet SET nama_dompet = :nama_dompet WHERE id_dompet = :id AND id_user = :id_user",
+                "UPDATE dompet SET nama_dompet = :nama_dompet, nomor_rekening = :nomor_rekening WHERE id_dompet = :id AND id_user = :id_user",
             );
             $stmt->execute([
                 "nama_dompet" => $nama_dompet,
+                "nomor_rekening" => empty($nomor_rekening) ? null : $nomor_rekening,
                 "id" => $id,
                 "id_user" => $user_id,
             ]);
@@ -161,10 +165,31 @@ try {
                     <li class="nav-item"><a class="nav-link" href="budgeting.php">Anggaran</a></li>
                     <li class="nav-item"><a class="nav-link" href="target_tabungan.php">Target Tabungan</a></li>
                     <li class="nav-item"><a class="nav-link active font-bold" href="dompet.php">Dompet</a></li>
+                    <li class="nav-item"><a class="nav-link" href="kalender.php">Kalender</a></li>
+                    <li class="nav-item"><a class="nav-link" href="profile.php">Profil</a></li>
+                    <?php if (isset($_SESSION["role"]) && $_SESSION["role"] === "admin"): ?>
+                    <li class="nav-item">
+                        <a class="nav-link d-flex align-items-center gap-1" href="admin_dashboard.php">
+                            <span class="badge bg-warning text-dark" style="font-size: 0.7rem; padding: 3px 7px; border-radius: 6px;">
+                                <i class="bi bi-shield-fill me-1"></i>Admin
+                            </span>
+                        </a>
+                    </li>
+                    <?php endif; ?>
                 </ul>
                 <ul class="navbar-nav ms-auto align-items-center">
-                    <li class="nav-item text-white me-3">
-                        <i class="bi bi-person-circle me-1"></i> Halo, <strong><?= escape($username) ?></strong>
+                    <li class="nav-item text-white me-3 d-flex align-items-center gap-2">
+                        <?php if (!empty($_SESSION["foto_profile"]) && file_exists(__DIR__ . "/uploads/profile/" . $_SESSION["foto_profile"])): ?>
+                            <img src="uploads/profile/<?= escape($_SESSION["foto_profile"]) ?>" alt="Avatar" class="rounded-circle" style="width: 24px; height: 24px; object-fit: cover;">
+                        <?php else: ?>
+                            <i class="bi bi-person-circle fs-5"></i>
+                        <?php endif; ?>
+                        <span>Halo, <strong><?= escape($username) ?></strong></span>
+                    </li>
+                    <li class="nav-item">
+                        <a class="btn btn-outline-light btn-sm me-2 d-flex align-items-center gap-1" href="https://t.me/Bagas_Dompetku_bot" target="_blank">
+                            <i class="bi bi-telegram"></i> Bot Telegram
+                        </a>
                     </li>
                     <li class="nav-item"><a class="btn btn-light btn-sm text-primary" href="logout.php">Logout</a></li>
                 </ul>
@@ -180,7 +205,7 @@ try {
         <?php endif; ?>
 
         <div class="card p-4 shadow-sm border-0">
-            <div class="d-flex justify-content-between align-items-center mb-4">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
                 <div>
                     <h4 class="font-bold mb-1">Kelola Dompet Keuangan</h4>
                     <p class="text-muted mb-0" style="font-size: 0.9rem;">Kelompokkan dana Anda ke berbagai rekening atau e-wallet terpisah.</p>
@@ -212,6 +237,9 @@ try {
                                     <td><?= $no++ ?></td>
                                     <td class="font-bold">
                                         <i class="bi bi-wallet text-primary me-2"></i><?= escape($row["nama_dompet"]) ?>
+                                        <?php if (!empty($row["nomor_rekening"])): ?>
+                                            <br><small class="text-muted fw-normal ms-4" style="font-size: 0.8rem;"><i class="bi bi-card-text me-1"></i>No. Rek: <?= escape($row["nomor_rekening"]) ?></small>
+                                        <?php endif; ?>
                                     </td>
                                     <td>
                                         <span class="font-bold <?= $row["saldo"] >= 0 ? "text-success" : "text-danger" ?>">
@@ -225,7 +253,8 @@ try {
                                         <div class="d-flex justify-content-center gap-2">
                                             <button type="button" class="btn btn-sm btn-outline-primary btn-edit" 
                                                     data-id="<?= $row["id_dompet"] ?>" 
-                                                    data-nama="<?= escape($row["nama_dompet"]) ?>">
+                                                    data-nama="<?= escape($row["nama_dompet"]) ?>"
+                                                    data-norek="<?= escape($row["nomor_rekening"]) ?>">
                                                 <i class="bi bi-pencil-square"></i>
                                             </button>
                                             <button type="button" class="btn btn-sm btn-outline-danger btn-delete" 
@@ -260,6 +289,10 @@ try {
                         <div class="mb-3">
                             <label for="nama_dompet" class="form-label font-bold text-secondary">Nama Dompet / Rekening</label>
                             <input type="text" class="form-control" name="nama_dompet" id="nama_dompet" required placeholder="Contoh: Dompet Utama, Bank BCA, GoPay">
+                        </div>
+                        <div class="mb-3">
+                            <label for="nomor_rekening" class="form-label font-bold text-secondary">Nomor Rekening (Opsional)</label>
+                            <input type="text" class="form-control" name="nomor_rekening" id="nomor_rekening" placeholder="Contoh: 1234567890 (BCA)">
                         </div>
                     </div>
                     <div class="modal-footer border-0">
@@ -321,11 +354,13 @@ try {
             $('.btn-edit').on('click', function() {
                 const id = $(this).data('id');
                 const nama = $(this).data('nama');
+                const norek = $(this).data('norek');
 
                 $('#modalDompetLabel').text('Edit Dompet');
                 $('#formAction').val('update');
                 $('#dompetId').val(id);
                 $('#nama_dompet').val(nama);
+                $('#nomor_rekening').val(norek);
 
                 $('#modalDompet').modal('show');
             });

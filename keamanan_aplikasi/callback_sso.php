@@ -103,6 +103,14 @@ try {
         $user = $stmt->fetch();
 
         if ($user) {
+            // Cek apakah akun aktif
+            $user_active = isset($user["is_active"]) ? intval($user["is_active"]) : 1;
+            if ($user_active === 0) {
+                set_flash_message("danger", "Akun Anda telah dinonaktifkan oleh administrator. Silakan hubungi dukungan.");
+                header("Location: login.php");
+                exit();
+            }
+
             // Jika akun ada tapi google_id belum terikat (pendaftaran manual via email sebelumnya)
             if (empty($user["google_id"])) {
                 $update = $pdo->prepare(
@@ -153,19 +161,20 @@ try {
             $is_new_user = true;
         }
 
-        // 4. Set Session (Sama persis dengan mekanisme login.php)
+        // 4. Set Session (termasuk role untuk RBAC)
         session_regenerate_id(true);
         $_SESSION["user_id"] = $user["id"];
         $_SESSION["username"] = $user["username"];
         $_SESSION["email"] = $user["email"];
+        $_SESSION["role"] = $user["role"] ?? "user";
 
-        // Panggil pengiriman email di background (asinkron di Windows CLI)
-        $bg_script = __DIR__ . "/send_email_bg.php";
-        $cmd = "start /B C:\\xampp\\php\\php.exe " . escapeshellarg($bg_script) . 
-               " --email=" . escapeshellarg($user["email"]) . 
-               " --username=" . escapeshellarg($user["username"]) . 
-               " --method=" . escapeshellarg($email_method);
-        pclose(popen($cmd, "r"));
+        // Panggil pengiriman email (asinkron jika didukung, sinkron sebagai fallback)
+        send_email_async([
+            "email" => $user["email"],
+            "username" => $user["username"],
+            "method" => $email_method,
+            "type" => "login"
+        ]);
 
         header("Location: dashboard.php");
         exit();

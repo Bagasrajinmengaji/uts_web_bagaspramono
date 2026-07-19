@@ -1,1 +1,21 @@
+# Environment variables and local configs
 .env
+.env.local
+.env.*.local
+
+# Database dumps / SQL files (security precaution)
+*.sql
+**/*.sql
+
+# Composer dependencies
+vendor/
+keamanan_aplikasi/vendor/
+
+# Node dependencies (if any)
+node_modules/
+
+# Logs and temp files
+*.log
+telegram_log.txt
+keamanan_aplikasi/telegram_log.txt
+keamanan_aplikasi/post_log.txt

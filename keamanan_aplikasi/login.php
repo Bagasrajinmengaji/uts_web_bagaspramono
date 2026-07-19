@@ -88,36 +88,46 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 }
 
                 if ($password_matches) {
-                    // --- CRITICAL SECURITY: Session Fixation Prevention ---
-                    session_regenerate_id(true);
+                    $user_active = isset($user["is_active"]) ? intval($user["is_active"]) : 1;
+                    if ($user_active === 0) {
+                        $errors[] = "Akun Anda telah dinonaktifkan oleh administrator. Silakan hubungi dukungan.";
+                    } else {
+                        // --- CRITICAL SECURITY: Session Fixation Prevention ---
+                        session_regenerate_id(true);
 
-                    // Set session variables
-                    $_SESSION["user_id"] = $user["id"];
-                    $_SESSION["username"] = $user["username"];
-                    $_SESSION["email"] = $user["email"];
+                        // Set session variables (termasuk role untuk RBAC)
+                        $_SESSION["user_id"] = $user["id"];
+                        $_SESSION["username"] = $user["username"];
+                        $_SESSION["email"] = $user["email"];
+                        $_SESSION["role"] = $user["role"] ?? "user";
 
-                    if ($debug) {
-                        $debug_output[] =
-                            "DEBUG: Session berhasil disimpan! (\$_SESSION['user_id'] = " .
-                            $_SESSION["user_id"] .
-                            ", \$_SESSION['username'] = '" .
-                            $_SESSION["username"] .
-                            "', \$_SESSION['email'] = '" .
-                            $_SESSION["email"] .
-                            "')";
-                        $_SESSION["debug_log"] = $debug_output;
+                        if ($debug) {
+                            $debug_output[] =
+                                "DEBUG: Session berhasil disimpan! (\$_SESSION['user_id'] = " .
+                                $_SESSION["user_id"] .
+                                ", \$_SESSION['username'] = '" .
+                                $_SESSION["username"] .
+                                "', \$_SESSION['email'] = '" .
+                                $_SESSION["email"] .
+                                "')";
+                            $_SESSION["debug_log"] = $debug_output;
+                        }
+
+                        // Panggil pengiriman email (asinkron jika didukung, sinkron sebagai fallback)
+                        send_email_async([
+                            "email" => $user["email"],
+                            "username" => $user["username"],
+                            "method" => "Kredensial Standard",
+                            "type" => "login"
+                        ]);
+
+                        // Arahkan admin ke dashboard admin, user biasa ke dashboard
+                        $redirect = (isset($user["role"]) && $user["role"] === "admin")
+                            ? "admin_dashboard.php"
+                            : "dashboard.php";
+                        header("Location: " . $redirect);
+                        exit();
                     }
-
-                    // Panggil pengiriman email di background (asinkron di Windows CLI)
-                    $bg_script = __DIR__ . "/send_email_bg.php";
-                    $cmd = "start /B C:\\xampp\\php\\php.exe " . escapeshellarg($bg_script) . 
-                           " --email=" . escapeshellarg($user["email"]) . 
-                           " --username=" . escapeshellarg($user["username"]) . 
-                           " --method=" . escapeshellarg("Kredensial Standard");
-                    pclose(popen($cmd, "r"));
-
-                    header("Location: dashboard.php");
-                    exit();
                 }
             }
 
@@ -172,7 +182,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             <?php endif; ?>
 
             <?php if (isset($_SESSION["debug_log"])): ?>
-                <div class="alert alert-info border-2 font-monospace mb-3" style="font-size: 0.82rem; border-color: #3b82f6; background-color: #eff6ff;">
+                <div class="alert alert-info border-2 font-monospace mb-3 debug-panel" style="font-size: 0.82rem; border-color: #3b82f6;">
                     <strong class="text-primary"><i class="bi bi-bug-fill me-1"></i> DEBUG AUTENTIKASI:</strong>
                     <hr class="my-2 text-muted">
                     <ul class="mb-0 ps-3">
@@ -209,7 +219,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 </div>
 
                 <div class="mb-4">
-                    <label for="password" class="form-label">Password</label>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <label for="password" class="form-label mb-0">Password</label>
+                        <a href="forgot_password.php" class="text-primary font-bold text-decoration-none" style="font-size: 0.85rem;">Lupa password?</a>
+                    </div>
                     <div class="input-group">
                         <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-lock"></i></span>
                         <input type="password" class="form-control border-start-0 ps-0" id="password" name="password" placeholder="Masukkan password" required>
