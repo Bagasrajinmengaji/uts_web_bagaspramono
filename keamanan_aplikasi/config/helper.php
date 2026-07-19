@@ -489,14 +489,25 @@ function load_env()
         "SMTP_USERNAME"        => "",
         "SMTP_PASSWORD"        => "",
         "SMTP_FROM_EMAIL"      => "",
-        "SMTP_FROM_NAME"       => "DompetKu"
+        "SMTP_FROM_NAME"       => "DompetKu",
+        "DB_HOST"              => "localhost",
+        "DB_NAME"              => "dompetku",
+        "DB_USER"              => "root",
+        "DB_PASS"              => ""
     ];
     foreach ($defaults as $key => $val) {
-        if (!isset($_ENV[$key])) {
-            $_ENV[$key] = $val;
-        }
-        if (!isset($_SERVER[$key])) {
-            $_SERVER[$key] = $val;
+        // Cek jika variabel env ada di level OS (misal di Render.com atau runtime container)
+        $system_val = getenv($key);
+        if ($system_val !== false) {
+            $_ENV[$key] = $system_val;
+            $_SERVER[$key] = $system_val;
+        } else {
+            if (!isset($_ENV[$key])) {
+                $_ENV[$key] = $val;
+            }
+            if (!isset($_SERVER[$key])) {
+                $_SERVER[$key] = $val;
+            }
         }
     }
 }
